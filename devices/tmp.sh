@@ -1,0 +1,15 @@
+touch ./samr21-xpro/01-simple-net/.gitignore
+touch ./samr21-xpro/02-imu/.gitignore
+touch ./samr21b18-mz210pa/01-simple/.gitignore
+touch ./samr21b18-mz210pa/02-imu-shell/.gitignore
+touch ./samr21b18-mz210pa/04-imu-network/.gitignore
+touch ./samr21b18-mz210pa/03-udp-service/.gitignore
+touch ./tests/periph_timer/.gitignore
+touch ./tests/shell/.gitignore
+touch ./tests/periph_spi/.gitignore
+touch ./samr21-zllk/01-oled/.gitignore
+touch ./samr21-zllk/05-border-router/.gitignore
+touch ./samr21-zllk/00-basic-functions/.gitignore
+touch ./samr21-zllk/03-simplenet/.gitignore
+touch ./samr21-zllk/02-switches/.gitignore
+touch ./samr21-zllk/04-udpnet/.gitignore

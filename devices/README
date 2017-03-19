@@ -1,0 +1,7 @@
+tests - basic development environment tests - this to ensure changes to
+underlying libraries/boards/hardware/programing devices  etc work OK.
+
+Run these whenever changes are made to RIOT OS versions, when adding a new
+board/device to the system or when hardware or hardware configuration changes
+etc are made.
+

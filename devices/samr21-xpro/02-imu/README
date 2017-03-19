@@ -1,0 +1,13 @@
+Check that the IMU stuff works.
+
+To test, make and flash the board.
+
+Attach an MPU9150 IMU to:
+
+3.3V and ground and to PA16/PA17 (see photo)
+
+
+"make term"
+
+there should be a stream of data that changes as the MPU9150 device is moved.
+

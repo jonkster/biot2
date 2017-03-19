@@ -1,0 +1,55 @@
+#!/usr/bin/expect
+
+set dev [lindex $argv 0];
+
+#set pid [spawn make term TERMFLAGS="-p/dev/ttyACM$dev"]
+set pid [spawn minicom -D /dev/ttyACM$dev riotos]
+
+puts "looking for shell welcome..."
+set timeout 5
+send "reboot\n"
+set timeout 5
+
+expect {
+    "test_shell" {}
+    timeout { puts "\nFAIL! - no shell welcome message\n"; exec kill $pid; exit 1 }
+}
+
+set timeout 1
+
+send "\n"
+send "\n"
+puts "looking for prompt..."
+expect {
+    ">" {}
+    timeout { puts "\nFAIL! - no prompt\n"; exec kill $pid; exit 1 }
+}
+
+puts "start test..."
+send "start_test\n"
+expect {
+    "\[TEST_START\]" {}
+    timeout { puts "\nFAIL! - unexpected response\n"; exec kill $pid; exit 1 }
+}
+
+puts "looking for prompt..."
+expect {
+    ">" {}
+    timeout { puts "\nFAIL! - unexpected response\n"; exec kill $pid; exit 1 }
+}
+
+puts "end test..."
+send "end_test\n"
+expect {
+    "\[TEST_END\]" {}
+    timeout { puts "\nFAIL! - unexpected response\n"; exec kill $pid; exit 1 }
+}
+
+send "reboot\n"
+sleep 5
+
+
+puts "\nTest successful!\n"
+send "\x01x\n\n"
+sleep 2
+exec kill $pid

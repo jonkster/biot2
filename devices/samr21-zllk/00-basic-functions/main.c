@@ -1,0 +1,133 @@
+#include <stdbool.h>
+#include <stdio.h>
+#include <string.h>
+
+#include "board.h"
+#include "shell_commands.h"
+#include "shell.h"
+#include "thread.h"
+
+#include <xtimer.h>
+
+bool led_status = false;
+char flash_stack[THREAD_STACKSIZE_MAIN];
+
+static int led_control(int argc, char **argv)
+{
+    if (argc == 2) {
+        if (strcmp(argv[1], "on") == 0) {
+            led_status = true;
+            LED0_ON;
+            LED1_OFF;
+            return 0;
+        }
+        else if (strcmp(argv[1], "off") == 0) {
+            led_status = false;
+            LED0_OFF;
+            LED1_ON;
+            LED_RGB_OFF;
+            return 0;
+        }
+        else if (strcmp(argv[1], "red") == 0) {
+            led_status = false;
+            LED_RGB_OFF;
+            LED_RGB_R_ON;
+            return 0;
+        }
+        else if (strcmp(argv[1], "green") == 0) {
+            led_status = false;
+            LED_RGB_OFF;
+            LED_RGB_G_ON;
+            return 0;
+        }
+        else if (strcmp(argv[1], "blue") == 0) {
+            led_status = false;
+            LED_RGB_OFF;
+            LED_RGB_B_ON;
+            return 0;
+        }
+    }
+
+    return -1;
+}
+
+static int print_echo(int argc, char **argv)
+{
+    for (int i = 0; i < argc; ++i) {
+        printf("“%s” ", argv[i]);
+    }
+    puts("");
+
+    return 0;
+}
+
+static const shell_command_t shell_commands[] = {
+    { "led", "use 'led on|red|green|blue|off' to set the LEDs ", led_control },
+    { "echo", "prints the input command", print_echo },
+    { NULL, NULL, NULL }
+};
+
+void *flash(void *arg)
+{
+    (void) arg;
+    LED0_ON;
+    LED1_ON;
+    LED_RGB_OFF;
+
+    puts("blue on");
+    LED_RGB_B_ON;
+    xtimer_sleep(2);
+
+    puts("red on");
+    LED_RGB_R_ON;
+    xtimer_sleep(2);
+
+    puts("green on");
+    LED_RGB_G_ON;
+    xtimer_sleep(2);
+
+    for (uint8_t i = 0; i < 5; i++)
+    {
+        puts("green on");
+        LED_RGB_G_ON;
+        xtimer_usleep(100000);
+        LED_RGB_OFF;
+
+        puts("red on");
+        LED_RGB_R_ON;
+        xtimer_usleep(100000);
+        LED_RGB_OFF;
+
+        puts("blue on");
+        LED_RGB_B_ON;
+        xtimer_usleep(100000);
+        LED_RGB_OFF;
+    }
+
+    LED0_OFF;
+    LED1_OFF;
+    LED_RGB_OFF;
+
+    puts("ready");
+    return NULL;
+}
+
+
+int main(void)
+{
+
+    printf("Simple Test Shell\n");
+    xtimer_usleep(3);
+    puts("ready");
+
+    (void) thread_create(
+            flash_stack, sizeof(flash_stack),
+            THREAD_PRIORITY_MAIN - 1,
+            THREAD_CREATE_WOUT_YIELD | THREAD_CREATE_STACKTEST,
+            flash, NULL, "nr2");
+
+    char line_buf[SHELL_DEFAULT_BUFSIZE];
+    shell_run(shell_commands, line_buf, SHELL_DEFAULT_BUFSIZE);
+
+    return 0;
+}

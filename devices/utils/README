@@ -1,0 +1,8 @@
+to set up PC network
+
+sudo ./tunslip6 affe::1/64 -t tun0 -s /dev/ttyUSB0 -B115200 &
+
+NB make sure you use corecct TTYUSBx !!
+
+(This for network connection over serial line (USB))
+

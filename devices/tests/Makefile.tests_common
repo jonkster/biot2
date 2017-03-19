@@ -1,0 +1,4 @@
+BOARD ?= native
+RIOTBASE ?= $(CURDIR)/../../../RIOT
+QUIET ?= 1
+APPLICATION := tests_$(APPLICATION)

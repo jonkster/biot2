@@ -1,0 +1,64 @@
+#!/usr/bin/expect
+
+set dev [lindex $argv 0];
+
+#set pid [spawn make term TERMFLAGS="-p/dev/ttyACM$dev"]
+set pid [spawn minicom -D /dev/ttyACM$dev riotos]
+
+set timeout 5
+send "reboot\n"
+set timeout 5
+expect {
+    "test_shell" {}
+    timeout { puts "\nFAIL! - no shell welcome\n"; exec kill $pid; exit 1 }
+}
+
+set timeout 1
+
+send "\n"
+expect {
+    ">" {}
+    timeout { puts "\nFAIL! - no shell prompt\n"; exec kill $pid; exit 1 }
+}
+
+send "start_test\n"
+expect {
+    "\[TEST_START\]" {}
+    timeout { puts "\nFAIL! - unexpected start respnse\n"; exec kill $pid; exit 1 }
+}
+expect {
+    ">" {}
+    timeout { puts "\nFAIL! - no shell prompt\n"; exec kill $pid; exit 1 }
+}
+
+for { set i 0 } { $i < 10 } { incr i 1 } {
+    send "123456789012345678901234567890123456789012345678901234567890\n"
+    expect {
+        "shell: command not found:" {
+            expect {
+                "123456789012345678901234567890123456789012345678901234567890" {}
+                timeout { puts "\nFAIL! - unexpected response\n"; exec kill $pid; exit 1 }
+            }
+        }
+        timeout { puts "\nFAIL! - unexpected acceptance\n"; exec kill $pid; exit 1 }
+    }
+}
+
+send "end_test\n"
+expect {
+    "\[TEST_END\]" {}
+    timeout { puts "\nFAIL! - no end test\n"; exec kill $pid; exit 1 }
+}
+expect {
+    ">" {}
+    timeout { puts "\nFAIL! - no shell prompt\n"; exec kill $pid; exit 1 }
+}
+
+send "reboot\n"
+sleep 5
+
+puts "\nTest successful!\n"
+send "\x01x\n\n"
+sleep 2
+
+exec kill $pid

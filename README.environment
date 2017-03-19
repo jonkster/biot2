@@ -1,0 +1,9 @@
+Directory structure/procedures
+
+RIOT - this is RIOT-OS source - cloned from github.  Typically use a release branch, eg as of Feb 2017 use:
+    git checkout 2017.01-branch
+
+devices - code for microcontrollers/IMU devices etc
+
+applications - code for applications that interact with devices
+
