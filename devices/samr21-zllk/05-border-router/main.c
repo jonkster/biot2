@@ -24,6 +24,15 @@
 
 #define PRIO    (THREAD_PRIORITY_MAIN + 1)
 #define Q_SZ    (4)
+
+#define SYSTEM_SUBNET    "affe"
+#define ROUTER_6LOW_IF   "7"
+#define ROUTER_6LOW_ROOT_IP   "::2"
+#define ROUTER_6SLIP_IF  "8"
+#define ROUTER_6SLIP_IP  "::3"
+#define UDPIP_6SLIP_IP   "::1" // address of PC endpoint
+
+
 static msg_t msg_q[Q_SZ];
 bool led_status = false;
 static char udp_stack[THREAD_STACKSIZE_DEFAULT];
@@ -33,6 +42,22 @@ static const shell_command_t shell_commands[];
 
 
 /* Add the shell command function here ###################################### */
+bool isRootPending = false;
+bool isRoot = false;
+
+int init_cmd(int argc, char **argv)
+{
+    if (isRoot)
+    {
+        puts("already initialised.  Try rebooting if problems.");
+        return -1;
+    }
+    LED_RGB_R_ON;
+    LED0_ON;
+    isRootPending = true;
+    puts("Root pending...");
+    return 0;
+}
 
 int led_control(int argc, char **argv)
 {
@@ -76,13 +101,10 @@ int led_control(int argc, char **argv)
 
 extern void batch(const shell_command_t *command_list, char *line);
 
-bool isRoot = false;
-bool isRootPending = false;
 void btnCallback(void* arg)
 {
     if (! isRoot)
     {
-        isRoot = true;
         LED_RGB_R_ON;
         LED0_ON;
         isRootPending = true;
@@ -100,6 +122,8 @@ static const shell_command_t shell_commands[] = {
 
     { "udp", "send a message: udp <IPv6-address> <message>", udp_cmd },
 
+    { "init", "initialise router inetrfaces", init_cmd },
+
     /* ########################################################################## */
     { NULL, NULL, NULL }
 };
@@ -110,21 +134,37 @@ void setRoot(void)
     puts("setting root...");
     isRootPending = false;
     // set up rpl root
-    batch(shell_commands, "ifconfig 7 add affe::2");
-    batch(shell_commands, "rpl root 1 affe::2");
-    // add wired interface
-    batch(shell_commands, "ifconfig 8 add affe::3");
-    batch(shell_commands, "ncache add 8 affe::1");
+    puts("making 6lowpan wireless interface");
+    batch(shell_commands, "ifconfig " ROUTER_6LOW_IF " add " SYSTEM_SUBNET ROUTER_6LOW_ROOT_IP );
+    // was - batch(shell_commands, "ifconfig 7 add affe::2");
+   
+    puts("making dodag root node");
+    batch(shell_commands, "rpl root 1 " SYSTEM_SUBNET ROUTER_6LOW_ROOT_IP );
+    // was - batch(shell_commands, "rpl root 1 affe::2");
 
+    puts("making slip interface");
+    // add wired interface
+    batch(shell_commands, "ifconfig " ROUTER_6SLIP_IF " add " SYSTEM_SUBNET ROUTER_6SLIP_IP );
+    // was - batch(shell_commands, "ifconfig 8 add affe::3");
+
+    puts("adding udp/ip endpoint address to cache");
+    batch(shell_commands, "ncache add " ROUTER_6SLIP_IF " " SYSTEM_SUBNET UDPIP_6SLIP_IP );
+    // was - batch(shell_commands, "ncache add 8 affe::1");
+
+    puts("starting udpserver thread");
     thread_create(udp_stack, sizeof(udp_stack), PRIO, THREAD_CREATE_STACKTEST, udp_server,
                 NULL, "udp");
+
+    LED_RGB_G_ON;
+    isRoot = true;
 }
 
 /* set interval to 1 second */
 #define INTERVAL (1000000U)
 void *housekeeping_handler(void *arg)
 {
-   int factor = 1; 
+    int factor = 1; 
+    LED_RGB_OFF;
     while(1)
     {
         if (isRootPending)
@@ -132,10 +172,16 @@ void *housekeeping_handler(void *arg)
             setRoot();
             factor = 5;
         }
-        xtimer_usleep(INTERVAL/(2*factor));
+
+        if (! isRoot)
+        {
+           LED_RGB_R_ON;
+           isRootPending = true; 
+        }
         LED0_OFF;
-        xtimer_usleep(INTERVAL/factor);
+        xtimer_usleep(INTERVAL/(2*factor));
         LED0_ON;
+        xtimer_usleep(INTERVAL/factor);
     }
 }
 
@@ -151,15 +197,16 @@ int main(void)
 
     printf("Biotz\n");
 
-    batch(shell_commands, "rpl init 7");
+    puts("initialising rpl");
+    batch(shell_commands, "rpl init " ROUTER_6LOW_IF );
 
     gpio_init_int(BUTTON_GPIO, GPIO_IN_PU, GPIO_FALLING, (gpio_cb_t)btnCallback, NULL);
 
     thread_create(housekeeping_stack, sizeof(housekeeping_stack), PRIO, THREAD_CREATE_STACKTEST, housekeeping_handler,
                 NULL, "housekeeping");
 
-    thread_create(udp_stack, sizeof(udp_stack), PRIO, THREAD_CREATE_STACKTEST, udp_server,
-                NULL, "udp");
+    /*thread_create(udp_stack, sizeof(udp_stack), PRIO, THREAD_CREATE_STACKTEST, udp_server,
+                NULL, "udp");*/
 
     char line_buf[SHELL_DEFAULT_BUFSIZE];
     shell_run(shell_commands, line_buf, SHELL_DEFAULT_BUFSIZE);

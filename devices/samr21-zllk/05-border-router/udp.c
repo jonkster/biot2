@@ -160,45 +160,6 @@ static int udp_send(char *addr_str, char *data)
     return 0;
 }
 
-//static int udp_send_suspect(char *addr_str, char *data)
-//{
-//    struct sockaddr_in6 src, dst;
-//    size_t data_len = strlen(data);
-//    int s;
-//    src.sin6_family = AF_INET6;
-//    dst.sin6_family = AF_INET6;
-//    memset(&src.sin6_addr, 0, sizeof(src.sin6_addr));
-//    /* parse destination address */
-//    if (inet_pton(AF_INET6, addr_str, &dst.sin6_addr) != 1) {
-//        puts("Error: unable to parse destination address");
-//        return 1;
-//    }
-//
-//    dst.sin6_port = htons(UDP_PORT);
-//    src.sin6_port = htons(UDP_PORT);
-//
-//    s = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
-//
-//    if (s < 0) {
-//        printf("sending udp data - error initializing socket: %i\n", s);
-//        return 1;
-//    }
-//
-//    if (sendto(s, data, data_len, 0, (struct sockaddr *)&dst, sizeof(dst)) < 0) {
-//        puts("error: could not send message");
-//        close(s);
-//        return 1;
-//    }
-//
-//    printf("Success: send %u byte(s) to %s:%u\n", (unsigned)data_len, addr_str, UDP_PORT);
-//
-//    puts("closing socket...");
-//    usleep(1000000);
-//    close(s);
-//    puts("socket closed");
-//
-//    return 0;
-//}
 
 static int udp_send_jk(struct in6_addr destAdd, char *data)
 {

@@ -39,29 +39,33 @@ if [ $? != 0 ]; then
     exit 0
 fi
 
-tunslip="../../utils/tunslip6 affe::1/64 -t tun0 -s $slipdev -B115200"
+tunslip="../utils/tunslip6 affe::1/64 -t tun0 -s $slipdev -B115200"
 
 PASSWORD=$(zenity --password)
 echo $PASSWORD | sudo -Sb $tunslip
 
+echo off | nc -6u -q 1 affe::2 8888
 sleep 2
 echo green | nc -6u -q 1 affe::2 8888
+sleep 2
 echo blue | nc -6u -q 1 affe::2 8888
-zenity --info --text="If link OK LED should have changed from green to blue"
+zenity --info --text="If router communication with UDP/IP appears OK, LED should go from blue to green"
 
 zenity --question --text="Open terminal on $termdev?"
 if [ $? = 0 ]; then
+    zenity --info --text="If router communication with UDP/IP appears OK, LED should go off"
     echo off | nc -6u -q 1 affe::2 8888
     minicom -D$termdev riotos
 fi
 echo green | nc -6u -q 1 affe::2 8888
+zenity --info --text="If router communication with UDP/IP appears OK, LED should go to green"
 
 zenity --question --text="close SLIP interface?"
 if [ $? != 0 ]; then
-    zenity --info --text="Link will remain open"
+    zenity --info --text="Link will remain open, led should be green"
     exit 0
 fi
 
 echo red | nc -6u -q 1 affe::2 8888
 echo $PASSWORD | sudo killall tunslip6
-zenity --info --text="Link should now be closed"
+zenity --info --text="Link should now be closed, led should be red"

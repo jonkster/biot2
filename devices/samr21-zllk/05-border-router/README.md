@@ -2,27 +2,31 @@
 
 # Overview
 
-Rough code for 6lowPAN nodes.
+Rough code for 6lowPAN border router.
 
-It experiments with udp wireless communication between samr21z-llk boards.
+Uses a SLIP network connection via USB between the router and PC.
 
-See ../adc/README.md for details on architecture etc
 
 # summary:
 
-1. connect one node with FTDI cable to PC USB.  This will be the edge
-   router/root of the DODAG
+after flashing board (use samr21-zllk)
 
-2. hit reset on both boards
+1. connect with FTDI cable to PC USB.
 
-3. hit SW0 on the edge router board
+2. hit reset on the board to reboot it
 
-4. from one of the boards, send a udp message to another board to change led
-   colour from the shell eg
+3. run the script 'runrouter' on PC to confirm communication between router and PC works
 
-    usb affe::2 red
+# to send commands from PC to router do something like:
 
-The targetted board should change led colour and also fire a return message to
-change led colour on the original board (which will respond in kind - basically
-like a UNIX 'finger war' but with changing colours :)
+echo blue | nc -6u -q 1 affe::2 8888
 
+This sends the string 'blue' to the router via a udp message.
+
+# possibly useful snippets
+
+to create interface on PC:
+
+../utils/tunslip6 affe::1/64 -t tun0 -s /dev/ttyUSB0 -B115200"
+
+(run killall tunslip6 to kill the interface)
