@@ -20,12 +20,6 @@ CFLAGS += -DMAX_NODES=10
 
 USEMODULE += printf_float
 
-# adding biot specific modules
-#USEMODULE += biotUdp
-#USEMODULE += position
-#USEMODULE += biotIdentify
-
-
 USEMODULE += mpu9250
 
 # Include packages that pull up and auto-init the link layer.
