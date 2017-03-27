@@ -1,0 +1,12 @@
+This module provides tools for using a common network timestamp.
+
+To use this module, add the following to the project Makefile:
+
+    DIRS += ../common/time/
+    USEMODULE += biot_time
+
+and in code that uses the batch method, include the header
+
+    #include ../common/time/biotTime.h
+
+

@@ -1,0 +1,2 @@
+To make slip stuff work, in Makefile add:
+INCLUDES += -I$(CURDIR)/../common/slip

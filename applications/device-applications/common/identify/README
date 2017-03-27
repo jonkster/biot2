@@ -1,0 +1,14 @@
+This module provides a mechanism for a device to visually identify itself by flashing.
+
+To use this module, add the following to the project Makefile:
+
+    DIRS += ../common/identify/
+    USEMODULE += biot_identify
+
+and in code that uses the batch method, include the header
+
+    #include ../common/identify/biotIdentify.h
+
+to identify do:
+
+    identifyYourself();
