@@ -1,0 +1,24 @@
+To use this module, add the following to the project Makefile:
+
+    DIRS += ../common/housekeeper/
+    USEMODULE += biot_housekeeper
+
+and in code that wants to use the housekeeping functionality,
+
+1. include the header:
+
+#include ../common/housekeeper/housekeeper.h
+
+2. Implement a idleTask method that will be called repeatedly by the housekeeper when nothing else happening:
+
+void idleTask(void)
+{
+    ...
+}
+
+3. start the housekeeping thread:
+
+thread_create(housekeeping_stack, sizeof(housekeeping_stack), PRIO, THREAD_CREATE_STACKTEST, housekeeping_handler,
+                NULL, "housekeeping");
+
+

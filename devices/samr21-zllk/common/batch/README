@@ -1,0 +1,15 @@
+This module allows you to call programatically a RIOTOS shell command.
+
+To use this module, add the following to the project Makefile:
+
+    DIRS += ../common/batch/
+    USEMODULE += biot_batch
+
+and in code that uses the batch method, include the header
+
+    #include ../common/batch/batch.h
+
+An example of calling a command in 'batch mode':
+
+    batch(shell_commands, "ifconfig 2 add affe::2");
+

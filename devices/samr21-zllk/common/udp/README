@@ -1,0 +1,26 @@
+To use this module, add the following to the project Makefile:
+
+    DIRS += ../common/udp/
+    USEMODULE += biot_udp
+
+1. include the header and external methods in code that uses module:
+
+    #include ../common/udp/udp_common.h
+    
+    extern int udp_cmd(int argc, char **argv);
+    extern void *udp_server(void *);
+
+
+2. implement the:
+        void actOnCommand(char *cmdSt, struct in6_addr src_addr);
+    method somewhere to act on received commands.    
+
+
+3. start the udp server thread (if you need to receive udp messages and act on them):
+
+   thread_create(udp_stack, sizeof(udp_stack), PRIO, THREAD_CREATE_STACKTEST, udp_server, NULL, "udp");
+
+
+4. to send udp messages do:
+        udp_send_jk(i6_dest_addr, message_string);
+
