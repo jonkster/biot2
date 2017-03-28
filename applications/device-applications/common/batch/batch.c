@@ -5,6 +5,37 @@
 #include <stdlib.h>
 #include "shell_commands.h"
 
+void print_help(const shell_command_t *command_list)
+{
+    printf("%-20s %s\n", "Command", "Description");
+    puts("---------------------------------------");
+    printf("%-20s %s\n", "help", "display this help");
+
+    const shell_command_t *command_lists[] = {
+        command_list,
+#ifdef MODULE_SHELL_COMMANDS
+        _shell_command_list,
+#endif
+    };
+
+    const shell_command_t *entry;
+
+    /* iterating over command_lists */
+    for (unsigned int i = 0; i < sizeof(command_lists) / sizeof(entry); i++) {
+        if ((entry = command_lists[i])) {
+            /* iterating over commands in command_lists entry */
+            while (entry->name != NULL) {
+                printf("%-20s %s\n", entry->name, entry->desc);
+                entry++;
+            }
+        }
+    }
+    puts("");
+    printf("> ");
+    fflush(stdout);
+}
+
+
 static shell_command_handler_t find_handler(const shell_command_t *command_list, char *command)
 {
     const shell_command_t *command_lists[] = {

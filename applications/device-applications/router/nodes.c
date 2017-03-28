@@ -8,7 +8,7 @@
 #include "../common/time/biotTime.h"
 #include "../common/udp/udp_common.h"
 
-char nodeData[MAX_NODES][IPV6_ADDR_MAX_STR_LEN];
+char nodeData[MAX_NODES][INET6_ADDRSTRLEN];
 uint32_t startTime = 0;
 
 void registerNode(char *addr)
@@ -40,11 +40,11 @@ void syncKnown(void)
 {
     char buffer[MAX_MESSAGE_LENGTH];
     memset(buffer, 0, MAX_MESSAGE_LENGTH);
-    sprintf(buffer, "ctim#%lu", getCurrentTime());
     for (uint8_t i = 0; i < MAX_NODES; i++)
     {
         if (strlen(nodeData[i]) > 0)
         {
+            sprintf(buffer, "ctim#%lu", getCurrentTime());
             udp_send(nodeData[i], buffer);
         }
         else
@@ -55,11 +55,25 @@ void syncKnown(void)
     return;
 }
 
+void who(void)
+{
+    uint8_t c = 0;
+    for (uint8_t i = 0; i < MAX_NODES; i++)
+    {
+        if (strlen(nodeData[i]) != 0)
+        {
+            printf("%i: %s\n", i, nodeData[i]);
+            c++;
+        }
+    }
+    printf("found %i IMU biot nodes\n", c);
+}
+
 void initNodes(void)
 {
     for (uint8_t i = 0; i < MAX_NODES; i++)
     {
-        memset(nodeData[i], 0, IPV6_ADDR_MAX_STR_LEN);
+        memset(nodeData[i], 0, INET6_ADDRSTRLEN);
     }
     startTime = xtimer_now().ticks32;
 }

@@ -8,76 +8,102 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include "net/conn/udp.h"
+#include "net/ipv6/addr.h"
+#include "net/sock/udp.h"
 #include <unistd.h>
 
 #include "msg.h"
 #include "udp_common.h"
 
-#define MUDP_Q_SZ           (8)
+#define SERVER_MSG_QUEUE_SIZE (8)
 #define SERVER_BUFFER_SIZE  (128)
 #define UDP_PORT            (8888)
 
-static int server_socket = -1;
-static char server_buffer[SERVER_BUFFER_SIZE];
-static msg_t msg_q[MUDP_Q_SZ];
+static msg_t msg_q[SERVER_MSG_QUEUE_SIZE];
 
 extern void actOnCommand(char *cmdSt, char *src_addr);
 
+static int serverSocket = -1;
+
 static void *udp_server_loop(void)
 {
-    struct sockaddr_in6 server_addr;
-
     puts("initialising udp server...");
 
-    server_socket = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
+    msg_init_queue(msg_q, SERVER_MSG_QUEUE_SIZE);
 
-    server_addr.sin6_family = AF_INET6;
-    memset(&server_addr.sin6_addr, 0, sizeof(server_addr.sin6_addr));
-    server_addr.sin6_port = htons(UDP_PORT);
-
-    if (server_socket < 0)
+    if (serverSocket >= 0)
     {
-        printf("initialising udp server - error initializing socket: %s\n", strerror(errno));
-        server_socket = 0;
+        puts("closing open socket");
+        close(serverSocket);
+    }
+    serverSocket = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
+
+    struct sockaddr_in6 serverSocketAddr;
+    serverSocketAddr.sin6_family = AF_INET6;
+    memset(&serverSocketAddr.sin6_addr, 0, sizeof(serverSocketAddr.sin6_addr));
+    serverSocketAddr.sin6_port = htons(UDP_PORT);
+
+
+    if (serverSocket < 0)
+    {
+        puts("error initializing socket");
+        serverSocket = -1;
         return NULL;
     }
 
-    if (bind(server_socket, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0)
+    if (bind(serverSocket, (struct sockaddr *)&serverSocketAddr, sizeof(serverSocketAddr)) < 0)
     {
-        server_socket = -1;
+        serverSocket = -1;
         puts("error binding socket");
         return NULL;
     }
-    
-    printf("Success: started UDP server on port %" PRIu16 "\n", UDP_PORT);
 
-    struct sockaddr_in6 src;
-    socklen_t src_len = sizeof(struct sockaddr_in6);
-    while (1)
+    puts("OK");
+
+    static char serverBuffer[SERVER_BUFFER_SIZE];
+    for(;;)
     {
-        memset(server_buffer, 0, SERVER_BUFFER_SIZE);
-        int res = recvfrom(server_socket, server_buffer, sizeof(server_buffer), 0, (struct sockaddr *)&src, &src_len);
+        memset(serverBuffer, 0, SERVER_BUFFER_SIZE);
+
+        struct sockaddr_in6 src;
+        socklen_t srcLen = sizeof (src);
+        bzero(&src, srcLen);
+
+        // this blocks :( no non blocking recvfrom in RIOT OS yet
+        int res = recvfrom(serverSocket,
+                serverBuffer,
+                sizeof(serverBuffer),
+                0,
+                (struct sockaddr *)&src,
+                &srcLen);
+
+        // get strings representing source and server ipv6 addresses
+        static char srcAdd[INET6_ADDRSTRLEN];
+
+        inet_ntop(src.sin6_family, &src.sin6_addr, srcAdd, INET6_ADDRSTRLEN);
+        printf("\naddr len=%i a=%s\n\n", srcLen, srcAdd);
+
 
         if (res < 0)
         {
-            puts("Error on receive");
+            printf("Error on RX %d:%s rx from: %s (%s)\n", errno, strerror(errno), srcAdd, serverBuffer);
+            xtimer_usleep(100);
         }
         else if (res == 0)
         {
             puts("Peer did shut down");
         }
+        else if (res >= SERVER_BUFFER_SIZE)
+        {
+            puts("OVERFLOW!");
+        }
         else
         {
-            server_buffer[strcspn(server_buffer, "\n")] = 0;
-
-            char srcText[IPV6_ADDR_MAX_STR_LEN];
-            if (inet_ntop(AF_INET6, &src.sin6_addr, srcText, IPV6_ADDR_MAX_STR_LEN) == NULL) {
-                puts("Error: unable to parse source address");
-            }
-            else
-            {
-                actOnCommand(server_buffer, srcText);
-            }
+            static char selfAdd[INET6_ADDRSTRLEN];
+            inet_ntop(AF_INET6, &(serverSocketAddr.sin6_addr), selfAdd, INET6_ADDRSTRLEN);
+            printf("src add: %s             myadd: %s data:%s\n", srcAdd, selfAdd, serverBuffer);
+            actOnCommand(serverBuffer, srcAdd);
         }
     }
     return NULL;
@@ -159,7 +185,6 @@ int udp_send_jk(struct in6_addr destAdd, char *data)
 void *udp_server(void *arg)
 {
     (void) arg;
-    msg_init_queue(msg_q, MUDP_Q_SZ);
 
     udp_server_loop();
 

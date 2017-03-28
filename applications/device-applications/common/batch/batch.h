@@ -10,6 +10,8 @@ extern "C" {
 /* simplified arg processor - NB will not interpret quotes */
 void batch(const shell_command_t *command_list, char *line);
 
+void print_help(const shell_command_t *command_list);
+
 #ifdef __cplusplus
 }
 #endif

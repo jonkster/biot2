@@ -21,7 +21,7 @@ void actOnLedCommandMessage(char *data)
     {
         LED0_ON;
         LED_RGB_OFF;
-        LED_RGB_G_ON;
+        LED_RGB_B_ON;
     }
     else if (strcmp(data, "2") == 0)
     {
@@ -55,6 +55,25 @@ void actOnRebCommandMessage(char *data)
     pm_reboot();
 }
 
+void actOnOrientDataMessage(char* data, char* srcAdd)
+{
+    puts("actOnOrientDataMessage not implemented yet");
+}
+
+void actOnCalibrDataMessage(char* data, char* srcAdd)
+{
+    puts("actOnCalibrDataMessage not implemented yet");
+}
+
+void actOnStatusDataMessage(char* data, char* srcAdd)
+{
+    char buffer[MAX_MESSAGE_LENGTH];
+    memset(buffer, 0, MAX_MESSAGE_LENGTH);
+    sprintf(buffer, "%s#%s", data, srcAdd);
+    relayMessage("ds", buffer, "affe::1");
+    registerNode(srcAdd);
+}
+ 
 
 void actOnCommand(char *cmdSt, char *src_addr)
 {
@@ -87,7 +106,20 @@ void actOnCommand(char *cmdSt, char *src_addr)
         }
     }
 
-    if (strcmp(cmd, "cled") == 0)
+    if (strcmp(cmd, "do") == 0)
+    {
+        actOnOrientDataMessage(data, src_addr);
+    }
+    else if (strcmp(cmd, "dc") == 0)
+    {
+        actOnCalibrDataMessage(data, src_addr);
+    }
+    else if (strcmp(cmd, "ds") == 0)
+    {
+        actOnStatusDataMessage(data, src_addr);
+    }
+
+    else if (strcmp(cmd, "cled") == 0)
     {
         actOnLedCommandMessage(data);
     }

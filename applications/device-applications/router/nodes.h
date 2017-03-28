@@ -15,6 +15,8 @@ void syncKnown(void);
 
 void initNodes(void);
 
+void who(void);
+
 #ifdef __cplusplus
 }
 #endif

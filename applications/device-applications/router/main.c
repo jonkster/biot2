@@ -6,9 +6,11 @@
 #include <xtimer.h>
 #include "board.h"
 #include "thread.h"
+#include "nodes.h"
 #include "../common/batch/batch.h"
-#include "../common/udp/udp_common.h"
 #include "../common/housekeeper/housekeeper.h"
+#include "../common/time/biotTime.h"
+#include "../common/udp/udp_common.h"
 #include "periph/gpio.h"
 
 #define PRIO    (THREAD_PRIORITY_MAIN + 1)
@@ -35,6 +37,14 @@ extern int udp_cmd(int argc, char **argv);
 extern void *udp_server(void *);
 
 /* Add the shell command function here ###################################### */
+int about_cmd(int argc, char **argv)
+{
+    puts("--------------------------------------------------------------------------------------------------");
+    puts("This application implements a 6lowPAN Edge Router for use in a Biotz System");
+    puts("--------------------------------------------------------------------------------------------------");
+    return 0;
+}
+
 int init_cmd(int argc, char **argv)
 {
     if (isRoot)
@@ -89,6 +99,12 @@ int led_control(int argc, char **argv)
     return -1;
 }
 
+int who_cmd(int argc, char **argv)
+{
+    who();
+    return 0;
+}
+
 
 void btnCallback(void* arg)
 {
@@ -101,17 +117,33 @@ void btnCallback(void* arg)
     }
 }
 
+static int sync_cmd(int argc, char **argv)
+{
+    syncKnown();
+    return 0;
+}
+
+
+static int time_cmd(int argc, char **argv)
+{
+    printf("%lu\n", getCurrentTime());
+    return 0;
+}
+
+
 
 /* ########################################################################## */
 static const shell_command_t shell_commands[] = {
 
 /* Add a new shell command here ############################################# */
 
+    { "about", "system description", about_cmd },
+    { "init", "initialise router interfaces", init_cmd },
     { "led", "use 'led on' to turn the LED on and 'led off' to turn the LED off", led_control },
-
+    { "sync", "push router time to all children", sync_cmd },
+    { "time", "show the current time counter", time_cmd },
     { "udp", "send a message: udp <IPv6-address> <message>", udp_cmd },
-
-    { "init", "initialise router inetrfaces", init_cmd },
+    { "who", "list known IMU nodes", who_cmd },
 
     /* ########################################################################## */
     { NULL, NULL, NULL }
@@ -140,6 +172,7 @@ void setRoot(void)
     thread_create(udp_stack, sizeof(udp_stack), PRIO, THREAD_CREATE_STACKTEST, udp_server,
                 NULL, "udp");
 
+    initNodes();
     LED_RGB_G_ON;
     isRoot = true;
 }
@@ -167,7 +200,9 @@ int main(void)
     LED0_OFF;
     LED_RGB_OFF;
 
-    printf("Biotz\n");
+    printf("Biotz Router\n");
+    about_cmd(0, NULL);
+    print_help(shell_commands);
 
     puts("initialising rpl");
     batch(shell_commands, "rpl init " ROUTER_6LOW_IF );
