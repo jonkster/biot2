@@ -57,12 +57,20 @@ void actOnRebCommandMessage(char *data)
 
 void actOnOrientDataMessage(char* data, char* srcAdd)
 {
-    puts("actOnOrientDataMessage not implemented yet");
+    char buffer[MAX_MESSAGE_LENGTH];
+    memset(buffer, 0, MAX_MESSAGE_LENGTH);
+    sprintf(buffer, "%s#%s", data, srcAdd);
+    relayMessage("do", buffer, "affe::1");
+    updateNodeOrientation(srcAdd, data);
 }
 
 void actOnCalibrDataMessage(char* data, char* srcAdd)
 {
-    puts("actOnCalibrDataMessage not implemented yet");
+    char buffer[MAX_MESSAGE_LENGTH];
+    memset(buffer, 0, MAX_MESSAGE_LENGTH);
+    sprintf(buffer, "%s#%s", data, srcAdd);
+    relayMessage("dc", buffer, "affe::1");
+    updateNodeCalibration(srcAdd, data);
 }
 
 void actOnStatusDataMessage(char* data, char* srcAdd)
@@ -71,7 +79,7 @@ void actOnStatusDataMessage(char* data, char* srcAdd)
     memset(buffer, 0, MAX_MESSAGE_LENGTH);
     sprintf(buffer, "%s#%s", data, srcAdd);
     relayMessage("ds", buffer, "affe::1");
-    registerNode(srcAdd);
+    registerNode(srcAdd, data);
 }
  
 

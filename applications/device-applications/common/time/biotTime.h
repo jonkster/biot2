@@ -1,6 +1,8 @@
 #ifndef _BIOTTIME_H_INCLUDE_
 #define _BIOTTIME_H_INCLUDE_
 
+#include <stdbool.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif

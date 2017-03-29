@@ -1,19 +1,38 @@
 #ifndef _NODES_H
 #define _NODES_H
 
+#include <netinet/in.h>
+#include "../common/biotmaths/position.h"
+
 #define MAX_MESSAGE_LENGTH 84
 
+typedef struct {
+    char     ip6Address[INET6_ADDRSTRLEN];
+    uint32_t timeStamp;
+    char*    nodeTime;
+    char*    orientation;
+    char*    calibration;
+    char*    gamStatus;
+    uint16_t updateInterval;
+    bool     calibrationMode;
+} nodeData_t;
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-void registerNode(char *addr);
+void initNodes(void);
+
+void registerNode(char *addr, char *data);
 
 void relayMessage(char *cmd, char *data, char *address);
 
 void syncKnown(void);
 
-void initNodes(void);
+void updateNodeCalibration(char* srcAdd, char* data);
+
+void updateNodeOrientation(char* srcAdd, char* data);
+
+void updateNodeStatus(char* srcAdd, char* data);
 
 void who(void);
 

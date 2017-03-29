@@ -16,15 +16,22 @@
 #include "msg.h"
 #include "udp_common.h"
 
-#define SERVER_MSG_QUEUE_SIZE (8)
-#define SERVER_BUFFER_SIZE  (128)
-#define UDP_PORT            (8888)
+#define SERVER_MSG_QUEUE_SIZE  (4)
+//#define SERVER_MSG_QUEUE_SIZE  (8)
+#define UDP_PORT               (8888)
+
+#define UDP_VERBOSE            1  // set == 1 for debugging
 
 static msg_t msg_q[SERVER_MSG_QUEUE_SIZE];
 
 extern void actOnCommand(char *cmdSt, char *src_addr);
 
 static int serverSocket = -1;
+
+void resetNetwork(void)
+{
+    udp_send("ff02::1", "creb##");
+}
 
 static void *udp_server_loop(void)
 {
@@ -82,10 +89,12 @@ static void *udp_server_loop(void)
         static char srcAdd[INET6_ADDRSTRLEN];
 
         inet_ntop(src.sin6_family, &src.sin6_addr, srcAdd, INET6_ADDRSTRLEN);
-        printf("\naddr len=%i a=%s\n\n", srcLen, srcAdd);
-
-
-        if (res < 0)
+        if (strcmp(srcAdd, "affe::") == 0)
+        {
+            puts("nodes have lost context with router...");
+            resetNetwork();
+        }
+        else if (res < 0)
         {
             printf("Error on RX %d:%s rx from: %s (%s)\n", errno, strerror(errno), srcAdd, serverBuffer);
             xtimer_usleep(100);
@@ -100,9 +109,8 @@ static void *udp_server_loop(void)
         }
         else
         {
-            static char selfAdd[INET6_ADDRSTRLEN];
-            inet_ntop(AF_INET6, &(serverSocketAddr.sin6_addr), selfAdd, INET6_ADDRSTRLEN);
-            printf("src add: %s             myadd: %s data:%s\n", srcAdd, selfAdd, serverBuffer);
+            if (UDP_VERBOSE > 0)
+                printf("rx from: %s data:%s\n", srcAdd, serverBuffer);
             actOnCommand(serverBuffer, srcAdd);
         }
     }
@@ -136,7 +144,8 @@ int udp_send(char *addr_str, char *data)
         puts("could not send");
     }
     else {
-        //printf("Success: send %u byte to %s:%u\n", (unsigned)data_len, addr_str, UDP_PORT);
+        if (UDP_VERBOSE > 0)
+            printf("Success: send %u byte to %s:%u data:%s\n", (unsigned)data_len, addr_str, UDP_PORT, data);
     }
 
     close(s);
@@ -171,7 +180,8 @@ int udp_send_jk(struct in6_addr destAdd, char *data)
         return 1;
     }
 
-    //printf("Success: sent %u byte(s)\n", (unsigned)data_len);
+    if (UDP_VERBOSE > 0)
+        printf("Success: sent %u byte(s)\n", (unsigned)data_len);
 
     close(s);
 

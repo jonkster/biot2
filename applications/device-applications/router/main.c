@@ -189,6 +189,13 @@ void idleTask(void)
         LED_RGB_R_ON;
         isRootPending = true; 
     }
+
+    uint32_t mSecs = getCurrentTime()/1500;
+    uint32_t secs = mSecs/1000;
+    if ((secs % 10) == 0)
+    {
+        syncKnown();
+    }
 }
 
 int main(void)
