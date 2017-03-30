@@ -32,6 +32,7 @@ static const shell_command_t shell_commands[];
 bool isRootPending = false;
 bool isRoot = false;
 
+uint32_t timeSyncIntervalV       = 10000000;
 
 extern int udp_cmd(int argc, char **argv);
 extern void *udp_server(void *);
@@ -179,22 +180,30 @@ void setRoot(void)
 
 void idleTask(void)
 {
-    if (isRootPending)
+    uint32_t microSecs = getCurrentTime();
+
+    // every second...
+    if (schedule(microSecs, ONE_SECOND_US, SCHEDULED_TASK_1))
     {
-        setRoot();
+
+        if (isRootPending)
+        {
+            setRoot();
+        }
+
+        if (! isRoot)
+        {
+            LED_RGB_R_ON;
+            isRootPending = true; 
+        }
     }
 
-    if (! isRoot)
+    if (isRoot)
     {
-        LED_RGB_R_ON;
-        isRootPending = true; 
-    }
-
-    uint32_t mSecs = getCurrentTime()/1500;
-    uint32_t secs = mSecs/1000;
-    if ((secs % 10) == 0)
-    {
-        syncKnown();
+        if (schedule(microSecs, timeSyncIntervalV, SCHEDULED_TASK_2))
+        {
+            syncKnown();
+        }
     }
 }
 
