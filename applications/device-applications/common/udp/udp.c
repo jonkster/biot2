@@ -16,11 +16,10 @@
 #include "msg.h"
 #include "udp_common.h"
 
-#define SERVER_MSG_QUEUE_SIZE  (4)
-//#define SERVER_MSG_QUEUE_SIZE  (8)
+#define SERVER_MSG_QUEUE_SIZE  (16)
 #define UDP_PORT               (8888)
 
-#define UDP_VERBOSE            1  // set == 1 for debugging
+#define UDP_VERBOSE            0  // set == 1 for debugging
 
 static msg_t msg_q[SERVER_MSG_QUEUE_SIZE];
 

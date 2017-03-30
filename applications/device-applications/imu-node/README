@@ -1,0 +1,20 @@
+*Biotz IMU Node*
+
+This is a small device, currently consisting of a samr21b18-mz210pa board, an
+MPU9250 IMU device and associated leds, battery, charging circuit etc.
+
+It communicates using 6lowPAN with a router, sending orientation information
+calculated from the IMU readings to the router.
+
+
+#notes#
+
+1.  if IMU device doesn't start properly when board boots up, I have noticed it
+started after changing the position of programmer cable that was near the atsam
+board on the device.  Wondering if it is sensitive to electrical interference?
+
+2. If node randomly crashes with stack overflow - first thing to try is
+changing thread stack size allocation to try and increase it (NB may be hard to
+know which thread needs adjusting - a bit of trial and error).
+
+

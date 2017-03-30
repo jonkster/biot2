@@ -48,6 +48,8 @@ extern "C" {
 
     void displayData(imuData_t data);
 
+    void dumpIMU(mpu9250_t dev);
+
     void forceReorientation(void);
 
     uint16_t gFsrRange2Int(mpu9250_gyro_ranges_t fsr);

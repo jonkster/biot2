@@ -10,6 +10,7 @@
 
 #define MAX_MESSAGE_LENGTH 84
 
+bool pokeRequested = false;
 
 void actOnLedCommandMessage(char *data)
 {
@@ -38,7 +39,6 @@ void actOnLedCommandMessage(char *data)
 void actOnTimCommandMessage(char *data)
 {
     uint32_t t = atoi(data);
-    printf("setting time to: %lu\n", t);
     setCurrentTime(t);
 }
 
@@ -51,39 +51,77 @@ void actOnRebCommandMessage(char *data)
 
 void actOnCavCommandMessage(char* data)
 {
-    puts("cav not implemented yet");
+    int16_t cal[6];
+    sscanf(data, "%"SCNd16":%"SCNd16":%"SCNd16":%"SCNd16":%"SCNd16":%"SCNd16, &cal[0], &cal[1], &cal[2], &cal[3], &cal[4], &cal[5]);
+    setMagCalibration(cal);
+    forceReorientation();
 }
 
 void actOnDofCommandMessage(char* data)
 {
-    puts("dof not implemented yet");
+    if (data[0] == '0')
+        setGyroUse(false);
+    else
+        setGyroUse(true);
+
+    if (data[1] == '0')
+        setAccelUse(false);
+    else
+        setAccelUse(true);
+
+    if (data[2] == '0')
+        setCompassUse(false);
+    else
+        setCompassUse(true);
 }
 
-void actOnMcmCommandMessage(char* data)
+void actOnMcmCommandMessage(char *data)
 {
-    puts("actOnMcmCommandMessage not implemented yet");
+    if (strcmp(data, "0") == 0)
+    {
+        autoCalibrate = false;
+    }
+    else if (strcmp(data, "1") == 0)
+    {
+        autoCalibrate = true;
+    }
+    else
+    {
+        int16_t cal[] = {0, 0, 0, 0, 0, 0};
+        if (strcmp(data, "2") == 0)
+        {
+            autoCalibrate = true;
+            setMagCalibration(cal);
+            forceReorientation();
+        }
+        else if (strcmp(data, "3") == 0)
+        {
+            autoCalibrate = false;
+            setMagCalibration(cal);
+            forceReorientation();
+        }
+        else
+        {
+            printf("Error: unable to parse calibration mode: %s\n", data);
+        }
+    }
 }
 
 void actOnDupCommandMessage(char* data)
 {
-    puts("actOnDupCommandMessage not implemented yet");
+    uint32_t t = atoi(data);
+    dupInterval = t;
 }
 
 void actOnPokeCommandMessage(char* data)
 {
-    puts("actOnPokeCommandMessage not implemented yet");
-}
-
-void actOnSynCommandMessage(char* data)
-{
-    puts("actOnSynCommandMessage not implemented yet");
+    pokeRequested = true;
 }
 
 void relayMessage(char *cmd, char *data, char *address)
 {
     char buffer[MAX_MESSAGE_LENGTH];
     memset(buffer, 0, MAX_MESSAGE_LENGTH);
-    //printf("relaying cmd:%s with data:%s to:%s\n", cmd, data, address);
     sprintf(buffer, "%s#%s", cmd, data);
     udp_send(address, buffer);
     return;
@@ -152,10 +190,6 @@ void actOnCommand(char *cmdSt, char *src_addr)
     else if (strcmp(cmd, "cpok") == 0)
     {
         actOnPokeCommandMessage(data);
-    }
-    else if (strcmp(cmd, "csyn") == 0)
-    {
-        actOnSynCommandMessage(data);
     }
     else
     {

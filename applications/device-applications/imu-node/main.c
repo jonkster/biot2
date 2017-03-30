@@ -30,7 +30,7 @@ extern void *udp_server(void *);
 extern bool imuReady;
 
 bool led_status = false;
-static char housekeeping_stack[THREAD_STACKSIZE_DEFAULT+256]; // may get stack overflow if this too low...
+static char housekeeping_stack[THREAD_STACKSIZE_DEFAULT+512]; // may get stack overflow if this too low...
 static char udp_stack[THREAD_STACKSIZE_DEFAULT];
 
 char dodagRoot[IPV6_ADDR_MAX_STR_LEN];
@@ -49,6 +49,12 @@ int identify_cmd(int argc, char **argv)
     puts("identifying myself...");
     identifyYourself();
     puts("done.");
+    return 0;
+}
+
+int imu_cmd(int argc, char **argv)
+{
+    dumpAllIMU();
     return 0;
 }
 
@@ -121,6 +127,7 @@ static int time_cmd(int argc, char **argv)
 static const shell_command_t shell_commands[] = {
     { "about", "system description", about_cmd },
     { "identify", "visually identify board", identify_cmd },
+    { "imu", "display IMU information", imu_cmd },
     { "led", "use 'led on|off' to set the LED ", led_control },
     { "time", "show the current time counter", time_cmd },
     { "udp", "send a message: udp <IPv6-address> <message>", udp_cmd },
@@ -131,7 +138,7 @@ uint32_t lastSecs = 0;
 void idleTask(void)
 {
     uint32_t microSecs = getCurrentTime();
-    //
+
     // every second...
     if (schedule(microSecs, ONE_SECOND_US, SCHEDULED_TASK_1))
     {

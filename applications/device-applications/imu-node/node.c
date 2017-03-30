@@ -16,6 +16,28 @@ uint8_t retries = 0;
 
 mpu9250_t imuDev;
 
+void dumpAllIMU(void)
+{
+    imuStatus_t is;
+    if (getIMUStatus(imuDev, &is))
+    {
+        printf("raw data: ");
+        dumpIMU(imuDev);
+        printf("calculated quaternion: ");
+        dumpQuat(getPosition(imuDev));
+        displayCorrections();
+        printf("use gyroscopes     :%s\n", is.useGyroscopes ? "YES":"NO");
+        printf("use accelerometers :%s\n", is.useAccelerometers ? "YES":"NO");
+        printf("use magnetometers  :%s\n", is.useMagnetometers ? "YES":"NO");
+        printf("use calibrate mode :%i\n", is.calibrateMode);
+        printf("update interval:%lu (ms)\n", is.dupInterval);
+    }
+    else
+    {
+        printf("Cannot communicate with IMU device\n");
+    }
+}
+
 bool initIMU(void)
 {
     if (initialiseIMU(&imuDev))
@@ -44,33 +66,53 @@ bool getCurrentPosition(void)
 
 void sendNodeOrientation(void)
 {
-    // need to do this properly!!
-    uint32_t ts = getCurrentTime();
-
     if (imuOK)
     {
-printf("prepare...\n");
+        uint32_t ts = getCurrentTime();
         char buffer[SERVER_BUFFER_SIZE];
-printf("init string\n");
         memset(buffer, 0, SERVER_BUFFER_SIZE);
-printf("make string\n");
         sprintf(buffer, "do#%lu:%f:%f:%f:%f", ts, orientationQ.w, orientationQ.x, orientationQ.y, orientationQ.z);
-printf("%s\n", buffer);
         udp_send("affe::2", buffer);
-printf("sent OK\n");
     }
 }
 
 void sendNodeCalibration(void)
 {
-    // need to do this properly!!
-    udp_send("affe::2", "dc#-89:-86:-82:88:3:54");
+    if (imuOK)
+    {
+        int16_t *mc = getMagCalibration();
+        char buffer[SERVER_BUFFER_SIZE];
+        memset(buffer, 0, SERVER_BUFFER_SIZE);
+        sprintf(buffer, "dc#%i:%i:%i:%i:%i:%i", mc[0], mc[1], mc[2], mc[3], mc[4], mc[5]);
+        udp_send("affe::2", buffer);
+    }
 }
 
 void sendNodeStatus(void)
 {
-    // need to do this properly!!
-    udp_send("affe::2", "ds#111:200:1");
+    if (imuOK)
+    {
+        imuStatus_t is;
+        if (getIMUStatus(imuDev, &is))
+        {
+            uint8_t dof = 0;
+            if (is.useGyroscopes)
+                dof += 100;
+            if (is.useAccelerometers)
+                dof += 10;
+            if (is.useMagnetometers)
+                dof += 1;
+
+            uint8_t mode = 0;
+            if (is.calibrateMode)
+                mode = 1;
+
+            char buffer[SERVER_BUFFER_SIZE];
+            memset(buffer, 0, SERVER_BUFFER_SIZE);
+            sprintf(buffer, "ds#%d:%"SCNu32":%d", dof, is.dupInterval, mode);
+            udp_send("affe::2", buffer);
+        }
+    }
     
 }
 

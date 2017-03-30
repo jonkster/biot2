@@ -10,6 +10,8 @@
 extern "C" {
 #endif
 
+void dumpAllIMU(void);
+
 bool getCurrentPosition(void);
 
 bool initIMU(void);

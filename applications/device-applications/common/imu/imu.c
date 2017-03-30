@@ -96,6 +96,20 @@ void displayData(imuData_t data)
             data.temperature);
 }
 
+void dumpIMU(mpu9250_t dev)
+{
+    imuData_t imuData;
+
+    if (getIMUData(dev, &imuData))
+    {
+        displayData(imuData);
+    }
+    else
+    {
+        puts("could not read IMU device");
+    }
+}
+
 uint16_t gFsrRange2Int(mpu9250_gyro_ranges_t fsr)
 {
     uint16_t rate = 0;
