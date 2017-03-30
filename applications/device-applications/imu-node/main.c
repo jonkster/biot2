@@ -75,14 +75,12 @@ int findParent(void)
 
 int findRoot(void)
 {
-    //puts("where is root?");
     if (gnrc_rpl_instances[0].state == 0) {
         return 1;
     }
 
     gnrc_rpl_dodag_t *dodag = &gnrc_rpl_instances[0].dodag; // disable while debugging
     ipv6_addr_to_str(dodagRoot, &dodag->dodag_id, sizeof(dodagRoot)); // disable while debugging
-    //strcpy(dodagRoot, "affe::2"); // use to force value while debugging
     printf("dodag: %s\n", dodagRoot);
     findParent();
     return 0;

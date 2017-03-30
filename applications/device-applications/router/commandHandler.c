@@ -44,7 +44,7 @@ void actOnLedCommandMessage(char *data)
 
 void actOnTimCommandMessage(char *data)
 {
-    uint32_t t = atoi(data);
+    uint32_t t = strtoul(data, NULL, 0);
     setCurrentTime(t);
 }
 
