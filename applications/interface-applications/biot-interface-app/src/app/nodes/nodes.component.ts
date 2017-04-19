@@ -7,12 +7,13 @@ import {BiotzService} from '../biotz.service';
 @Component({
   selector: 'app-nodes',
   templateUrl: './nodes.component.html',
-  styleUrls: ['./nodes.component.css']
+  styleUrls: ['./nodes.component.css'],
+  providers: [ BiotzService ]
 })
 export class NodesComponent implements OnInit {
     @ViewChildren(ThreeDirective) threeDirective;
 
-    private biotz:BiotzService;
+    //private biotz:BiotzService;
     private biotzCalibration:any = {};
     private biotzData:any = {};
     private counter:number = 0;
@@ -27,7 +28,7 @@ export class NodesComponent implements OnInit {
     private showOnlyAddress: any = {};
     private systemMessageRate: number = 0;
 
-    constructor() { }
+    constructor(public biotz:BiotzService) { }
 
     ngOnInit() {
         this.updateData();
@@ -68,9 +69,12 @@ export class NodesComponent implements OnInit {
         return this.counter;
     }
 
+    getCommunicationStatus() {
+        return this.biotz.getCommunicationStatus();
+    }
+
     getData() {
-        console.log(this.biotz);
-        if (this.biotz !== undefined) {
+        if (this.getCommunicationStatus()) {
             this.biotz.getData()
                 .subscribe(rawData => {
                     this.getting = true;
@@ -159,7 +163,7 @@ export class NodesComponent implements OnInit {
     }
 
     getNodeCalibration(addr) {
-        if (this.biotz !== undefined) {
+        if (this.getCommunicationStatus()) {
             this.biotz.getCalibration(addr)
                 .subscribe(
                     rawData => {
@@ -206,7 +210,7 @@ export class NodesComponent implements OnInit {
 
     // normally only needed on start up, reads data from cache on PC
     readSavedCalibration(address) {
-        if (this.biotz !== undefined) {
+        if (this.getCommunicationStatus()) {
             this.biotz.getCachedCalibration(address).subscribe( res => {
                 this.savedCalibrations[address] = res;
             });
@@ -215,7 +219,7 @@ export class NodesComponent implements OnInit {
 
     // normally only needed on start up, reads data from cache on PC
     readSavedCalibrations() {
-        if (this.biotz !== undefined) {
+        if (this.getCommunicationStatus()) {
             var knownAddresses = [];
             this.biotz.getCachedCalibrationAddresses()
                 .subscribe(addresses => {
@@ -228,6 +232,10 @@ export class NodesComponent implements OnInit {
                     }
                 });
         }
+    }
+
+    resetService() {
+        this.biotz.resetService();
     }
 
     savedCalibrationsExist() {
