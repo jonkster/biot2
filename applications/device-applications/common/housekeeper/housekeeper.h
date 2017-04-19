@@ -21,6 +21,8 @@ extern void idleTask(void);
 
 void *housekeeping_handler(void *arg);
 
+void rapidHeartbeat(bool state);
+
 /**
  * returns true if the msec value indicates that interval time has passed
  * since the last time schedule was called.

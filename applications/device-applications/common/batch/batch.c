@@ -77,10 +77,6 @@ void batch(const shell_command_t *command_list, char *line)
         p = strtok(0, " ");
     }
     argv[argc] = 0;
-    /*for (int i = 0; i < argc; i++)
-    {
-        printf("argv[%d]=%s\n", i, argv[i]);
-    }*/
     
     /* then we call the appropriate handler */
     shell_command_handler_t handler = find_handler(command_list, argv[0]);

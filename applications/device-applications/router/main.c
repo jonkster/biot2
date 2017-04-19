@@ -31,18 +31,18 @@ static char housekeeping_stack[THREAD_STACKSIZE_DEFAULT];
 static const shell_command_t shell_commands[];
 bool isRootPending = false;
 bool isRoot = false;
+bool continuousWho = false;
 
 uint32_t timeSyncIntervalV       = 10000000;
 
 extern int udp_cmd(int argc, char **argv);
 extern void *udp_server(void *);
 
-/* Add the shell command function here ###################################### */
 int about_cmd(int argc, char **argv)
 {
-    puts("--------------------------------------------------------------------------------------------------");
+    puts("-----------------------------------------------------------------------------");
     puts("This application implements a 6lowPAN Edge Router for use in a Biotz System");
-    puts("--------------------------------------------------------------------------------------------------");
+    puts("-----------------------------------------------------------------------------");
     return 0;
 }
 
@@ -106,6 +106,13 @@ int who_cmd(int argc, char **argv)
     return 0;
 }
 
+int cwho_cmd(int argc, char **argv)
+{
+    continuousWho = ! continuousWho;
+    if (continuousWho)
+        puts("enter 'cwho' to stop");
+    return 0;
+}
 
 void btnCallback(void* arg)
 {
@@ -133,22 +140,19 @@ static int time_cmd(int argc, char **argv)
 
 
 
-/* ########################################################################## */
+/* ############# SHELL COMMANDS ###################################### */
 static const shell_command_t shell_commands[] = {
-
-/* Add a new shell command here ############################################# */
-
     { "about", "system description", about_cmd },
     { "init", "initialise router interfaces", init_cmd },
-    { "led", "use 'led on' to turn the LED on and 'led off' to turn the LED off", led_control },
+    { "led", "set LED cmd: 'led on|off|red|green|blue'", led_control },
     { "sync", "push router time to all children", sync_cmd },
     { "time", "show the current time counter", time_cmd },
     { "udp", "send a message: udp <IPv6-address> <message>", udp_cmd },
     { "who", "list known IMU nodes", who_cmd },
-
-    /* ########################################################################## */
+    { "cwho", "toggle continuous imu 'who' monitoring", cwho_cmd },
     { NULL, NULL, NULL }
 };
+/* ################################################################### */
 
 
 void setRoot(void)
@@ -182,25 +186,36 @@ void idleTask(void)
 {
     uint32_t microSecs = getCurrentTime();
 
-    // every second...
+    // every 1 second
     if (schedule(microSecs, ONE_SECOND_US, SCHEDULED_TASK_1))
     {
-
+        // set root if not done yet
         if (isRootPending)
         {
             setRoot();
         }
-
         if (! isRoot)
         {
             LED_RGB_R_ON;
             isRootPending = true; 
         }
+        // show any 'continuous' status output data
+        else if (continuousWho)
+        {
+            who();
+        }
     }
 
     if (isRoot)
     {
-        if (schedule(microSecs, timeSyncIntervalV, SCHEDULED_TASK_2))
+        // every 10 seconds clean up lost nodes
+        if (schedule(microSecs, 10 * ONE_SECOND_US, SCHEDULED_TASK_2))
+        {
+            cullOldNodes();
+        }
+
+        // at timeSyncIntervalV, send sync pulses to known nodes
+        if (schedule(microSecs, timeSyncIntervalV, SCHEDULED_TASK_3))
         {
             syncKnown();
         }
@@ -211,22 +226,20 @@ int main(void)
 {
     msg_init_queue(msg_q, Q_SZ);
 
-    puts("Type 'help' for a list of available commands");
-
     LED0_OFF;
     LED_RGB_OFF;
-
-    printf("Biotz Router\n");
-    about_cmd(0, NULL);
-    print_help(shell_commands);
 
     puts("initialising rpl");
     batch(shell_commands, "rpl init " ROUTER_6LOW_IF );
 
     gpio_init_int(BUTTON_GPIO, GPIO_IN_PU, GPIO_FALLING, (gpio_cb_t)btnCallback, NULL);
-
     thread_create(housekeeping_stack, sizeof(housekeeping_stack), PRIO, THREAD_CREATE_STACKTEST, housekeeping_handler,
                 NULL, "housekeeping");
+
+    printf("Biotz Router\n");
+    about_cmd(0, NULL);
+    puts("Type 'help' for a list of available commands");
+    print_help(shell_commands);
 
     char line_buf[SHELL_DEFAULT_BUFSIZE];
     shell_run(shell_commands, line_buf, SHELL_DEFAULT_BUFSIZE);

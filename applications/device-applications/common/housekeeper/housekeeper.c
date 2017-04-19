@@ -4,6 +4,7 @@
 #include "../time/biotTime.h"
 
 uint32_t lastTime[MAX_PERIODIC_TASKS + 1] = { 0, 0, 0, 0, 0 };
+bool rapidBeat = false;
 
 bool ledState = false;
 
@@ -26,15 +27,30 @@ void beat(void)
     ledState = ! ledState;
 }
 
+void rapidHeartbeat(bool state)
+{
+    rapidBeat = state;
+}
+
 void *housekeeping_handler(void *arg)
 {
     while(1)
     {
         idleTask();
         uint32_t microSecs = getCurrentTime();
-        if (schedule(microSecs, ONE_SECOND_US, HEARTBEAT_TASK))
+        if (rapidBeat)
         {
-            beat();
+            if (schedule(microSecs, ONE_SECOND_US/3, HEARTBEAT_TASK))
+            {
+                beat();
+            }
+        }
+        else
+        {
+            if (schedule(microSecs, ONE_SECOND_US, HEARTBEAT_TASK))
+            {
+                beat();
+            }
         }
     }
 }

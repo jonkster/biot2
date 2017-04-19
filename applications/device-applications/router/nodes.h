@@ -6,6 +6,8 @@
 
 #define MAX_MESSAGE_LENGTH 84
 
+#define HERMIT_TIME_SECS   10 // how long to wait for a silent node before culling
+
 typedef struct {
     char     ip6Address[INET6_ADDRSTRLEN];
     uint32_t timeStamp;
@@ -20,7 +22,12 @@ typedef struct {
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+void cullOldNodes(void);
+
 void initNodes(void);
+
+uint32_t nodeAge(uint8_t idx);
 
 void registerNode(char *addr, char *data);
 

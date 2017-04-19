@@ -147,11 +147,12 @@ void idleTask(void)
 
         if (! imuReady)
         {
+            rapidHeartbeat(true);
             initIMU();
-            if (! imuReady)
-            {
-                initIMU();
-            }
+        }
+        else if (imuReady)
+        {
+            rapidHeartbeat(false);
         }
     }
     
