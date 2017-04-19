@@ -1,0 +1,34 @@
+<h1>
+</h1>
+
+<h2>
+    {{title}}
+    <nav>
+        <a routerLink="/about" routerLinkActive="active"> About </a>
+        |
+        <a routerLink="/nodes" routerLinkActive="active"> Nodes </a> 
+        |
+        <a routerLink="/assemblies" routerLinkActive="active"> Assemblies </a>
+    </nav>
+</h2>
+
+<main>
+<router-outlet></router-outlet>
+</main>
+
+
+<footer>
+    © 2014-2017
+
+    <pre>TO DO
+                1. assemblies of limbs need to undo parent rotations (eg look at 3 limbs joined - last limb moving oddly)
+                2. update status information seems slow at times
+                3. display G/A/M DOF status of each node
+                4. faster detection of lost/unresponsive nodes
+                5. avoid extra lines for nodes that resurrect
+                6. improve accuracy of node orientation
+                7. resolve hesitation in updates (biot router problem?)
+    </pre>
+
+</footer>
+
