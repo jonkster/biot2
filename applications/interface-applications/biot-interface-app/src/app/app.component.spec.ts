@@ -1,18 +1,16 @@
 import { TestBed, async } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
-
 import { AppComponent } from './app.component';
-
 
 describe('AppComponent', () => {
   beforeEach(async(() => {
     TestBed.configureTestingModule({
-        imports: [
-            RouterTestingModule
-        ],
-        declarations: [
-            AppComponent
-        ],
+      declarations: [
+        AppComponent
+      ],
+      imports: [
+          RouterTestingModule.withRoutes([])
+      ]
     }).compileComponents();
   }));
 
@@ -22,16 +20,16 @@ describe('AppComponent', () => {
     expect(app).toBeTruthy();
   }));
 
-  it(`should have as title 'Biotz Interface'`, async(() => {
+  it(`should have as title 'Biotz User Interface'`, async(() => {
     const fixture = TestBed.createComponent(AppComponent);
     const app = fixture.debugElement.componentInstance;
-    expect(app.title).toEqual('Biotz Interface');
+    expect(app.title).toEqual('Biotz User Interface');
   }));
 
   it('should render title in a h2 tag', async(() => {
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
     const compiled = fixture.debugElement.nativeElement;
-    expect(compiled.querySelector('h2').textContent).toContain('Biotz Interface');
+    expect(compiled.querySelector('h2').textContent).toContain('Biotz User Interface');
   }));
 });

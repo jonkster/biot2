@@ -1,9 +1,54 @@
-<div appThree >
-</div>
-    <button *ngIf="!getCommunicationStatus()" (click)="resetService();">Retry Router Detection</button>
-    <span>Router 
+<div appThreed [displaywidth]="1400" [displayheight]="600" class="centred"></div>
+<hr/>
+
+<button (click)="addTestNode();">Add Test Node</button>
+<button *ngIf="!getCommunicationStatus()" (click)="resetService();">Retry Router Detection</button>
+
+<span>Router 
         <span *ngIf="!getCommunicationStatus()"> NOT </span>
         Detected
-    </span>
-    <!--<pre>Nodes page</pre>-->
-        <!--<div>Biotz Nodes detected: {{ getDetectedAddresses().length }} <button [disabled]="wantAll" (click)="showAll(true);">Show All</button></div>-->
+</span>
+
+<div>
+    <table>
+        <tr>
+            <th>colour</th>
+            <th>#</th>
+            <th>address</th>
+            <th>name</th>
+            <th>time-stamp</th>
+            <th>x</th>
+            <th>y</th>
+            <th>z</th>
+            <th>quat x</th>
+            <th>quat y</th>
+            <th>quat z</th>
+            <th>quat w</th>
+            <th>calibration</th>
+            <th>auto calibrate mode</th>
+            <th>LED mode</th>
+            <th>DOF</th>
+            <th>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</th>
+        </tr>
+        <tr *ngFor="let address of nodeAddresses; let i = index">
+            <td [style.background-color]="nodeData[address].colour">&nbsp;</td>
+            <td>#{{ i }}</td>
+            <td [style.color]="nodeData[address].colour">{{ address }}</td>
+            <td>{{ nodeData[address].name }}</td>
+            <td>{{ nodeData[address].timeStamp }}</td>
+            <td>{{ nodeData[address].position[0] }}</td>
+            <td>{{ nodeData[address].position[1] }}</td>
+            <td>{{ nodeData[address].position[2] }}</td>
+            <td>{{ nodeData[address].quaternion.x }}</td>
+            <td>{{ nodeData[address].quaternion.y }}</td>
+            <td>{{ nodeData[address].quaternion.z }}</td>
+            <td>{{ nodeData[address].quaternion.w }}</td>
+            <td>{{ nodeData[address].calibration }}</td>
+            <td>{{ nodeData[address].auto }}</td>
+            <td>{{ nodeData[address].led }}</td>
+            <td>{{ nodeData[address].dof }}</td>
+            <td [style.background-color]="nodeData[address].colour">&nbsp;</td>
+        </tr>
+    </table>
+</div>
+

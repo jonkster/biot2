@@ -1,0 +1,24 @@
+Overview of making a new application using ng cli:
+
+ng new biot-interface
+    - creates a blank new application
+
+cd biot-interface    
+
+ng g directive threed
+    - creates a blank new directive called threed
+
+ng g service threed.service/threed
+    - creates a blank new service (threed.service) in its own directory
+
+ng g component about/about
+    - creates a blank new component (about) in its own directory
+
+ng g component nodes/nodes
+    - creates another blank new component (nodes) in its own directory
+
+etc etc...
+
+CHROME_BIN=`which chromium-browser` ng test
+    - tests the app
+

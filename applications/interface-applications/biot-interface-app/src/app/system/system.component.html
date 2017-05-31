@@ -1,0 +1,41 @@
+<div>
+    <table>
+        <tr>
+            <th class="spec">Property</th>
+            <th>Value</th>
+        </tr>
+        <tr>
+            <td class="alt">Last Checked</td>
+            <td class="special">{{ routerStatus.time }}</td>
+        </tr>
+        <tr>
+            <td class="alt">Router Type</td>
+            <td>{{ routerStatus.title }}</td>
+        </tr>
+        <tr>
+            <td class="alt">Status</td>
+            <td>{{ routerStatus.status }}</td>
+        </tr>
+        <tr>
+            <td class="alt">Description</td>
+            <td>{{ routerStatus.description }}</td>
+        </tr>
+        <tr>
+            <td class="alt">Version</td>
+            <td>{{ routerStatus.version }}</td>
+        </tr>
+        <tr *ngFor="let link of routerStatus.links; let i = index">
+            <td class="alt">Resource #{{ i}}</td>
+            <td>{{ link }}</td>
+        </tr>
+        <tr>
+            <td class="alt">Detected Biot Nodes</td>
+            <td>{{ nodeStatus.count }}</td>
+        </tr>
+
+        <tr *ngFor="let address of nodeStatus.addresses; let i = index">
+            <td>#{{ i }} {{ address }}</td>
+            <td class="special">{{ nodeStatus.nodeData[address] }} </td>
+        </tr>
+    </table>
+</div>

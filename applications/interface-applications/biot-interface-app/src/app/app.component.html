@@ -1,33 +1,33 @@
-<h1>
-</h1>
-
-<h2>
-    {{title}}
+<div>
     <nav>
         <a routerLink="/about" routerLinkActive="active"> About </a>
         |
         <a routerLink="/nodes" routerLinkActive="active"> Nodes </a> 
         |
         <a routerLink="/assemblies" routerLinkActive="active"> Assemblies </a>
+        |
+        <a routerLink="/system" routerLinkActive="active"> System </a>
     </nav>
-</h2>
-
+<hr/>
+    <b class="centred">Motion Capture Systems {{title}}</b>
+<hr/>
+<div>
 <main>
 <router-outlet></router-outlet>
 </main>
+<hr/>
 
-
-<footer>
-    © 2014-2017
+<footer class="centred">
+    © 2014-2017 Jon. Kelly, Motion Capture Systems
 
     <pre>TO DO
-                1. assemblies of limbs need to undo parent rotations (eg look at 3 limbs joined - last limb moving oddly)
+<!--                1. assemblies of limbs need to undo parent rotations (eg look at 3 limbs joined - last limb moving oddly)
                 2. update status information seems slow at times
                 3. display G/A/M DOF status of each node
                 4. faster detection of lost/unresponsive nodes
                 5. avoid extra lines for nodes that resurrect
                 6. improve accuracy of node orientation
-                7. resolve hesitation in updates (biot router problem?)
+                7. resolve hesitation in updates (biot router problem?) -->
     </pre>
 
 </footer>

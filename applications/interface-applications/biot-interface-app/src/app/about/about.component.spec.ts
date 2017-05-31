@@ -1,28 +1,25 @@
-import { TestBed, async } from '@angular/core/testing';
-import {Router} from "@angular/router";
+import { async, ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { AboutComponent } from './about.component';
 
 describe('AboutComponent', () => {
+  let component: AboutComponent;
+  let fixture: ComponentFixture<AboutComponent>;
+
   beforeEach(async(() => {
     TestBed.configureTestingModule({
-      declarations: [
-        AboutComponent
-      ],
-    }).compileComponents();
+      declarations: [ AboutComponent ]
+    })
+    .compileComponents();
   }));
 
-  it('should create the about page', async(() => {
-    const fixture = TestBed.createComponent(AboutComponent);
-    const app = fixture.debugElement.componentInstance;
-    expect(app).toBeTruthy();
-  }));
+  beforeEach(() => {
+    fixture = TestBed.createComponent(AboutComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
 
-  it(`should mention page title`, async(() => {
-    const fixture = TestBed.createComponent(AboutComponent);
-    const app = fixture.debugElement.componentInstance;
-    const compiled = fixture.debugElement.nativeElement;
-    expect(compiled.querySelector('h3').textContent).toContain('About');
-  }));
-
+  it('should create', () => {
+    expect(component).toBeTruthy();
+  });
 });

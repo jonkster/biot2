@@ -1,5 +1,10 @@
 import { async, ComponentFixture, TestBed } from '@angular/core/testing';
+import { RouterTestingModule } from '@angular/router/testing';
 
+import { ThreedService } from '../threed/threed.service';
+import { ThreedDirective } from '../threed.directive';
+import { LimbmakerService } from '../3d-objects/limbmaker.service';
+import { NodemodelService } from '../3d-objects/nodemodel.service';
 import { NotfoundComponent } from './notfound.component';
 
 describe('NotfoundComponent', () => {
@@ -8,7 +13,9 @@ describe('NotfoundComponent', () => {
 
   beforeEach(async(() => {
     TestBed.configureTestingModule({
-      declarations: [ NotfoundComponent ]
+      declarations: [ NotfoundComponent, ThreedDirective ],
+      providers: [ ThreedService, LimbmakerService, NodemodelService ],
+      imports: [ RouterTestingModule ]
     })
     .compileComponents();
   }));
@@ -22,11 +29,4 @@ describe('NotfoundComponent', () => {
   it('should create', () => {
     expect(component).toBeTruthy();
   });
-
-  it('should say page not found in a h2 tag', async(() => {
-    const fixture = TestBed.createComponent(NotfoundComponent);
-    fixture.detectChanges();
-    const compiled = fixture.debugElement.nativeElement;
-    expect(compiled.querySelector('h2').textContent).toContain('Page not found');
-  }));
 });

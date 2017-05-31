@@ -1,10 +1,10 @@
-import { BiotInterfaceAppPage } from './app.po';
+import { BiotInterfacePage } from './app.po';
 
-describe('biot-interface-app App', () => {
-  let page: BiotInterfaceAppPage;
+describe('biot-interface App', () => {
+  let page: BiotInterfacePage;
 
   beforeEach(() => {
-    page = new BiotInterfaceAppPage();
+    page = new BiotInterfacePage();
   });
 
   it('should display message saying app works', () => {

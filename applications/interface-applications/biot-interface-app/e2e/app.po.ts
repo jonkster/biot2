@@ -1,6 +1,6 @@
 import { browser, element, by } from 'protractor';
 
-export class BiotInterfaceAppPage {
+export class BiotInterfacePage {
   navigateTo() {
     return browser.get('/');
   }
