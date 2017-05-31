@@ -1,4 +1,5 @@
-import { Component, OnInit, AfterContentChecked } from '@angular/core';
+import { Component, OnInit, AfterContentChecked, ViewChild, ElementRef } from '@angular/core';
+import {DialogComponent} from '../dialog/dialog.component';
 import {BiotService} from '../biotservice/biot.service';
 import {NodeholderService} from '../biotservice/nodeholder.service';
 import {ThreedService} from '../threed/threed.service';
@@ -19,6 +20,11 @@ export class NodesComponent implements OnInit, AfterContentChecked {
     private nodeHolderService: NodeholderService = undefined;
     private nodeData: any = {};
     private nodeAddresses: string[] = [];
+    private selectedNodeAddress: string = '';
+    private selectedNodeCalMode = 0;
+    private selectedNodeColour = '';
+
+    @ViewChild('nodeDialog') nodeDialog: DialogComponent;
 
     constructor(biotService: BiotService, threedService: ThreedService, limbMakerService: LimbmakerService, nodeHolderService: NodeholderService) {
         this.biotService = biotService;
@@ -132,6 +138,13 @@ export class NodesComponent implements OnInit, AfterContentChecked {
         }
     }
 
+    alertNode(addr) {
+        this.biotService.identify(addr).subscribe(
+            rawData => { console.log('ok', rawData)},
+            error => { console.log('error', error)},
+        );
+    }
+
     confirm1() {
         alert('I don\'t know how :(');
     }
@@ -144,11 +157,6 @@ export class NodesComponent implements OnInit, AfterContentChecked {
         return this.biotService.getCommunicationStatus();
     }
 
-    invertColour(col: string) {
-        let colSt = col.replace(/#/, '');
-        return '#ffffff';
-
-    }
 
 
     makeNode(name: string, type: string, displayName: string, x: number, y: number, z: number, quat: any, colour: string) {
@@ -156,6 +164,28 @@ export class NodesComponent implements OnInit, AfterContentChecked {
         var q3js = new THREE.Quaternion(quat.x, quat.y, quat.z, quat.w);
         node.setRotationFromQuaternion(q3js);
         return node;
+    }
+
+    openNodeDialog(addr: string) {
+        let node = this.nodeHolderService.getNode(addr);
+        this.selectedNodeAddress = addr;
+        this.selectedNodeCalMode = this.nodeCalibrationMode(addr);
+        this.selectedNodeColour = node.colour;
+        this.nodeDialog.show({ address: addr});
+    }
+
+    nodeCalibrationMode(addr: string): number {
+        if (this.nodeData[addr] !== undefined) {
+            return this.nodeData[addr].auto;
+        }
+        return 0;
+    }
+
+    setCalibrateMode(addr, mode) {
+        this.biotService.putAutoCal(addr, mode).subscribe(
+            rawData => { console.log('ok', rawData)},
+            error => { console.log('error', error)},
+        );
     }
 
     pickAColour(idx: number) {

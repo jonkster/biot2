@@ -15,7 +15,8 @@ import {LimbmakerService} from './3d-objects/limbmaker.service';
 import {NodemodelService} from './3d-objects/nodemodel.service';
 import {BiotService} from './biotservice/biot.service';
 import {NodeholderService} from './biotservice/nodeholder.service';
-import { SystemComponent } from './system/system.component';
+import {SystemComponent} from './system/system.component';
+import { DialogComponent } from './dialog/dialog.component';
 
 export const rootRouterConfig: Routes = [
     {path: '', redirectTo: 'about', pathMatch: 'full'},
@@ -33,7 +34,8 @@ export const rootRouterConfig: Routes = [
     NodesComponent,
     AboutComponent,
     NotfoundComponent,
-    SystemComponent
+    SystemComponent,
+    DialogComponent
   ],
   imports: [
     BrowserModule,

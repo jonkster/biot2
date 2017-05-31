@@ -1,0 +1,1 @@
+../device-applications/router/runrouter.sh

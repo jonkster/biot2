@@ -30,7 +30,7 @@
             <th>DOF</th>
             <th>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</th>
         </tr>
-        <tr *ngFor="let address of nodeAddresses; let i = index">
+        <tr *ngFor="let address of nodeAddresses; let i = index" (click)="openNodeDialog(address)">
             <td [style.background-color]="nodeData[address].colour">&nbsp;</td>
             <td>#{{ i }}</td>
             <td [style.color]="nodeData[address].colour">{{ address }}</td>
@@ -51,4 +51,21 @@
         </tr>
     </table>
 </div>
+
+<app-dialog #nodeDialog>
+    <div class="app-modal-header" [style.background-color]="selectedNodeColour">
+        Address: <b>{{ selectedNodeAddress }}</b>
+    </div>
+    <div class="app-modal-body">
+        <input type="radio" name="calibrate" value="0" (click)="setCalibrateMode(selectedNodeAddress, 0)" [(ngModel)]="selectedNodeCalMode">Stop Calibration<br/>
+        <input type="radio" name="calibrate" value="1" (click)="setCalibrateMode(selectedNodeAddress, 1)" [(ngModel)]="selectedNodeCalMode">Calibration On<br/>
+        <input type="radio" name="calibrate" value="2" (click)="setCalibrateMode(selectedNodeAddress, 2)" [(ngModel)]="selectedNodeCalMode">Reset and Restart Calibration<br/>
+        <input type="radio" name="calibrate" value="3" (click)="setCalibrateMode(selectedNodeAddress, 3)" [(ngModel)]="selectedNodeCalMode">Reset and Stop Calibration<br/>
+        <button (click)="alertNode(selectedNodeAddress)">Identify Node</button>
+    </div>
+    <div class="app-modal-footer">
+        <button type="button" class="btn btn-default" (click)="nodeDialog.hide()">Close</button>
+    </div>
+</app-dialog>
+
 
