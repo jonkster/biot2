@@ -209,6 +209,20 @@ export class BiotService {
             .map((response) => response.json());
     }
 
+    getRecordedData(addr: string) {
+        const path = 'biotz/addresses/' + addr + '/record';
+        const url = "http://localhost:8889/" + path ;
+        return this.http.get(url)
+            .map((response) => response.json());
+    }
+
+    recordData(addr: string, seconds: number) {
+        const path = 'biotz/addresses/' + addr + '/record';
+        const url = "http://localhost:8889/" + path ;
+        return this.http.put(url, seconds)
+            .map((response) => response.json());
+    }
+
     resetService() {
         console.log("resetting communications");
         const path = '';

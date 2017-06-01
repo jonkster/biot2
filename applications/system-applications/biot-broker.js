@@ -33,6 +33,9 @@ var nodeStatus = {};
 var realNodes = {};
 var dummyNodes = {};
 var dummyTime = 0;
+var recording = {};
+var recordingTime = {};
+var recordedData = {};
 
 // received an update message - store info
 brokerUdpListener.on('message', function (message, remote) {
@@ -83,6 +86,8 @@ brokerListener.put('/biotz/addresses/:address/led', putBiotLed);
 brokerListener.get('/biotz/addresses/:address/alive', getBiotAlive);
 brokerListener.get('/biotz/addresses/:address/alive/ts', getBiotAliveTs);
 brokerListener.get('/biotz/addresses/:address/alive/status', getBiotAliveStatus);
+brokerListener.get('/biotz/addresses/:address/record', getBiotRecord);
+brokerListener.put('/biotz/addresses/:address/record', putBiotRecord);
 
 
 brokerListener.get('/data', getData);
@@ -143,6 +148,16 @@ function addNodeData(message) {
             nodeStatus[address] = {
                 'ts' : new Date(),
                 'status' : 'active'
+            }
+            if (recording[address]) {
+                recordedData[address].push(bits[1]);
+                var now = new Date().getTime();
+                if (recordingTime[address] <= now) {
+                    console.log('done recording', address);
+                    recording[address] = false;
+                    recordingTime[address] = false;
+                }
+            } else {
             }
         } else {
             console.log('scrambled do', message);
@@ -580,6 +595,12 @@ function deleteDataValue(req, res, next) {
     });
 }
 
+function getBiotRecord(req, res, next) {
+    var address = req.context['address'];
+    res.send(200, recordedData[address]);
+    next();
+}
+
 
 function putBiotAuto(req, res, next) {
 
@@ -679,6 +700,21 @@ function putBiotLed(req, res, next) {
         client.close();
         next();
     });
+}
+
+function putBiotRecord(req, res, next) {
+    var address = req.context['address'];
+    var seconds = req.body;
+    if (seconds > 5) {
+        console.log('changing recording time from', seconds, ' to ', 5);
+        seconds = 5;
+    }
+    console.log('start recording', address);
+    recordingTime[address] = (new Date().getTime()) + (seconds * 1000);
+    recordedData[address] = [];
+    recording[address] = true;
+    res.send(200, 'OK');
+    next();
 }
 
 

@@ -4,6 +4,7 @@ import {BiotService} from '../biotservice/biot.service';
 import {NodeholderService} from '../biotservice/nodeholder.service';
 import {ThreedService} from '../threed/threed.service';
 import {LimbmakerService} from '../3d-objects/limbmaker.service';
+import {Router} from '@angular/router';
 import * as THREE from 'three';
 
 @Component({
@@ -16,21 +17,26 @@ export class NodesComponent implements OnInit, AfterContentChecked {
     private biotService: BiotService;
     private threedService: ThreedService;
     private limbMakerService: LimbmakerService;
+    private router: Router;
     private worldSpace: THREE.Object3D = undefined;
     private nodeHolderService: NodeholderService = undefined;
     private nodeData: any = {};
     private nodeAddresses: string[] = [];
+    private selectedNode: any = undefined;
     private selectedNodeAddress: string = '';
+    private selectedNodeName: string = '';
+    private candidateNodeName: string = '';
     private selectedNodeCalMode = 0;
     private selectedNodeColour = '';
 
     @ViewChild('nodeDialog') nodeDialog: DialogComponent;
 
-    constructor(biotService: BiotService, threedService: ThreedService, limbMakerService: LimbmakerService, nodeHolderService: NodeholderService) {
+    constructor(biotService: BiotService, threedService: ThreedService, limbMakerService: LimbmakerService, nodeHolderService: NodeholderService, router: Router) {
         this.biotService = biotService;
         this.threedService = threedService;
         this.limbMakerService = limbMakerService;
         this.nodeHolderService = nodeHolderService;
+        this.router = router;
     }
 
     ngDoCheck() {
@@ -98,6 +104,7 @@ export class NodesComponent implements OnInit, AfterContentChecked {
             let node = this.makeNode(addr, type, name, x, y, z, q, colour);
             this.nodeHolderService.add3DModel(addr, node);
             this.worldSpace.add(node);
+            this.nodeHolderService.flashNode(addr);
         }
         else {
             alert(this.nodeHolderService.getError());
@@ -140,17 +147,13 @@ export class NodesComponent implements OnInit, AfterContentChecked {
 
     alertNode(addr) {
         this.biotService.identify(addr).subscribe(
-            rawData => { console.log('ok', rawData)},
+            rawData => { this.flashNodeLed(addr, 3); },
             error => { console.log('error', error)},
         );
     }
 
-    confirm1() {
-        alert('I don\'t know how :(');
-    }
-
-    confirm2() {
-        alert('I don\'t know how :(');
+    flashNodeLed(addr: string, mode: number) {
+        this.nodeHolderService.setLedMode(addr, mode);
     }
 
     getCommunicationStatus() {
@@ -167,11 +170,22 @@ export class NodesComponent implements OnInit, AfterContentChecked {
     }
 
     openNodeDialog(addr: string) {
+        this.alertNode(addr);
         let node = this.nodeHolderService.getNode(addr);
+        this.selectedNode = node;
         this.selectedNodeAddress = addr;
         this.selectedNodeCalMode = this.nodeCalibrationMode(addr);
         this.selectedNodeColour = node.colour;
-        this.nodeDialog.show({ address: addr});
+        this.selectedNodeName = node.name;
+        this.candidateNodeName = node.name;
+    }
+
+    nameNode(addr: string) {
+        this.nodeDialog.show({});
+    }
+
+    rename(addr: string, name: string) {
+        this.nodeHolderService.rename(addr, name);
     }
 
     nodeCalibrationMode(addr: string): number {
@@ -180,6 +194,25 @@ export class NodesComponent implements OnInit, AfterContentChecked {
         }
         return 0;
     }
+
+    displayRecordedData(jsonData: string) {
+        this.router.navigate(['recordings', {'title': this.selectedNodeName, 'data': jsonData}]);
+    }
+
+    getNodeRecording(addr: string) {
+        this.biotService.getRecordedData(addr).subscribe(
+            rawData => { this.displayRecordedData(JSON.stringify(rawData))},
+            error => { alert('error:' + error)},
+        );
+    }
+
+    recordNode(addr: string) {
+        this.biotService.recordData(addr, 5).subscribe(
+            rawData => { },
+            error => { alert('error:' + error)},
+        );
+    }
+
 
     setCalibrateMode(addr, mode) {
         this.biotService.putAutoCal(addr, mode).subscribe(

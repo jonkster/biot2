@@ -1,8 +1,7 @@
-<div appThreed [displaywidth]="1400" [displayheight]="600" class="centred"></div>
-<hr/>
-
 <button (click)="addTestNode();">Add Test Node</button>
 <button *ngIf="!getCommunicationStatus()" (click)="resetService();">Retry Router Detection</button>
+<div appThreed [displaywidth]="1400" [displayheight]="400" class="centred"></div>
+<hr/>
 
 <span>Router 
         <span *ngIf="!getCommunicationStatus()"> NOT </span>
@@ -20,17 +19,18 @@
             <th>x</th>
             <th>y</th>
             <th>z</th>
-            <th>quat x</th>
-            <th>quat y</th>
-            <th>quat z</th>
-            <th>quat w</th>
-            <th>calibration</th>
-            <th>auto calibrate mode</th>
+            <th class="w10em">quat x</th>
+            <th class="w10em">quat y</th>
+            <th class="w10em">quat z</th>
+            <th class="w10em">quat w</th>
+            <th class="w20em">calibration</th>
+            <th>auto<br/>calibrate<br/>mode</th>
             <th>LED mode</th>
             <th>DOF</th>
             <th>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</th>
         </tr>
-        <tr *ngFor="let address of nodeAddresses; let i = index" (click)="openNodeDialog(address)">
+        <ng-template ngFor let-address [ngForOf]="nodeAddresses" let-i="index">
+            <tr (click)="openNodeDialog(address)" [class.selectedTop]="selectedNodeAddress === address">
             <td [style.background-color]="nodeData[address].colour">&nbsp;</td>
             <td>#{{ i }}</td>
             <td [style.color]="nodeData[address].colour">{{ address }}</td>
@@ -49,22 +49,52 @@
             <td>{{ nodeData[address].dof }}</td>
             <td [style.background-color]="nodeData[address].colour">&nbsp;</td>
         </tr>
+        <tr *ngIf="selectedNodeAddress === address" [class.selectedBottom]="selectedNodeAddress === address">
+            <td [style.background-color]="nodeData[address].colour">&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>
+                <button class="btn btn-primary" (click)="alertNode(address)">Identify Node</button>
+            </td>
+            <td>
+                <button class="btn btn-primary" (click)="nameNode(address)">Rename Node</button>
+            </td>
+            <td>
+                <button class="btn btn-primary" (click)="recordNode(address)">Record Node</button>
+                <button class="btn btn-primary" (click)="getNodeRecording(address)">Display Recording</button>
+            </td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>
+                <input type="radio" name="calibrate2" value="0" (click)="setCalibrateMode(address)" [(ngModel)]="selectedNodeCalMode">Stop Calibration<br/>
+                <input type="radio" name="calibrate2" value="1" (click)="setCalibrateMode(address)" [(ngModel)]="selectedNodeCalMode">Calibration On<br/>
+                <input type="radio" name="calibrate2" value="2" (click)="setCalibrateMode(address)" [(ngModel)]="selectedNodeCalMode">Reset and Restart Calibration<br/>
+                <input type="radio" name="calibrate2" value="3" (click)="setCalibrateMode(address)" [(ngModel)]="selectedNodeCalMode">Reset and Stop Calibration<br/>
+            </td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td [style.background-color]="nodeData[address].colour">&nbsp;</td>
+        </tr>
+        </ng-template>
     </table>
 </div>
 
 <app-dialog #nodeDialog>
-    <div class="app-modal-header" [style.background-color]="selectedNodeColour">
-        Address: <b>{{ selectedNodeAddress }}</b>
+    <div class="app-modal-header">
+        Rename Node: <b>{{ selectedNodeAddress }}</b>
     </div>
     <div class="app-modal-body">
-        <input type="radio" name="calibrate" value="0" (click)="setCalibrateMode(selectedNodeAddress, 0)" [(ngModel)]="selectedNodeCalMode">Stop Calibration<br/>
-        <input type="radio" name="calibrate" value="1" (click)="setCalibrateMode(selectedNodeAddress, 1)" [(ngModel)]="selectedNodeCalMode">Calibration On<br/>
-        <input type="radio" name="calibrate" value="2" (click)="setCalibrateMode(selectedNodeAddress, 2)" [(ngModel)]="selectedNodeCalMode">Reset and Restart Calibration<br/>
-        <input type="radio" name="calibrate" value="3" (click)="setCalibrateMode(selectedNodeAddress, 3)" [(ngModel)]="selectedNodeCalMode">Reset and Stop Calibration<br/>
-        <button (click)="alertNode(selectedNodeAddress)">Identify Node</button>
+        <span>Current Name: {{ selectedNodeName}}</span>
+        <input type="text" name="name" [(ngModel)]="candidateNodeName" />
     </div>
     <div class="app-modal-footer">
-        <button type="button" class="btn btn-default" (click)="nodeDialog.hide()">Close</button>
+        <button type="button" class="btn btn-default" (click)="nodeDialog.hide()">Cancel</button>
+        <button type="button" class="btn btn-default" (click)="rename(selectedNodeAddress, candidateNodeName); nodeDialog.hide()">Save</button>
     </div>
 </app-dialog>
 

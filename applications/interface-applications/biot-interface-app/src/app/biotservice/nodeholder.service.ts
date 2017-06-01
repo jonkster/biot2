@@ -54,6 +54,57 @@ export class NodeholderService {
       }
   }
 
+  setLedMode(addr: string, mode: number) {
+      var node = this.getNode(addr);
+      if (node.model !== undefined) {
+          let nodeModel = node.model;
+          nodeModel.userData.ledMode = mode;
+          if (mode === 3) {
+              nodeModel.userData.alertState = 20;
+          }
+          this.flashNode(addr);
+      }
+  }
+
+  flashNode(addr: string) {
+      var node = this.getNode(addr);
+      if (node.model !== undefined) {
+          let nodeModel = node.model;
+          let ledMode = nodeModel.userData.ledMode;
+          let ledOn = nodeModel.getObjectByName('led-on');
+          let ledOff = nodeModel.getObjectByName('led-off');
+
+          if (ledOn !== undefined) {
+              let flashInterval = 1500;
+              if (ledMode === 0) {
+                  ledOn.visible = false;
+                  ledOff.visible = true;
+                  return;
+              } else if (ledMode === 1) {
+                  ledOn.visible = true;
+                  ledOff.visible = false;
+                  return;
+              } else if (ledMode === 2) {
+                  flashInterval = 1500;
+              } else if (ledMode === 3) {
+                  flashInterval = 300;
+                  if (nodeModel.userData.alertState > 0) {
+                      nodeModel.userData.alertState--;
+                  } else {
+                      nodeModel.userData.ledMode = 2;
+                      return;
+                  }
+              }
+              ledOn.visible = ! ledOn.visible;
+              ledOff.visible = ! ledOff.visible;
+              let siht = this;
+              setTimeout(e => {
+                  siht.flashNode(addr);
+              }, flashInterval);
+          }
+      }
+  }
+
   getNodeAddresses() {
       return Object.keys(this.nodeList);
   }
@@ -115,6 +166,14 @@ export class NodeholderService {
 
   nodeKnown(addr) : boolean {
       return this.nodeList[addr] !== undefined;
+  }
+
+
+  rename(addr: string, name: string) {
+      let node = this.getNode(addr);
+      if (node !== undefined) {
+          node.name = name;
+      }
   }
 
   setPosition(node: any, x: number, y: number, z: number) {

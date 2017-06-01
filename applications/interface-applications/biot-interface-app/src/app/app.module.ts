@@ -17,11 +17,15 @@ import {BiotService} from './biotservice/biot.service';
 import {NodeholderService} from './biotservice/nodeholder.service';
 import {SystemComponent} from './system/system.component';
 import { DialogComponent } from './dialog/dialog.component';
+import { RecordingsComponent } from './recordings/recordings.component';
+import { ChartsModule } from 'ng2-charts';
+
 
 export const rootRouterConfig: Routes = [
     {path: '', redirectTo: 'about', pathMatch: 'full'},
     {path: 'about', component: AboutComponent},
     {path: 'nodes', component: NodesComponent},
+    {path: 'recordings', component: RecordingsComponent},
     {path: 'system', component: SystemComponent},
     // {path: 'assemblies', component: AssembliesComponent},
     {path: '**', component: NotfoundComponent }
@@ -35,10 +39,12 @@ export const rootRouterConfig: Routes = [
     AboutComponent,
     NotfoundComponent,
     SystemComponent,
-    DialogComponent
+    DialogComponent,
+    RecordingsComponent
   ],
   imports: [
     BrowserModule,
+    ChartsModule,
     FormsModule,
     HttpModule,
     RouterModule.forRoot(rootRouterConfig)
