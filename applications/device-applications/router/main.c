@@ -36,6 +36,7 @@ bool continuousWho = false;
 uint32_t timeSyncIntervalV       = 10000000;
 
 extern int udp_cmd(int argc, char **argv);
+extern int udp_send(char *addr_str, char *data);
 extern void *udp_server(void *);
 
 int about_cmd(int argc, char **argv)
@@ -139,7 +140,6 @@ static int time_cmd(int argc, char **argv)
 }
 
 
-
 /* ############# SHELL COMMANDS ###################################### */
 static const shell_command_t shell_commands[] = {
     { "about", "system description", about_cmd },
@@ -153,6 +153,15 @@ static const shell_command_t shell_commands[] = {
     { NULL, NULL, NULL }
 };
 /* ################################################################### */
+
+void sendAliveMessage(void)
+{
+    char buffer[MAX_MESSAGE_LENGTH];
+    memset(buffer, 0, MAX_MESSAGE_LENGTH);
+    sprintf(buffer, "da##");
+    udp_send(SYSTEM_SUBNET UDPIP_6SLIP_IP, buffer);
+    return;
+}
 
 
 void setRoot(void)
@@ -212,6 +221,7 @@ void idleTask(void)
         if (schedule(microSecs, 10 * ONE_SECOND_US, SCHEDULED_TASK_2))
         {
             cullOldNodes();
+            sendAliveMessage();
         }
 
         // at timeSyncIntervalV, send sync pulses to known nodes

@@ -4,6 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { HttpModule } from '@angular/http';
 import { RouterModule, Routes } from '@angular/router';
 
+import { ChartsModule } from 'ng2-charts';
+
 import { AppComponent } from './app.component';
 import { ThreedDirective } from './threed.directive';
 import { NodesComponent } from './nodes/nodes.component';
@@ -18,7 +20,6 @@ import {NodeholderService} from './biotservice/nodeholder.service';
 import {SystemComponent} from './system/system.component';
 import { DialogComponent } from './dialog/dialog.component';
 import { RecordingsComponent } from './recordings/recordings.component';
-import { ChartsModule } from 'ng2-charts';
 
 
 export const rootRouterConfig: Routes = [

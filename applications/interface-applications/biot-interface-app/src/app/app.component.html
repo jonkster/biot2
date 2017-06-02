@@ -10,26 +10,27 @@
         |
         <a routerLink="/system" routerLinkActive="active"> System </a>
     </nav>
-<hr/>
-    <b class="centred">Motion Capture Systems {{title}}</b>
-<hr/>
+    <div class="centered">
+        <hr/>
+        <b class="centred">Motion Capture Systems {{title}}</b>
+        <hr/>
+    <div class="centered">
 <div>
 <main>
 <router-outlet></router-outlet>
 </main>
-<hr/>
 
-<footer class="centred">
+<hr/>
+<footer class="footer">
     © 2014-2017 Jon. Kelly, Motion Capture Systems
 
     <pre>TO DO
-<!--                1. assemblies of limbs need to undo parent rotations (eg look at 3 limbs joined - last limb moving oddly)
-                2. update status information seems slow at times
-                3. display G/A/M DOF status of each node
-                4. faster detection of lost/unresponsive nodes
-                5. avoid extra lines for nodes that resurrect
-                6. improve accuracy of node orientation
-                7. resolve hesitation in updates (biot router problem?) -->
+    1. fix rotation about Z axis being mirrored
+    2. remove defunct nodes from display
+    3. fix issue where changing pages can hide nodes in the node page
+    4. look at efficiency of calling requestAnimationFrame
+    5. look at recorded movement analysis (fourier?)
+    6. implement limb assembly
     </pre>
 
 </footer>

@@ -26,10 +26,12 @@ export class NodesComponent implements OnInit, AfterContentChecked {
     private selectedNodeAddress: string = '';
     private selectedNodeName: string = '';
     private candidateNodeName: string = '';
+    private recordSeconds = 5;
     private selectedNodeCalMode = 0;
     private selectedNodeColour = '';
 
-    @ViewChild('nodeDialog') nodeDialog: DialogComponent;
+    @ViewChild('nodeRenameDialog') nodeRenameDialog: DialogComponent;
+    @ViewChild('nodeRecordDialog') nodeRecordDialog: DialogComponent;
 
     constructor(biotService: BiotService, threedService: ThreedService, limbMakerService: LimbmakerService, nodeHolderService: NodeholderService, router: Router) {
         this.biotService = biotService;
@@ -169,7 +171,7 @@ export class NodesComponent implements OnInit, AfterContentChecked {
         return node;
     }
 
-    openNodeDialog(addr: string) {
+    openNodeControl(addr: string) {
         this.alertNode(addr);
         let node = this.nodeHolderService.getNode(addr);
         this.selectedNode = node;
@@ -181,7 +183,11 @@ export class NodesComponent implements OnInit, AfterContentChecked {
     }
 
     nameNode(addr: string) {
-        this.nodeDialog.show({});
+        this.nodeRenameDialog.show({});
+    }
+
+    recordNode(addr: string) {
+        this.nodeRecordDialog.show({});
     }
 
     rename(addr: string, name: string) {
@@ -206,8 +212,8 @@ export class NodesComponent implements OnInit, AfterContentChecked {
         );
     }
 
-    recordNode(addr: string) {
-        this.biotService.recordData(addr, 5).subscribe(
+    startRecordingNode(addr: string) {
+        this.biotService.recordData(addr, this.recordSeconds).subscribe(
             rawData => { },
             error => { alert('error:' + error)},
         );

@@ -12,7 +12,9 @@
   ],
   "license": "0BSD",
   "dependencies": {
+    "is-reachable": "^2.3.2",
     "mkdirp": "^0.5.1",
+    "net-ping": "^1.2.0",
     "restify": "^4.1.1"
   },
   "repository": {

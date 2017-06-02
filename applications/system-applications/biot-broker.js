@@ -29,6 +29,11 @@ var biotzData = {};
 var biotzCal = {};
 var biotzStatus = {};
 var nodeStatus = {};
+var systemStatus = {
+    'udpip': 'unknown',
+    'edgerouter': 'unknown',
+    'dodag': 'unknown'
+};
 
 var realNodes = {};
 var dummyNodes = {};
@@ -42,8 +47,15 @@ brokerUdpListener.on('message', function (message, remote) {
     if (message.length > 0)
     {
         addNodeData(message.toString());
+        systemStatus.udpip = 'OK';
+        systemStatus.edgerouter = 'OK';
     }
 });
+
+var lastAliveTime = 0;
+var interval = setInterval(function() {
+      testSystem();
+}, 10000);
 
 // Listen for and act on Broker HTTP Requests
 var restify = require('restify');
@@ -142,6 +154,7 @@ function addNodeData(message) {
     lastUpdate[address].time = now;
 
     if (bits[0] == 'do') {
+        systemStatus.dodag = 'OK';
         if (bits[1].match(/[0-9]+:[\-0-9\.]+:[\-0-9\.]+:[\-0-9\.]+:[\-0-9\.]+/)) {
             biotzData[address] = bits[1];
             realNodes[address] = true;
@@ -169,6 +182,10 @@ function addNodeData(message) {
     else if (bits[0] == 'ds'){
         biotzStatus[address] = bits[1];
     }
+    else if (bits[0] == 'da'){
+        lastAliveTime = new Date();
+        systemStatus.edgerouter = 'OK';
+    }
     else{
         console.log("unknown message type", bits[0]);
     }
@@ -176,6 +193,8 @@ function addNodeData(message) {
     if (lastUpdate[address].delta > 110) {
         console.log(lastUpdate[address].addr, lastUpdate[address].delta, lastUpdate[address].type, "was good for: " + allGood + "responses");
         allGood = 0;
+        systemStatus.edgerouter = 'unknown';
+        systemStatus.dodag = 'unknown';
     } else {
         allGood++;
     }
@@ -207,7 +226,7 @@ function biotSync(req, res, next) {
     client.send(message, 0, message.length, BIOTZ_UDP_PORT, BIOTZ_ROUTER_HOST, function(err, bytes) {
         if (err)
         {
-            console.log('Error:', err);
+            console.log('Sync Error:', err);
         }
         client.close();
     });
@@ -238,6 +257,9 @@ function getRoot(req, res, next) {
         "title": "Biotz Broker REST API",
         "description": "interface to a network of Biot Orientation Sensors",
         "version": VERSION,
+        "UDP-IP-status": systemStatus.udpip,
+        "Edge-Router-status": systemStatus.edgerouter,
+        "DODAG-status": systemStatus.dodag,
         "time": now,
         "links": [
             "http://" + BROKER_HOST + ":" + BROKER_HTTP_PORT + "/",
@@ -705,9 +727,9 @@ function putBiotLed(req, res, next) {
 function putBiotRecord(req, res, next) {
     var address = req.context['address'];
     var seconds = req.body;
-    if (seconds > 5) {
-        console.log('changing recording time from', seconds, ' to ', 5);
-        seconds = 5;
+    if (seconds > 15) {
+        console.log('changing recording time from', seconds, ' to ', 15);
+        seconds = 15;
     }
     console.log('start recording', address);
     recordingTime[address] = (new Date().getTime()) + (seconds * 1000);
@@ -760,6 +782,32 @@ function sendPoke(address) {
             client.close();
         }
     });
+}
+
+function testSystem() {
+    var now = new Date();
+    var secsAlive = (now - lastAliveTime) / 1000;
+    if (secsAlive > 12) {
+        systemStatus.edgerouter = 'fault';
+    }
+
+    let fault = true;
+    let os = require('os');
+    let interfaces = os.networkInterfaces();
+    let ifs = Object.keys(interfaces);
+    for (var i = 0; i < ifs.length; i++) {
+        var iface = interfaces[ifs[i]];
+        for (var j = 0; j < iface.length; j++) {
+            if (iface[j].address === UDP_LOCAL_HOST) {
+                fault = false;
+            }
+        }
+    }
+    if (fault) {
+        systemStatus.udpip = 'fault';
+    } else {
+        systemStatus.udpip = 'OK';
+    }
 }
 
 

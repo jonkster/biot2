@@ -30,7 +30,7 @@
             <th>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</th>
         </tr>
         <ng-template ngFor let-address [ngForOf]="nodeAddresses" let-i="index">
-            <tr (click)="openNodeDialog(address)" [class.selectedTop]="selectedNodeAddress === address">
+            <tr (click)="openNodeControl(address)" [class.selectedTop]="selectedNodeAddress === address">
             <td [style.background-color]="nodeData[address].colour">&nbsp;</td>
             <td>#{{ i }}</td>
             <td [style.color]="nodeData[address].colour">{{ address }}</td>
@@ -84,7 +84,7 @@
     </table>
 </div>
 
-<app-dialog #nodeDialog>
+<app-dialog #nodeRenameDialog>
     <div class="app-modal-header">
         Rename Node: <b>{{ selectedNodeAddress }}</b>
     </div>
@@ -93,9 +93,23 @@
         <input type="text" name="name" [(ngModel)]="candidateNodeName" />
     </div>
     <div class="app-modal-footer">
-        <button type="button" class="btn btn-default" (click)="nodeDialog.hide()">Cancel</button>
-        <button type="button" class="btn btn-default" (click)="rename(selectedNodeAddress, candidateNodeName); nodeDialog.hide()">Save</button>
+        <button type="button" class="btn btn-default" (click)="nodeRenameDialog.hide()">Cancel</button>
+        <button type="button" class="btn btn-default" (click)="rename(selectedNodeAddress, candidateNodeName); nodeRenameDialog.hide()">Save</button>
     </div>
 </app-dialog>
+
+<app-dialog #nodeRecordDialog>
+    <div class="app-modal-header">
+        Record Node: <b>{{ selectedNodeAddress }}</b>
+    </div>
+    <div class="app-modal-body">
+        Record <input type="text" name="seconds" [(ngModel)]="recordSeconds" /> Seconds
+    </div>
+    <div class="app-modal-footer">
+        <button type="button" class="btn btn-default" (click)="nodeRecordDialog.hide()">Cancel</button>
+        <button type="button" class="btn btn-default" (click)="startRecordingNode(selectedNodeAddress); nodeRecordDialog.hide()">Record Data</button>
+    </div>
+</app-dialog>
+
 
 

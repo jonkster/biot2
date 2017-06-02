@@ -1,4 +1,15 @@
+hr {
+    border: 0 0 1px 0;
+    border-color: black;
+    clear: both;
+}
+
 .centred {
     margin: 0 10% 0 10%;
+}
+
+.footer {
+    margin: 0 10% 0 10%;
+    clear: both;
 }
 

@@ -1,4 +1,42 @@
-<div>
+<div class="left-panel">
+    <canvas #sysCanvas width="600" height="600">
+    </canvas>
+</div>
+<div class="right-panel">
+    <table>
+        <tr>
+            <th class="spec">Component</th>
+            <th>Status</th>
+        </tr>
+        <tr>
+            <td class="alt">TCP/IP Link</td>
+            <td [class]="getClass(getSystemStatus().tcpip)">{{ getSystemStatus().tcpip }}</td>
+        </tr>
+        <tr>
+            <td class="alt">Biot Broker</td>
+            <td [class]="getClass(getSystemStatus().biotbroker)">{{ getSystemStatus().biotbroker }}</td>
+        </tr>
+        <tr>
+            <td class="alt">UDP/IP Link</td>
+            <td [class]="getClass(getSystemStatus().udpip)">{{ getSystemStatus().udpip }}</td>
+        </tr>
+        <tr>
+            <td class="alt">Edge Router</td>
+            <td [class]="getClass(getSystemStatus().edgerouter)">{{ getSystemStatus().edgerouter }}</td>
+        </tr>
+        <tr>
+            <td class="alt">Biot Nodes</td>
+            <td [class]="getClass(getSystemStatus().biots)">{{ getSystemStatus().biots }}</td>
+        </tr>
+    </table>
+    <br/>
+    <button type="button" class="btn btn-default" (click)="toggleStatus('tcpip')">Recheck TCP/IP Link</button>
+    <button type="button" class="btn btn-default" (click)="toggleStatus('biotbroker')">Recheck Biot Broker Status</button>
+    <button type="button" class="btn btn-default" (click)="toggleStatus('udpip')">Recheck UDP/IP Link</button>
+    <button type="button" class="btn btn-default" (click)="toggleStatus('edgerouter')">Recheck Edge Router Status</button>
+    <button type="button" class="btn btn-default" (click)="toggleStatus('biots')">Recheck Biot Node Status</button>
+    <br/>
+    <br/>
     <table>
         <tr>
             <th class="spec">Property</th>
@@ -6,10 +44,10 @@
         </tr>
         <tr>
             <td class="alt">Last Checked</td>
-            <td class="special">{{ routerStatus.time }}</td>
+            <td class="good">{{ routerStatus.time }}</td>
         </tr>
         <tr>
-            <td class="alt">Router Type</td>
+            <td class="alt">BIOT Broker System</td>
             <td>{{ routerStatus.title }}</td>
         </tr>
         <tr>

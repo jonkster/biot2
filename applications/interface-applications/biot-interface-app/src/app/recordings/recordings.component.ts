@@ -86,8 +86,6 @@ export class RecordingsComponent implements OnInit {
             this.lineChartOptions.title.text = params.title;
             var json = JSON.parse(params.data);
             let keys = Object.keys(json);
-            console.log(keys);
-            console.log(json);
             let start = 0;
             let now = 0;
             for (let i = 0; i < keys.length; i++) {
@@ -116,7 +114,9 @@ export class RecordingsComponent implements OnInit {
     }
 
     ngOnDestroy() {
-        this.sub.unsubscribe();
+        if (this.sub !== undefined) {
+            this.sub.unsubscribe();
+        }
     }
 
     setPlottingData() {
