@@ -41,6 +41,8 @@ var dummyTime = 0;
 var recording = {};
 var recordingTime = {};
 var recordedData = {};
+var recordingStart = {};
+var recordingStop = {};
 
 // received an update message - store info
 brokerUdpListener.on('message', function (message, remote) {
@@ -163,12 +165,15 @@ function addNodeData(message) {
                 'status' : 'active'
             }
             if (recording[address]) {
-                recordedData[address].push(bits[1]);
                 var now = new Date().getTime();
+                recordingStop[address] = now;
+                recordedData[address].push(bits[1]);
                 if (recordingTime[address] <= now) {
-                    console.log('done recording', address);
-                    recording[address] = false;
-                    recordingTime[address] = false;
+                    if (isPowerOfTwo(recordedData[address].length)) {
+                        recordingStop[address] = now;
+                        console.log('done recording', address);
+                        recording[address] = false;
+                    }
                 }
             } else {
             }
@@ -619,10 +624,26 @@ function deleteDataValue(req, res, next) {
 
 function getBiotRecord(req, res, next) {
     var address = req.context['address'];
-    res.send(200, recordedData[address]);
+    if (recordedData[address] !== undefined) {
+        let samples =  recordedData[address].length;
+        let time =  (recordingStop[address] - recordingStart[address]) / 1000;
+        let sr =  samples / time;
+        res.send(200, {
+            'address': address,
+            'sampleRate': sr,
+            'interval': time,
+            'count': samples,
+            'data': recordedData[address]
+        });
+    } else {
+        res.send(404, 'recorded data for address:' + address + ' does not exist');
+    }
     next();
 }
 
+function isPowerOfTwo(n) {
+    return n && (n & (n - 1)) === 0;
+}
 
 function putBiotAuto(req, res, next) {
 
@@ -733,6 +754,8 @@ function putBiotRecord(req, res, next) {
     }
     console.log('start recording', address);
     recordingTime[address] = (new Date().getTime()) + (seconds * 1000);
+    recordingStart[address] = recordingTime[address];
+    recordingStop[address] = recordingTime[address];
     recordedData[address] = [];
     recording[address] = true;
     res.send(200, 'OK');
