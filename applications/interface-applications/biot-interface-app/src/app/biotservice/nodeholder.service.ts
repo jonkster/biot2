@@ -136,7 +136,7 @@ export class NodeholderService {
                     let posData = rawData["data"];
                     let parts = posData.split(/:/);
                     node.timeStamp = Number(parts[0]);
-                    var q3js = new THREE.Quaternion(Number(parts[4]), Number(parts[1]), Number(parts[2]), Number(parts[3]));
+                    var q3js = new THREE.Quaternion(Number(parts[2]), Number(parts[3]), Number(parts[4]), Number(parts[1]));
                     node.quaternion = q3js;
                     this.setRotation(node, q3js);
                 },

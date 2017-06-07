@@ -37,7 +37,7 @@ export class NodemodelService {
       ledHolder.name = 'led-holder';
       ledHolder.add(ledOn);
       ledHolder.add(ledOff);
-      ledHolder.position.set(0, 0, 5);
+      ledHolder.position.set(0, 0, -5);
       return ledHolder;
   }
 
@@ -69,6 +69,7 @@ export class NodemodelService {
         loader.load('./assets/nodemodel.json',
             function(geometry) {
                 geometry.center();
+                geometry.rotateX(Math.PI);
                 let material = new THREE.MeshPhongMaterial( mOpts );
                 let obj = new THREE.Mesh(geometry, material);
                 obj.scale.set(40, 40, 40);
