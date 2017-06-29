@@ -2,6 +2,10 @@
     margin: 0 10% 0 10%;
 }
 
+.btn {
+    margin: 2px;
+}
+
 th {
     font: bold 11px "Trebuchet MS", Verdana, Arial, Helvetica,
     sans-serif;

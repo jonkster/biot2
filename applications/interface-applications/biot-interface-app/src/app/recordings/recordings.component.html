@@ -1,7 +1,7 @@
-<div class="row">
+<div class="row bordered-panel">
     <div class="col-md-6">
         <div style="display: block;">
-            <canvas class="centred" baseChart width="400" height="400"
+            <canvas #xyzplot class="centred-chart" baseChart 
                                           [datasets]="lineChartData"
                                           [labels]="lineChartLabels"
                                           [options]="lineChartOptions"
@@ -12,11 +12,13 @@
                                           (chartClick)="chartClicked($event)"></canvas>
         </div>
     </div>
+    <div appThreed [displaywidth]="800" [displayheight]="400" class="centred-chart"></div>
 </div>
-<div class="row">
+<div class="cursor" [style.left]="cursorPosition + 'px'">&nbsp;</div>
+<div class="row bordered-panel">
     <div class="col-md-6">
         <div style="display: block;">
-            <canvas class="centred" baseChart width="400" height="400"
+            <canvas class="centred-chart" baseChart
                                           [datasets]="spectrumChartData"
                                           [labels]="spectrumChartLabels"
                                           [options]="spectrumChartOptions"
@@ -46,7 +48,7 @@
 
 <table *ngIf="! isCollapsed">
     <tr>
-        <td>milliseconds</td>
+        <td>seconds</td>
         <td>timestamp</td>
         <td>q.x</td>
         <td>q.y</td>

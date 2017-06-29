@@ -39,6 +39,7 @@ var realNodes = {};
 var dummyNodes = {};
 var dummyTime = 0;
 var recording = {};
+var recordingExists = {};
 var recordingTime = {};
 var recordedData = {};
 var recordingStart = {};
@@ -102,6 +103,7 @@ brokerListener.get('/biotz/addresses/:address/alive/ts', getBiotAliveTs);
 brokerListener.get('/biotz/addresses/:address/alive/status', getBiotAliveStatus);
 brokerListener.get('/biotz/addresses/:address/record', getBiotRecord);
 brokerListener.put('/biotz/addresses/:address/record', putBiotRecord);
+brokerListener.get('/biotz/addresses/:address/record/status', getBiotRecordStatus);
 
 
 brokerListener.get('/data', getData);
@@ -171,6 +173,7 @@ function addNodeData(message) {
                 if (recordingTime[address] <= now) {
                     if (isPowerOfTwo(recordedData[address].length)) {
                         recordingStop[address] = now;
+                        recordingExists[address] = true;
                         console.log('done recording', address);
                         recording[address] = false;
                     }
@@ -638,6 +641,23 @@ function getBiotRecord(req, res, next) {
     } else {
         res.send(404, 'recorded data for address:' + address + ' does not exist');
     }
+    next();
+}
+
+function getBiotRecordStatus(req, res, next) {
+    var address = req.context['address'];
+    var recStatus = false;
+    if (recordingTime[address] !== undefined ) {
+        var now = new Date().getTime();
+        if (recordingTime[address] >= now) {
+            recStatus = true;
+        }
+    }
+
+    res.send(200, {
+        recordingActive: recStatus,
+        recordingExists: recordingExists[address]
+    });
     next();
 }
 

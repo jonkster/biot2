@@ -22,6 +22,8 @@ export class NodesComponent implements OnInit, AfterContentChecked {
     private nodeHolderService: NodeholderService = undefined;
     private nodeData: any = {};
     private nodeAddresses: string[] = [];
+    private recordingActive: any = {};
+    private recordingExists: any = {};
     private selectedNode: any = undefined;
     private selectedNodeAddress: string = '';
     private selectedNodeName: string = '';
@@ -93,6 +95,7 @@ export class NodesComponent implements OnInit, AfterContentChecked {
                     var q = { 'w': 0, 'x': 0, 'y': 1, 'z': 0 };
                     this.addNode(addr, 'detected-biot-node', 'biot-'+addr, 0, 0, 0, q, this.pickAColour(i));
                 }
+                this.getRecordActive(addr);
             }
             this.adjustNodePositions();
             this.addDetectedNodes();
@@ -162,6 +165,21 @@ export class NodesComponent implements OnInit, AfterContentChecked {
         return this.biotService.getCommunicationStatus();
     }
 
+    getRecordActive(addr: string) {
+        if (this.recordingActive[addr] === undefined) {
+            this.recordingActive[addr] = false;
+        } else {
+            this.biotService.getRecordStatus(addr)
+                .subscribe(
+                    rawData => {
+                        this.recordingActive[addr] = rawData.recordingActive;
+                        this.recordingExists[addr] = rawData.recordingExists;
+                    },
+                    error => { console.log('error getting record status:' + error); },
+                );
+        }
+    }
+
 
 
     makeNode(name: string, type: string, displayName: string, x: number, y: number, z: number, quat: any, colour: string) {
@@ -212,9 +230,17 @@ export class NodesComponent implements OnInit, AfterContentChecked {
         );
     }
 
+    hasRecording(addr: string) {
+        return this.recordingExists[addr];
+    }
+
+    replayNodeRecording(addr) {
+        alert("sorry cannot do that yet");
+    }
+
     startRecordingNode(addr: string) {
         this.biotService.recordData(addr, this.recordSeconds).subscribe(
-            rawData => { },
+            rawData => { this.recordingActive[addr] = true; },
             error => { alert('error:' + error)},
         );
     }

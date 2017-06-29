@@ -1,5 +1,26 @@
+.bordered-panel {
+    border: 1px solid grey;
+}
+
 .centred {
     margin: 0 10% 0 10%;
+}
+
+.centred-chart {
+    /*width: 800px;
+    height: 400px;*/
+    float: left;
+}
+
+.cursor {
+    position: absolute;
+    border: 1px solid grey;
+    background-color: green;
+    opacity: 0.3;
+    width: 5px;
+    top: 180px;
+    height: 350px;
+    left: 50px;
 }
 
 th {

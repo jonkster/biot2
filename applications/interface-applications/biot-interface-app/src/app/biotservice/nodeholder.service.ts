@@ -33,6 +33,7 @@ export class NodeholderService {
             'auto': '',
             'dof': '',
             'led': '',
+            'lasttime': '',
             'colour': colour,
             'model': undefined
         };
@@ -135,6 +136,7 @@ export class NodeholderService {
                     node.led = rawData.led;
                     let posData = rawData["data"];
                     let parts = posData.split(/:/);
+                    node.lasttime = node.timeStamp;
                     node.timeStamp = Number(parts[0]);
                     var q3js = new THREE.Quaternion(Number(parts[2]), Number(parts[3]), Number(parts[4]), Number(parts[1]));
                     node.quaternion = q3js;
@@ -203,7 +205,10 @@ export class NodeholderService {
           requestAnimationFrame(() => {
               this.getAllNodeData();
               this.counter++;
-              this.startUpdateLoop();
+                setTimeout(e => {
+                    this.startUpdateLoop();
+                }, 1);
+              //this.startUpdateLoop();
           });
       }
   }

@@ -1,6 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, AfterViewInit, ElementRef, ViewChild } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { ChartsModule } from 'ng2-charts';
+import {ThreedService} from '../threed/threed.service';
+import {LimbmakerService} from '../3d-objects/limbmaker.service';
 import * as THREE from 'three';
 import * as SPEC from 'fourier-transform';
 
@@ -12,6 +14,16 @@ declare const require: (moduleId: string) => any;
   styleUrls: ['./recordings.component.css']
 })
 export class RecordingsComponent implements OnInit {
+
+    @ViewChild('xyzplot') elementView: ElementRef;
+
+    private threedService: ThreedService;
+    private limbMakerService: LimbmakerService;
+    private image: THREE.Object3D;
+    private limb: THREE.Object3D;
+    private i: number = 0;
+    private replayStart: number = 0;
+    private cursorPosition: number = 50;
 
     private sub: any = undefined;
     private data: any = [];
@@ -154,17 +166,24 @@ export class RecordingsComponent implements OnInit {
             pointHoverBorderColor: 'rgba(148,159,255,0.8)'
         }
     ];
-    constructor(private route: ActivatedRoute) { }
+    constructor(private route: ActivatedRoute, threedService: ThreedService, limbMakerService: LimbmakerService) { 
+        this.threedService = threedService;
+        this.limbMakerService = limbMakerService;
+    }
 
     ngOnInit() {
         this.sub = this.route.params.subscribe(params => {
-            this.lineChartOptions.title.text = params.title;
+            if (! params.data) {
+                return;
+            }
+            this.lineChartOptions.title.text = 'rotation of: ' + params.title;
             var json = JSON.parse(params.data);
             var data = json.data;
             this.currentRecording.address = json.address;
             this.currentRecording.sampleRate = json.sampleRate;
             this.currentRecording.interval = json.interval;
             this.currentRecording.count = json.count;
+            let stepSize = json.interval/json.count;
 
 
             let keys = Object.keys(data);
@@ -180,7 +199,7 @@ export class RecordingsComponent implements OnInit {
                 let quaternion = new THREE.Quaternion(parts[2], parts[3], parts[4], parts[1]).normalize();
                 let euler = new THREE.Euler().setFromQuaternion(quaternion);
                 this.data.push({
-                    time: (now - start)/1000,
+                    time: i * stepSize,
                     ts: parts[0],
                     w: parts[1],
                     x: parts[2],
@@ -193,6 +212,38 @@ export class RecordingsComponent implements OnInit {
             }
             this.setPlottingData();
         });
+    }
+
+    ngAfterViewInit() {
+
+        // set up some test objects
+
+        this.threedService.setBackgroundColour('#ffffff');
+        const texture = THREE.ImageUtils.loadTexture('./assets/mocap.png');
+        texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+        texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+        texture.repeat.set( 2, 2 );
+        const material = new THREE.MeshBasicMaterial({map: texture, opacity: 0.2, transparent: true});
+        material.side = THREE.DoubleSide;
+        const geometry = new THREE.PlaneGeometry(800, 600, 0);
+        this.image = new THREE.Mesh(geometry, material);
+        this.image.rotateX(-Math.PI/2);
+
+        let axis = this.limbMakerService.makeAxis(0, 0, 0, 420, 1, 0.1);
+
+        //this.limb = this.limbMakerService.makeLimbWithNode();
+        //this.limb.add(this.image);
+        this.limb = this.limbMakerService.makeNodeModel('fred', 'RECORDED-IMU', 'recorded node', 0, 0, 0, '#ff7f7f');
+        this.limb.add(axis);
+        //this.limb.rotateX(0.9);
+        //this.limb.rotateZ(0.9);
+        this.threedService.add(this.limb);
+
+        this.threedService.addLighting(0, 0, 0);
+
+        this.replay();
+
+        this.threedService.zoom(1.5);
     }
 
     ngOnDestroy() {
@@ -218,8 +269,9 @@ export class RecordingsComponent implements OnInit {
             data[0].push(x);
             data[1].push(y);
             data[2].push(z);
+            let secs = Math.floor((this.data[i].time * 100)) / 100;
             if (i % 2 === 0) {
-                this.lineChartLabels.push(this.data[i].time);
+                this.lineChartLabels.push(secs);
             } else {
                 this.lineChartLabels.push(' ');
             }
@@ -244,9 +296,39 @@ export class RecordingsComponent implements OnInit {
     // events
     public chartClicked(e:any):void {
         console.log(e);
+        console.log(this.elementView);
     }
 
     public chartHovered(e:any):void {
         console.log(e);
+    }
+
+    setCursor(time: number) {
+        let secs = time / 1000;
+        let fract = secs / this.currentRecording.interval;
+        let leftOffset = 50;
+        let graphWidth = this.elementView.nativeElement.width;
+        this.cursorPosition = leftOffset + (fract * (graphWidth - leftOffset));
+    }
+
+
+    replay() {
+        requestAnimationFrame(() => {
+            if (this.data.length > 0) {
+                let point = this.data[this.i++];
+                if (this.i >= this.data.length) {
+                    this.i = 0;
+                }
+                let t = point.time * 1000;
+                let delay = t - this.replayStart;
+                this.replayStart = t;
+                let quaternion = new THREE.Quaternion(point.x, point.y, point.z, point.w).normalize();
+                this.limb.setRotationFromQuaternion(quaternion);
+                this.setCursor(t);
+                setTimeout(e => {
+                    this.replay();
+                }, delay);
+            }
+        });
     }
 }
