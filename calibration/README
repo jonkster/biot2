@@ -1,0 +1,33 @@
+This is an application that controls a simple positioning robot used to assist
+calibrating the IMU modules.
+
+Architecture:
+
+The robot is a set of Robotis Dynamixel AX-12 servos that can hold and move an
+IMU sensor.
+
+It is controlled by an Arduino Uno like device (actual device used is
+Freetronics Ether Ten).
+
+The Arduino runs an ethernet connection that takes requests to position the arm
+via a simple web service.
+
+eg http://10.1.1.98:8085/pos/2
+
+from commandline try:
+
+    while true
+        do wget http://10.1.1.98:8085/step
+        sleep 5
+    done
+
+
+See robot.h for ethernet address and port.
+
+
+Programming:
+    make clean (or reset or upload)
+
+    may need to remove dynamixel control wires from arduino when programming
+    for some weird interference issue when programming
+
