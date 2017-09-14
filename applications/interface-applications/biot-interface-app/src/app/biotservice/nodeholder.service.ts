@@ -17,7 +17,6 @@ export class NodeholderService {
 
   addNode(addr: string, type: string, name: string, x: number, y: number, z: number, q: any, colour: string): boolean {
       if (this.nodeKnown(addr)) {
-          this.lastError = 'node address: ' + addr + ' already added';
           return false;
       } else {
         let quaternion = new THREE.Quaternion(q.x, q.y, q.z, q.w);
@@ -170,6 +169,13 @@ export class NodeholderService {
       return this.nodeList[addr] !== undefined;
   }
 
+  nodeKnownAndVisible(addr) : boolean {
+      if (this.nodeKnown(addr)) {
+          return  true;
+      }
+      return false;
+  }
+
 
   rename(addr: string, name: string) {
       let node = this.getNode(addr);
@@ -208,7 +214,6 @@ export class NodeholderService {
                 setTimeout(e => {
                     this.startUpdateLoop();
                 }, 1);
-              //this.startUpdateLoop();
           });
       }
   }

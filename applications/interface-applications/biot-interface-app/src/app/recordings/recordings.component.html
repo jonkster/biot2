@@ -1,3 +1,19 @@
+<div class="equispace10">
+    <button type="button" class="btn btn-success" *ngIf="!isPlaying" (click)="isPlaying = true; replay();">play</button>
+    <button type="button" class="btn btn-warning" *ngIf="isPlaying" (click)="isPlaying = false;">pause</button>
+    <button type="button" class="btn btn-success" [disabled]="replayPosition === 0 || isPlaying" (click)="i = 0; setCursor(0); replayStart = 0; replay()">Reset to Start</button>
+    <button type="button" class="btn btn-info" [disabled]="isPlaying" (click)="replay();">Step Forward</button>
+    <button type="button" class="btn btn-info" [disabled]="isPlaying" (click)="i = i - 2; replay();">Step Backwards</button>
+    <button type="button" class="btn btn-info" *ngIf="! isLooping" (click)="isLooping = ! isLooping;">Repeat</button>
+    <button type="button" class="btn btn-info" *ngIf="isLooping" (click)="isLooping = ! isLooping;">Play Once</button>
+</div>
+<div class="status equispace20">
+    <span *ngIf="! isPlaying">Paused</span>
+    <span *ngIf="isLooping">Repeat</span>
+    <span *ngIf="! isLooping">Single Play</span>
+    <span>t={{(replayPosition * currentRecording.interval) | number:'2.3'}}</span>
+</div>
+
 <div class="row bordered-panel">
     <div class="col-md-6">
         <div style="display: block;">

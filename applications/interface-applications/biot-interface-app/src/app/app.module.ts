@@ -20,6 +20,7 @@ import {NodeholderService} from './biotservice/nodeholder.service';
 import {SystemComponent} from './system/system.component';
 import { DialogComponent } from './dialog/dialog.component';
 import { RecordingsComponent } from './recordings/recordings.component';
+import { MonitorComponent } from './monitor/monitor.component';
 
 
 export const rootRouterConfig: Routes = [
@@ -27,6 +28,7 @@ export const rootRouterConfig: Routes = [
     {path: 'about', component: AboutComponent},
     {path: 'nodes', component: NodesComponent},
     {path: 'recordings', component: RecordingsComponent},
+    {path: 'monitor', component: MonitorComponent},
     {path: 'system', component: SystemComponent},
     // {path: 'assemblies', component: AssembliesComponent},
     {path: '**', component: NotfoundComponent }
@@ -41,7 +43,8 @@ export const rootRouterConfig: Routes = [
     NotfoundComponent,
     SystemComponent,
     DialogComponent,
-    RecordingsComponent
+    RecordingsComponent,
+    MonitorComponent
   ],
   imports: [
     BrowserModule,

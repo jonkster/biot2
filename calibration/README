@@ -17,8 +17,8 @@ eg http://10.1.1.98:8085/pos/2
 from commandline try:
 
     while true
-        do wget http://10.1.1.98:8085/step
-        sleep 5
+        do wget -O /dev/null http://10.1.1.98:8085/step
+        sleep 2
     done
 
 

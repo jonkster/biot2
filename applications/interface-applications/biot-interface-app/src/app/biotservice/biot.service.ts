@@ -222,6 +222,13 @@ export class BiotService {
             .map((response) => response.json());
     }
 
+    getRecordings() {
+        const path = 'biotz/addresses/recordings';
+        const url = "http://localhost:8889/" + path ;
+        return this.http.get(url)
+            .map((response) => response.json());
+    }
+
     recordData(addr: string, seconds: number) {
         const path = 'biotz/addresses/' + addr + '/record';
         const url = "http://localhost:8889/" + path ;

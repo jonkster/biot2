@@ -47,7 +47,7 @@ export class NodesComponent implements OnInit, AfterContentChecked {
     }
 
     ngOnInit() {
-        this.addDetectedNodes();
+        this.addDetectedNodes(true);
     }
 
     ngAfterContentChecked() {
@@ -86,34 +86,31 @@ export class NodesComponent implements OnInit, AfterContentChecked {
 
     }
 
-    addDetectedNodes() {
+    addDetectedNodes(force: boolean) {
         setTimeout(e => {
             var addresses = this.biotService.getDetectedAddresses();
             for (let i = 0; i < addresses.length; i++) {
                 let addr = addresses[i];
-                if (! this.nodeHolderService.nodeKnown(addr)) {
+                if (force || (! this.nodeHolderService.nodeKnown(addr))) {
                     var q = { 'w': 0, 'x': 0, 'y': 1, 'z': 0 };
                     this.addNode(addr, 'detected-biot-node', 'biot-'+addr, 0, 0, 0, q, this.pickAColour(i));
                 }
                 this.getRecordActive(addr);
             }
             this.adjustNodePositions();
-            this.addDetectedNodes();
+            this.addDetectedNodes(false);
             this.getAllNodeData();
         }, 1000);
     }
 
 
     addNode(addr: string, type: string, name: string, x: number, y: number, z: number, q: any, colour: string) {
+        let node = this.makeNode(addr, type, name, x, y, z, q, colour);
         if (this.nodeHolderService.addNode(addr, type, name, x, y, z, q, colour)) {
-            let node = this.makeNode(addr, type, name, x, y, z, q, colour);
-            this.nodeHolderService.add3DModel(addr, node);
-            this.worldSpace.add(node);
-            this.nodeHolderService.flashNode(addr);
         }
-        else {
-            alert(this.nodeHolderService.getError());
-        }
+        this.nodeHolderService.add3DModel(addr, node);
+        this.worldSpace.add(node);
+        this.nodeHolderService.flashNode(addr);
     }
 
     addTestNode() {
@@ -236,6 +233,10 @@ export class NodesComponent implements OnInit, AfterContentChecked {
 
     replayNodeRecording(addr) {
         alert("sorry cannot do that yet");
+    }
+
+    redrawNodes() {
+        console.log('redraw');
     }
 
     startRecordingNode(addr: string) {

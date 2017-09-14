@@ -18,9 +18,19 @@
     background-color: green;
     opacity: 0.3;
     width: 5px;
-    top: 180px;
+    top: 270px;
     height: 350px;
     left: 50px;
+}
+
+.equispace10 * {
+    width: 10%;
+    padding: 1.4em;
+}
+
+.equispace20 * {
+    width: 20%;
+    padding: 1em;
 }
 
 th {

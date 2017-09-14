@@ -85,6 +85,7 @@ brokerListener.get('/biotz/all/data', getAllBiotz);
 //brokerListener.put('/biotz/addnode/:address', addDummyNode);
 //brokerListener.put('/biotz/dropnodes', dropDummyNodes);
 
+brokerListener.get('/biotz/addresses/recordings', getBiotRecordings);
 brokerListener.get('/biotz/addresses/:address', getBiotFull);
 brokerListener.get('/biotz/addresses/:address/data', getBiotData);
 brokerListener.get('/biotz/addresses/:address/calibration', getBiotCalibration);
@@ -168,14 +169,14 @@ function addNodeData(message) {
             }
             if (recording[address]) {
                 var now = new Date().getTime();
-                recordingStop[address] = now;
                 recordedData[address].push(bits[1]);
                 if (recordingTime[address] <= now) {
+                    // do not stop until we have power of 2 data points
                     if (isPowerOfTwo(recordedData[address].length)) {
                         recordingStop[address] = now;
-                        recordingExists[address] = true;
                         console.log('done recording', address);
                         recording[address] = false;
+                        recordingExists[address] = true;
                     }
                 }
             } else {
@@ -644,6 +645,12 @@ function getBiotRecord(req, res, next) {
     next();
 }
 
+function getBiotRecordings(req, res, next) {
+    let addresses = Object.keys(recordedData);
+    res.send(200, addresses);
+    next();
+}
+
 function getBiotRecordStatus(req, res, next) {
     var address = req.context['address'];
     var recStatus = false;
@@ -655,14 +662,15 @@ function getBiotRecordStatus(req, res, next) {
     }
 
     res.send(200, {
-        recordingActive: recStatus,
+        recordingActive: recording[address],
         recordingExists: recordingExists[address]
     });
     next();
 }
 
 function isPowerOfTwo(n) {
-    return n && (n & (n - 1)) === 0;
+        let k = Math.floor(Math.log(n) / Math.LN2)
+        return (Math.pow(2, k) === n);
 }
 
 function putBiotAuto(req, res, next) {
@@ -767,17 +775,22 @@ function putBiotLed(req, res, next) {
 
 function putBiotRecord(req, res, next) {
     var address = req.context['address'];
-    var seconds = req.body;
-    if (seconds > 15) {
-        console.log('changing recording time from', seconds, ' to ', 15);
-        seconds = 15;
+    if (! recording[address]) {
+        var seconds = req.body;
+        if (seconds > 15) {
+            console.log('changing recording time from', seconds, ' to ', 15);
+            seconds = 15;
+        }
+        console.log('start recording', address);
+        recordingTime[address] = (new Date().getTime()) + (seconds * 1000);
+        recordingStart[address] = recordingTime[address];
+        recordingStop[address] = recordingTime[address];
+        recordingExists[address] = false;
+        recordedData[address] = [];
+        recording[address] = true;
+    } else {
+        console.log('already recording', address);
     }
-    console.log('start recording', address);
-    recordingTime[address] = (new Date().getTime()) + (seconds * 1000);
-    recordingStart[address] = recordingTime[address];
-    recordingStop[address] = recordingTime[address];
-    recordedData[address] = [];
-    recording[address] = true;
     res.send(200, 'OK');
     next();
 }
