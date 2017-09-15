@@ -2,14 +2,12 @@ import { Directive, HostListener, OnInit, ElementRef, Input, Output } from '@ang
 import {ThreedService} from './threed/threed.service';
 
 @Directive({
-  selector: '[appThreed]'
+  selector: '[appThreed]',
 })
 export class ThreedDirective implements OnInit {
 
     @Input('displaywidth') displaywidth = 1024;
     @Input('displayheight') displayheight = 768;
-
-    private element = undefined;
 
     @HostListener('mousemove', ['$event'])
       onMousemove(event) { this.mouseMoveHandler(event); };

@@ -3,6 +3,9 @@ import * as THREE from 'three';
 //import { OrbitControls } from 'three-orbitcontrols-ts';
 declare const require: (moduleId: string) => any;
 var ExtraControls = require('three-orbitcontrols');
+declare var Stats: any;
+
+import {PeriodicService} from '../periodic.service';
 
 @Injectable()
 export class ThreedService {
@@ -17,16 +20,20 @@ export class ThreedService {
     scene = undefined;
     sizeX: number = undefined;
     sizeY: number = undefined;
+    stats: any = undefined;
 
-    constructor() { }
+    constructor(private periodicService: PeriodicService) { }
 
     initialiseThree(sizeX: number, sizeY: number, element: ElementRef) {
-        console.log('B');
+        this.stats = [new Stats(), new Stats(), new Stats()];
+        this.stats[0].showPanel(0);
+        this.stats[1].showPanel(1);
+        this.stats[2].showPanel(2);
         this.sizeX = sizeX;
         this.sizeY = sizeY;
         this.element = element;
         this.initScene();
-        this.animate();
+        this.periodicService.registerTask('3d draw', this, this.animate);
     }
 
     add(obj) {
@@ -98,11 +105,14 @@ export class ThreedService {
         this.scene.add(light);
     }
 
-    animate() {
-        requestAnimationFrame(() => {
-            this.animate();
-        });
-        this.render();
+    animate(owner: any) {
+        owner.stats[0].begin();
+        owner.stats[1].begin();
+        owner.stats[2].begin();
+        owner.render();
+        owner.stats[0].end();
+        owner.stats[1].begin();
+        owner.stats[2].begin();
     }
 
     getCanvasColour ( color ) {
@@ -132,6 +142,10 @@ export class ThreedService {
             intersects = this.raycaster.intersectObjects(obs);
         }
         return intersects;
+    }
+
+    getStats() {
+        return this.stats;
     }
 
     initScene() {

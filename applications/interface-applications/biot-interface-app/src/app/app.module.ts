@@ -17,10 +17,12 @@ import {LimbmakerService} from './3d-objects/limbmaker.service';
 import {NodemodelService} from './3d-objects/nodemodel.service';
 import {BiotService} from './biotservice/biot.service';
 import {NodeholderService} from './biotservice/nodeholder.service';
+import {PeriodicService} from './periodic.service';
 import {SystemComponent} from './system/system.component';
 import { DialogComponent } from './dialog/dialog.component';
 import { RecordingsComponent } from './recordings/recordings.component';
 import { MonitorComponent } from './monitor/monitor.component';
+import { ThreestatsDirective } from './threestats.directive';
 
 
 export const rootRouterConfig: Routes = [
@@ -44,7 +46,8 @@ export const rootRouterConfig: Routes = [
     SystemComponent,
     DialogComponent,
     RecordingsComponent,
-    MonitorComponent
+    MonitorComponent,
+    ThreestatsDirective
   ],
   imports: [
     BrowserModule,
@@ -53,7 +56,7 @@ export const rootRouterConfig: Routes = [
     HttpModule,
     RouterModule.forRoot(rootRouterConfig)
   ],
-  providers: [ThreedService, LimbmakerService, NodemodelService, BiotService, NodeholderService],
+  providers: [ThreedService, LimbmakerService, NodemodelService, BiotService, NodeholderService, PeriodicService],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

@@ -2,6 +2,7 @@ import { Component, OnInit, AfterContentChecked, ViewChild, ElementRef } from '@
 import {DialogComponent} from '../dialog/dialog.component';
 import {BiotService} from '../biotservice/biot.service';
 import {NodeholderService} from '../biotservice/nodeholder.service';
+import {PeriodicService} from '../periodic.service';
 import {ThreedService} from '../threed/threed.service';
 import {LimbmakerService} from '../3d-objects/limbmaker.service';
 import {Router} from '@angular/router';
@@ -35,7 +36,7 @@ export class NodesComponent implements OnInit, AfterContentChecked {
     @ViewChild('nodeRenameDialog') nodeRenameDialog: DialogComponent;
     @ViewChild('nodeRecordDialog') nodeRecordDialog: DialogComponent;
 
-    constructor(biotService: BiotService, threedService: ThreedService, limbMakerService: LimbmakerService, nodeHolderService: NodeholderService, router: Router) {
+    constructor(biotService: BiotService, threedService: ThreedService, limbMakerService: LimbmakerService, nodeHolderService: NodeholderService, router: Router, private periodicService: PeriodicService) {
         this.biotService = biotService;
         this.threedService = threedService;
         this.limbMakerService = limbMakerService;
@@ -82,7 +83,7 @@ export class NodesComponent implements OnInit, AfterContentChecked {
 
         this.threedService.add(this.worldSpace);
 
-        this.nodeHolderService.startUpdateLoop();
+        this.periodicService.registerTask('node update', this.nodeHolderService, this.nodeHolderService.updateLoop);
 
     }
 
@@ -218,6 +219,10 @@ export class NodesComponent implements OnInit, AfterContentChecked {
 
     displayRecordedData(jsonData: string) {
         this.router.navigate(['recordings', {'title': this.selectedNodeName, 'data': jsonData}]);
+    }
+
+    getStats() {
+        return this.threedService.getStats();
     }
 
     getNodeRecording(addr: string) {

@@ -1,18 +1,25 @@
 import { Injectable } from '@angular/core';
 import {BiotService} from '../biotservice/biot.service';
 import * as THREE from 'three';
+import {PeriodicService} from '../periodic.service';
 
 @Injectable()
 export class NodeholderService {
 
-    private biotService: BiotService;
+    //private biotService: BiotService;
     private nodeList: any = {};
+    private lastChange: {
+        [addr: string]: {
+            lastHeard: number,
+            timesLastHeardSame: number
+        }
+    } = {};
     private lastError = '';
-    private updating = false;
-    private counter = 0;
+    //private updating = false;
 
-  constructor(biotService: BiotService) {
+  constructor(private biotService: BiotService, private periodicService: PeriodicService) {
         this.biotService = biotService;
+        this.periodicService.registerTask('node update', this, this.updateLoop);
   }
 
   addNode(addr: string, type: string, name: string, x: number, y: number, z: number, q: any, colour: string): boolean {
@@ -41,10 +48,10 @@ export class NodeholderService {
   }
 
   add3DModel(addr: string, node: THREE.Object3D): boolean {
-      if (! this.updating) {
+      /*if (! this.updating) {
         this.updating = true;
-        this.startUpdateLoop();
-      }
+        this.periodicService.registerTask('node update', this, this.updateLoop);
+      }*/
       if (this.nodeList[addr] === undefined) {
           this.lastError = 'node address: ' + addr + ' not known!';
           return false;
@@ -52,6 +59,10 @@ export class NodeholderService {
           this.nodeList[addr].model = node;
           return true;
       }
+  }
+
+  dropNode(addr) {
+  //      delete this.nodeList[addr];
   }
 
   setLedMode(addr: string, mode: number) {
@@ -140,12 +151,30 @@ export class NodeholderService {
                     var q3js = new THREE.Quaternion(Number(parts[2]), Number(parts[3]), Number(parts[4]), Number(parts[1]));
                     node.quaternion = q3js;
                     this.setRotation(node, q3js);
+                    //console.log(node.lasttime, node.timeStamp);
+                    if (this.lastChange[addr] !== undefined)
+                    {
+                        let lastHeard = this.lastChange[addr].lastHeard;
+                        this.lastChange[addr].timesLastHeardSame++;
+                        if (node.lasttime != lastHeard) {
+                            this.lastChange[addr].timesLastHeardSame = 0;
+                            this.lastChange[addr].lastHeard = node.lasttime;
+                        }
+                    } else {
+                        this.lastChange[addr] = {
+                            lastHeard: node.lasttime,
+                            timesLastHeardSame: 0
+                        }
+                    }
+                    if (this.lastChange[addr].timesLastHeardSame > 20) {
+                        this.dropNode(addr);
+                        //console.log(addr, "DEAD?");
+                    }
                 },
                 error => {
                     console.log('error getting data:', error);
                 }
             );
-
           }
       }
   }
@@ -205,17 +234,11 @@ export class NodeholderService {
       }
   }
 
-  startUpdateLoop() {
-      this.biotService.detectNodes();
-      if (this.updating) {
-          requestAnimationFrame(() => {
-              this.getAllNodeData();
-              this.counter++;
-                setTimeout(e => {
-                    this.startUpdateLoop();
-                }, 1);
-          });
-      }
+  updateLoop(owner: any) {
+      owner.biotService.detectNodes();
+      //if (owner.updating) {
+          owner.getAllNodeData();
+      //}
   }
 
 }

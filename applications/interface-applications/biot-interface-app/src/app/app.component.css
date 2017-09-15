@@ -13,3 +13,13 @@ hr {
     clear: both;
 }
 
+.threed-stats {
+    border: 3px solid red;
+    padding: 2em;
+    background-color: green;
+    float: right;
+    top: 2em;
+    left: 2em;
+    position: inherit;
+}
+

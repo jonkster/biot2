@@ -13,6 +13,8 @@ export class BiotService {
     private statusOK:boolean = false;
     private resetRunning: boolean = false;
     private detectedAddresses: any = {};
+    private biotServerHost: string = '10.1.1.9';
+    private biotServerPort: string = '8889';
 
     constructor(private http: Http) { }
 
@@ -23,7 +25,7 @@ export class BiotService {
 
     addDummyNode(addr) {
         const path = 'biotz/addnode/' + addr;
-        const url = "http://localhost:8889/" + path;
+        const url = "http://" + this.biotServerHost + ":" + this.biotServerPort + "/" + path;
         return this.http.put(url, '')
             .map((response) => response.json());
     }
@@ -46,7 +48,7 @@ export class BiotService {
 
     dropDummyNodes() {
         const path = 'biotz/dropnodes';
-        const url = "http://localhost:8889/" + path;
+        const url = "http://" + this.biotServerHost + ":" + this.biotServerPort + "/" + path;
         return this.http.put(url, '')
             .map((response) => response.json());
     }
@@ -147,13 +149,13 @@ export class BiotService {
 
     identify(addr) {
         const path = 'biotz/addresses/' + addr + '/led';
-        const url = "http://localhost:8889/" + path ;
+        const url = "http://" + this.biotServerHost + ":" + this.biotServerPort + "/" + path ;
         return this.http.put(url, "3")
             .map((response) => response.json());
     }
 
     private makeBrokerRequest(path: string) {
-        const url = "http://localhost:8889/" + path ;
+        const url = "http://" + this.biotServerHost + ":" + this.biotServerPort + "/" + path ;
         return this.http.get(url)
             .map(this.extractWSData)
             .catch((err: Response) => {
@@ -166,28 +168,28 @@ export class BiotService {
 
     postAssemblyToCache(name, data: string) {
         const path = 'data/assembly/' + name;
-        const url = "http://localhost:8889/" + path ;
+        const url = "http://" + this.biotServerHost + ":" + this.biotServerPort + "/" + path ;
         return this.http.post(url, data)
             .map((response) => response.json());
     }
 
     putAutoCal(addr, data: number) {
         const path = 'biotz/addresses/' + addr + '/auto';
-        const url = "http://localhost:8889/" + path ;
+        const url = "http://" + this.biotServerHost + ":" + this.biotServerPort + "/" + path ;
         return this.http.put(url, data)
             .map((response) => response.json());
     }
 
     putCalibrationsToCache(addr, data: string) {
         const path = 'data/addresses/' + addr;
-        const url = "http://localhost:8889/" + path ;
+        const url = "http://" + this.biotServerHost + ":" + this.biotServerPort + "/" + path ;
         return this.http.put(url, data)
             .map((response) => response.json());
     }
 
     putCalibrationToNode(addr, data: string) {
         const path = 'biotz/addresses/' + addr + '/calibration';
-        const url = "http://localhost:8889/" + path ;
+        const url = "http://" + this.biotServerHost + ":" + this.biotServerPort + "/" + path ;
         return this.http.put(url, data)
             .map((response) => response.json());
     }
@@ -210,28 +212,28 @@ export class BiotService {
         }
 
         const path = 'biotz/addresses/' + addr + '/dof';
-        const url = "http://localhost:8889/" + path ;
+        const url = "http://" + this.biotServerHost + ":" + this.biotServerPort + "/" + path ;
         return this.http.put(url, data)
             .map((response) => response.json());
     }
 
     getRecordedData(addr: string) {
         const path = 'biotz/addresses/' + addr + '/record';
-        const url = "http://localhost:8889/" + path ;
+        const url = "http://" + this.biotServerHost + ":" + this.biotServerPort + "/" + path ;
         return this.http.get(url)
             .map((response) => response.json());
     }
 
     getRecordings() {
         const path = 'biotz/addresses/recordings';
-        const url = "http://localhost:8889/" + path ;
+        const url = "http://" + this.biotServerHost + ":" + this.biotServerPort + "/" + path ;
         return this.http.get(url)
             .map((response) => response.json());
     }
 
     recordData(addr: string, seconds: number) {
         const path = 'biotz/addresses/' + addr + '/record';
-        const url = "http://localhost:8889/" + path ;
+        const url = "http://" + this.biotServerHost + ":" + this.biotServerPort + "/" + path ;
         return this.http.put(url, seconds)
             .map((response) => response.json());
     }
@@ -253,7 +255,7 @@ export class BiotService {
 
     resetCalibrationOnNode(addr) {
         const path = 'biotz/addresses/' + addr + '/calibration';
-        const url = "http://localhost:8889/" + path ;
+        const url = "http://" + this.biotServerHost + ":" + this.biotServerPort + "/" + path ;
         return this.http.put(url, '0:0:0:0:0:0')
             .map((response) => response.json());
     }

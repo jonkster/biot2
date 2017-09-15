@@ -2,6 +2,7 @@
 <button *ngIf="!getCommunicationStatus()" (click)="resetService();">Retry Router Detection</button>
 <button (click)="redrawNodes();">Redraw Nodes</button>
 <div appThreed [displaywidth]="1400" [displayheight]="400" class="centred"></div>
+<div appThreestats [statsstyle]="{position: 'inherit', float: 'left', display: 'flex'}"></div>
 <hr/>
 
 <span>Router 
