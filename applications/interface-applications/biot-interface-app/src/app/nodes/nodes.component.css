@@ -55,6 +55,12 @@ td.special {
     color: #B43333;
 }
 
+.debug {
+    height: 7em;
+    overflow: auto;
+    border: 1px solid gray;
+}
+
 .selectedTop {
     border-top: 2px solid black;
     border-left: 2px solid black;

@@ -1,6 +1,6 @@
 <button (click)="addTestNode();">Add Test Node</button>
 <button *ngIf="!getCommunicationStatus()" (click)="resetService();">Retry Router Detection</button>
-<button (click)="redrawNodes();">Redraw Nodes</button>
+<button (click)="dropNodes();">Redraw Nodes</button>
 <div appThreed [displaywidth]="1400" [displayheight]="400" class="centred"></div>
 <div appThreestats [statsstyle]="{position: 'inherit', float: 'left', display: 'flex'}"></div>
 <hr/>
@@ -80,6 +80,9 @@
         </tr>
         </ng-template>
     </table>
+    <div class="debug" #debugHolder [scrollTop]="debugHolder.scrollHeight">
+        <div *ngFor="let txt of debugHistory; let i = index" >{{ i }} : {{ txt }}</div>
+    </div>
 </div>
 
 <app-dialog #nodeRenameDialog>

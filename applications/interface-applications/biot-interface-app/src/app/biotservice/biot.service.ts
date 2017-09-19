@@ -46,6 +46,16 @@ export class BiotService {
             });
     }
 
+    dropNode(addr: string) {
+        if (this.detectedAddresses[addr] !== undefined) {
+            delete this.detectedAddresses[addr];
+        }
+        const path = 'biotz/addresses/' + addr;
+        const url = "http://" + this.biotServerHost + ":" + this.biotServerPort + "/" + path;
+        return this.http.delete(url, '')
+            .map((response) => response.json());
+    }
+
     dropDummyNodes() {
         const path = 'biotz/dropnodes';
         const url = "http://" + this.biotServerHost + ":" + this.biotServerPort + "/" + path;
@@ -53,7 +63,7 @@ export class BiotService {
             .map((response) => response.json());
     }
 
-    getDetectedAddresses() {
+    getDetectedAddresses(): string[] {
         return Object.keys(this.detectedAddresses);
     }
 
@@ -159,8 +169,11 @@ export class BiotService {
         return this.http.get(url)
             .map(this.extractWSData)
             .catch((err: Response) => {
-                this.statusOK = false;
-                console.log('failed to get resource', err);
+                console.log(err);
+                if (err.status >= 500) {
+                    this.statusOK = false;
+                } 
+                console.log('failed to get resource', path, err);
                 return this.handleError(err)
             });
 
