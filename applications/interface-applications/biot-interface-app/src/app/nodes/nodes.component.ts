@@ -91,8 +91,6 @@ export class NodesComponent implements OnInit, AfterContentChecked {
 
         this.threedService.add(this.worldSpace);
 
-        this.periodicService.registerTask('node update', this.nodeHolderService, this.nodeHolderService.updateLoop);
-
     }
 
     addActiveNodes() {

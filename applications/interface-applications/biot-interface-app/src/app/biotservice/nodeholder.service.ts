@@ -34,6 +34,7 @@ export class NodeholderService {
         }
     } = {};
     private lastError = '';
+    private counter: number = 0;
 
 
   constructor(private biotService: BiotService, private periodicService: PeriodicService) {
@@ -288,7 +289,9 @@ export class NodeholderService {
   }
 
   updateLoop(owner: any) {
-      owner.biotService.detectNodes();
+      if ((owner.counter++ % 100) === 0) {
+              owner.biotService.detectNodes();
+      }
       owner.getAllNodeData();
   }
 
