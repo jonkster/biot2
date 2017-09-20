@@ -55,6 +55,11 @@ td.special {
     color: #B43333;
 }
 
+td.bad {
+    background: #F58888;
+    color: #ffffff;
+}
+
 .debug {
     height: 7em;
     overflow: auto;

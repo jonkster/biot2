@@ -17,6 +17,7 @@ type biotNodeType = {
     'dof': string,
     'led': string,
     'lasttime': number,
+    'lastHeardSame': number,
     'colour': string,
     'model': any
 };
@@ -39,6 +40,7 @@ export class NodeholderService {
 
   constructor(private biotService: BiotService, private periodicService: PeriodicService) {
         this.biotService = biotService;
+        this.getAllNodeStatusData();
         this.periodicService.registerTask('node update', this, this.updateLoop);
   }
 
@@ -48,7 +50,7 @@ export class NodeholderService {
       } else {
         let quaternion = new THREE.Quaternion(q.x, q.y, q.z, q.w);
         this.managedNodeList[addr] = this.makeNewNode(
-            addr, type, name, [x, y, z], quaternion, -1, undefined, undefined, undefined, undefined, undefined, -1, colour
+            addr, type, name, [x, y, z], quaternion, -1, undefined, undefined, undefined, undefined, undefined, -1, 0, colour
         );
         return true;
       }
@@ -114,66 +116,87 @@ export class NodeholderService {
       return Object.keys(this.managedNodeList);
   }
 
-  getAllNodeData() {
+  getAllNodePositionData() {
       let allNodeAddresses = this.biotService.getDetectedAddresses();
-      for (let i = 0; i < allNodeAddresses.length; i++) {
+      this.biotService.getData().subscribe(
+              allData => {
+                  for (let i = 0; i < allNodeAddresses.length; i++) {
+                      const addr = allNodeAddresses[i];
+                      let posData = allData[addr];
 
-          const addr = allNodeAddresses[i];
-          let managed = true;
+                      let managed = true;
+                      let node = this.getManagedNode(addr);
+                      if (node === undefined) {
+                          node = this.getUnmanagedNode(addr);
+                          if (node === undefined) {
+                              node = this.makeNewNode(addr);
+                              this.unmanagedNodeList[addr] = node;
+                          }
+                          managed = false;
+                      }
+                      if (node !== undefined) {
+                          if (posData !== undefined) {
+                              let parts = posData.split(/:/);
+                              node.lasttime = node.timeStamp;
+                              node.timeStamp = Number(parts[0]);
+                              var q3js = new THREE.Quaternion(Number(parts[2]), Number(parts[3]), Number(parts[4]), Number(parts[1]));
+                              node.quaternion = q3js;
+                              this.setRotation(node, q3js);
+                              if (this.lastChange[addr] !== undefined)
+                              {
+                                  let lastHeard = this.lastChange[addr].lastHeard;
+                                  this.lastChange[addr].timesLastHeardSame++;
+                                  if (node.lasttime != lastHeard) {
+                                      this.lastChange[addr].timesLastHeardSame = 0;
+                                      this.lastChange[addr].lastHeard = node.lasttime;
+                                  }
+                              } else {
+                                  this.lastChange[addr] = {
+                                      lastHeard: node.lasttime,
+                                      timesLastHeardSame: 0
+                                  }
+                              }
+                              node.lastHeardSame = this.lastChange[addr].timesLastHeardSame;
+                              if (managed && this.lastChange[addr].timesLastHeardSame > 25) {
+                                  this.warnLostNode(addr);
+                              }
+                          } else {
+                              this.dropNode(addr);
+                          }
+                      };
+                  }
+              },
+              error => {
+                  console.log('error getting data:', error);
+              }
+      );
+  }
+
+  getAllNodeStatusData() {
+      this.biotService.detectNodes();
+      let addresses = Object.keys(this.managedNodeList);
+      for (let i = 0; i < addresses.length; i++) {
+          const addr = addresses[i];
           this.biotService.getANodesData(addr).subscribe(
               rawData => {
                   let node = this.getManagedNode(addr);
-                  if (node === undefined) {
-                      node = this.getUnmanagedNode(addr);
-                      if (node === undefined) {
-                            node = this.makeNewNode(addr);
-                            this.unmanagedNodeList[addr] = node;
-                      }
-                      managed = false;
-                  }
                   if (node !== undefined) {
                       node.calibration = rawData.calibration;
                       node.interval = rawData.interval;
                       node.auto = rawData.auto;
                       node.dof = rawData.dof;
                       node.led = rawData.led;
-                      let posData = rawData["data"];
-                      if (posData !== undefined) {
-                          let parts = posData.split(/:/);
-                          node.lasttime = node.timeStamp;
-                          node.timeStamp = Number(parts[0]);
-                          var q3js = new THREE.Quaternion(Number(parts[2]), Number(parts[3]), Number(parts[4]), Number(parts[1]));
-                          node.quaternion = q3js;
-                          this.setRotation(node, q3js);
-                          if (this.lastChange[addr] !== undefined)
-                          {
-                              let lastHeard = this.lastChange[addr].lastHeard;
-                              this.lastChange[addr].timesLastHeardSame++;
-                              if (node.lasttime != lastHeard) {
-                                  this.lastChange[addr].timesLastHeardSame = 0;
-                                  this.lastChange[addr].lastHeard = node.lasttime;
-                              }
-                          } else {
-                              this.lastChange[addr] = {
-                                  lastHeard: node.lasttime,
-                                  timesLastHeardSame: 0
-                              }
-                          }
-                          if (managed && this.lastChange[addr].timesLastHeardSame > 200) {
-                              this.warnLostNode(addr);
-                          }
-                      } else {
-                          this.dropNode(addr);
-                      }
-                  };
+
+                  } else {
+                      this.dropNode(addr);
+                  }
               },
               error => {
                   console.log('error getting data:', error);
                   if (this.unmanagedNodeList[addr] !== undefined) {
                       delete this.unmanagedNodeList[addr];
                   }
-              }
-          );
+              });
       }
   }
 
@@ -226,6 +249,7 @@ export class NodeholderService {
     dof: string = undefined,
     led: string = undefined,
     lasttime: number = undefined,
+    lastHeardSame: number = 0,
     colour: string = undefined,
     model: any = undefined): biotNodeType {
         let n = {
@@ -241,6 +265,7 @@ export class NodeholderService {
             dof: dof,
             led: led,
             lasttime: lasttime,
+            lastHeardSame: lastHeardSame,
             colour: colour,
             model: model};
         return n;
@@ -289,10 +314,13 @@ export class NodeholderService {
   }
 
   updateLoop(owner: any) {
-      if ((owner.counter++ % 100) === 0) {
-              owner.biotService.detectNodes();
+      let delay = 0;
+      if ((owner.counter % (delay+1)) === 0) {
+          owner.getAllNodePositionData();
       }
-      owner.getAllNodeData();
+      if ((owner.counter++ % 100) === 0) {
+              owner.getAllNodeStatusData();
+      }
   }
 
   warnLostNode(addr) {

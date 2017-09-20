@@ -19,6 +19,7 @@
             <th>name</th>
             <th>time-stamp</th>
             <th>last-heard</th>
+            <th>delay</th>
             <th>x</th>
             <th>y</th>
             <th>z</th>
@@ -40,6 +41,7 @@
             <td>{{ nodeData[address].name }}</td>
             <td>{{ nodeData[address].timeStamp }}</td>
             <td>{{ nodeData[address].lasttime }}</td>
+            <td  [class.bad]="nodeData[address].lastHeardSame >= 3">{{ nodeData[address].lastHeardSame }}</td>
             <td>{{ nodeData[address].position[0] }}</td>
             <td>{{ nodeData[address].position[1] }}</td>
             <td>{{ nodeData[address].position[2] }}</td>
