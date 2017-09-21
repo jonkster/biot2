@@ -1,6 +1,6 @@
 <button (click)="addTestNode();">Add Test Node</button>
 <button *ngIf="!getCommunicationStatus()" (click)="resetService();">Retry Router Detection</button>
-<button (click)="redrawNodes();">Redraw Nodes</button>
+<button (click)="dropNodes();">Redraw Nodes</button>
 <div appThreed [displaywidth]="1400" [displayheight]="400" class="centred"></div>
 <div appThreestats [statsstyle]="{position: 'inherit', float: 'left', display: 'flex'}"></div>
 <hr/>
@@ -19,6 +19,7 @@
             <th>name</th>
             <th>time-stamp</th>
             <th>last-heard</th>
+            <th>delay</th>
             <th>x</th>
             <th>y</th>
             <th>z</th>
@@ -40,6 +41,7 @@
             <td>{{ nodeData[address].name }}</td>
             <td>{{ nodeData[address].timeStamp }}</td>
             <td>{{ nodeData[address].lasttime }}</td>
+            <td  [class.bad]="nodeData[address].lastHeardSame >= 3">{{ nodeData[address].lastHeardSame }}</td>
             <td>{{ nodeData[address].position[0] }}</td>
             <td>{{ nodeData[address].position[1] }}</td>
             <td>{{ nodeData[address].position[2] }}</td>
@@ -80,6 +82,9 @@
         </tr>
         </ng-template>
     </table>
+    <div class="debug" #debugHolder [scrollTop]="debugHolder.scrollHeight">
+        <div *ngFor="let txt of debugHistory; let i = index" >{{ i }} : {{ txt }}</div>
+    </div>
 </div>
 
 <app-dialog #nodeRenameDialog>

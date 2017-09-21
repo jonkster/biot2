@@ -25,6 +25,7 @@ export class LimbmakerService {
         lgeometry.vertices.push(new THREE.Vector3(length, 0, 0));
         var line = new THREE.Line(lgeometry, lmaterial);
         group.add(line);
+        group.name = 'axis:' + x + '-' + y + '-' + z + ':' + length + 'x' + width;
         line.castShadow = true;
         line.receiveShadow = true;
 

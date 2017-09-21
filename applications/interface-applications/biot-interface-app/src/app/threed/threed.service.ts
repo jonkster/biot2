@@ -53,6 +53,7 @@ export class ThreedService {
                     siht.scene.remove(siht.backgroundObject);
                 }
                 siht.backgroundObject = new THREE.Mesh(geometry, material);
+                siht.backgroundObject.name = 'background-image';
                 siht.backgroundObject.position.z = z;
                 siht.scene.add(siht.backgroundObject);
                 siht.backgroundObject.visible = true;
@@ -113,6 +114,16 @@ export class ThreedService {
         owner.stats[0].end();
         owner.stats[1].begin();
         owner.stats[2].begin();
+    }
+
+    dropNode(addr: string) {
+            console.log(this.scene);
+        let selectedObject = this.scene.getObjectByName('g_biot-' + addr);
+        if (selectedObject !== undefined) {
+            console.log(selectedObject);
+            selectedObject.parent.remove(selectedObject);
+            this.render();
+        }
     }
 
     getCanvasColour ( color ) {

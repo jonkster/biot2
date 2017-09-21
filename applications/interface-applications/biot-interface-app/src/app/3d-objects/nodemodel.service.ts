@@ -56,6 +56,7 @@ export class NodemodelService {
             mOpts['transparent'] = true;
         }
         let box = new THREE.Group();
+        box.name = 'g_' + displayName;
         box.userData = {
             'displayName': displayName,
             'ledMode': 2,
@@ -72,6 +73,7 @@ export class NodemodelService {
                 geometry.rotateX(Math.PI);
                 let material = new THREE.MeshPhongMaterial( mOpts );
                 let obj = new THREE.Mesh(geometry, material);
+                obj.name = 'nodemodel-' + name;
                 obj.scale.set(40, 40, 40);
                 obj.position.set(x, y, z);
                 obj.castShadow = true;

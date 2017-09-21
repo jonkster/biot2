@@ -15,6 +15,8 @@ import * as THREE from 'three';
 })
 export class NodesComponent implements OnInit, AfterContentChecked {
 
+    @ViewChild('debugHolder') debugHolder: ElementRef;
+
     private biotService: BiotService;
     private threedService: ThreedService;
     private limbMakerService: LimbmakerService;
@@ -32,6 +34,7 @@ export class NodesComponent implements OnInit, AfterContentChecked {
     private recordSeconds = 5;
     private selectedNodeCalMode = 0;
     private selectedNodeColour = '';
+    private debugHistory: string[] = [];
 
     @ViewChild('nodeRenameDialog') nodeRenameDialog: DialogComponent;
     @ViewChild('nodeRecordDialog') nodeRecordDialog: DialogComponent;
@@ -42,13 +45,18 @@ export class NodesComponent implements OnInit, AfterContentChecked {
         this.limbMakerService = limbMakerService;
         this.nodeHolderService = nodeHolderService;
         this.router = router;
+        this.nodeHolderService.lostNodeSubscription().subscribe(
+            nodeAddr => {
+                this.dropNode(nodeAddr);
+            }
+        );
     }
 
     ngDoCheck() {
     }
 
     ngOnInit() {
-        this.addDetectedNodes(true);
+        this.addActiveNodes();
     }
 
     ngAfterContentChecked() {
@@ -83,35 +91,39 @@ export class NodesComponent implements OnInit, AfterContentChecked {
 
         this.threedService.add(this.worldSpace);
 
-        this.periodicService.registerTask('node update', this.nodeHolderService, this.nodeHolderService.updateLoop);
-
     }
 
-    addDetectedNodes(force: boolean) {
+    addActiveNodes() {
         setTimeout(e => {
             var addresses = this.biotService.getDetectedAddresses();
             for (let i = 0; i < addresses.length; i++) {
                 let addr = addresses[i];
-                if (force || (! this.nodeHolderService.nodeKnown(addr))) {
-                    var q = { 'w': 0, 'x': 0, 'y': 1, 'z': 0 };
-                    this.addNode(addr, 'detected-biot-node', 'biot-'+addr, 0, 0, 0, q, this.pickAColour(i));
+                if (this.nodeHolderService.isActiveNode(addr)) {
+                    if (! this.nodeHolderService.isNodeManaged(addr)) {
+                        var q = { 'w': 0, 'x': 0, 'y': 1, 'z': 0 };
+                        this.addNode(addr, 'detected-biot-node', 'biot-'+addr, 0, 0, 0, q, this.pickAColour(i));
+                        this.getRecordActive(addr);
+                    }
                 }
-                this.getRecordActive(addr);
             }
             this.adjustNodePositions();
-            this.addDetectedNodes(false);
             this.getAllNodeData();
+            this.addActiveNodes();
         }, 1000);
     }
 
 
     addNode(addr: string, type: string, name: string, x: number, y: number, z: number, q: any, colour: string) {
+        this.debug("adding node: " + addr);
         let node = this.makeNode(addr, type, name, x, y, z, q, colour);
         if (this.nodeHolderService.addNode(addr, type, name, x, y, z, q, colour)) {
+            this.nodeHolderService.add3DModel(addr, node);
+            this.worldSpace.add(node);
+            this.nodeHolderService.flashNode(addr);
+            this.debug("adding node success: " + addr);
+        } else {
+        this.debug("adding node failed!: " + addr);
         }
-        this.nodeHolderService.add3DModel(addr, node);
-        this.worldSpace.add(node);
-        this.nodeHolderService.flashNode(addr);
     }
 
     addTestNode() {
@@ -123,7 +135,7 @@ export class NodesComponent implements OnInit, AfterContentChecked {
         var time = 0;
 
         var i = 0;
-        while (this.nodeHolderService.nodeKnown(addr)) {
+        while (this.nodeHolderService.isNodeManaged(addr)) {
             addr = '-' + i++;
             colour = this.pickAColour(i);
         }
@@ -138,7 +150,7 @@ export class NodesComponent implements OnInit, AfterContentChecked {
         let x = -(width * offset)/2
         for (let i = 0; i < count; i++) {
             let addr = addresses[i];
-            let node = this.nodeHolderService.getNode(addr);
+            let node = this.nodeHolderService.getManagedNode(addr);
             this.nodeHolderService.setPosition(node, 0, x, 0);
             x += width;
         }
@@ -151,11 +163,38 @@ export class NodesComponent implements OnInit, AfterContentChecked {
     alertNode(addr) {
         this.biotService.identify(addr).subscribe(
             rawData => { this.flashNodeLed(addr, 3); },
-            error => { console.log('error', error)},
+            error => { this.debug("error when alerting node:" + addr + " : " + error); },
         );
     }
 
+    debug(txt: string) {
+        if (this.debugHistory.length > 100) {
+            this.debugHistory.shift();
+            this.debugHistory[0] = 'earlier entries deleted...';
+        }
+        this.debugHistory.push(txt);
+    }
+
+    dropNodes() {
+            this.debug("drop all nodes");
+            var addresses = this.biotService.getDetectedAddresses();
+            for (let i = 0; i < addresses.length; i++) {
+                this.dropNode(addresses[i]);
+            }
+    }
+
+    dropNode(addr) {
+        delete this.nodeAddresses[addr];
+        this.nodeAddresses.splice(this.nodeAddresses.indexOf(addr), 1);
+        delete this.nodeData[addr];
+        this.nodeHolderService.dropNode(addr);
+        this.threedService.dropNode(addr);
+        this.biotService.dropNode(addr);
+        this.debug("dropped node:" + addr);
+    }
+
     flashNodeLed(addr: string, mode: number) {
+        this.debug("flashing node:" + addr);
         this.nodeHolderService.setLedMode(addr, mode);
     }
 
@@ -173,7 +212,8 @@ export class NodesComponent implements OnInit, AfterContentChecked {
                         this.recordingActive[addr] = rawData.recordingActive;
                         this.recordingExists[addr] = rawData.recordingExists;
                     },
-                    error => { console.log('error getting record status:' + error); },
+                    error => { this.debug("error getting node status node:" + addr + " : " + error); },
+                    
                 );
         }
     }
@@ -189,7 +229,7 @@ export class NodesComponent implements OnInit, AfterContentChecked {
 
     openNodeControl(addr: string) {
         this.alertNode(addr);
-        let node = this.nodeHolderService.getNode(addr);
+        let node = this.nodeHolderService.getManagedNode(addr);
         this.selectedNode = node;
         this.selectedNodeAddress = addr;
         this.selectedNodeCalMode = this.nodeCalibrationMode(addr);
@@ -240,10 +280,6 @@ export class NodesComponent implements OnInit, AfterContentChecked {
         alert("sorry cannot do that yet");
     }
 
-    redrawNodes() {
-        console.log('redraw');
-    }
-
     startRecordingNode(addr: string) {
         this.biotService.recordData(addr, this.recordSeconds).subscribe(
             rawData => { this.recordingActive[addr] = true; },
@@ -254,8 +290,8 @@ export class NodesComponent implements OnInit, AfterContentChecked {
 
     setCalibrateMode(addr, mode) {
         this.biotService.putAutoCal(addr, mode).subscribe(
-            rawData => { console.log('ok', rawData)},
-            error => { console.log('error', error)},
+            rawData => { this.debug("calibration set to mode: " + mode + " for: " + addr) },
+            error => { this.debug("error when setting calibration node:" + addr + " to: " + mode + " : " + error); }
         );
     }
 
