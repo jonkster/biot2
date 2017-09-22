@@ -10,7 +10,8 @@ var UDP_LOCAL_HOST = 'affe::1';
 var BIOTZ_ROUTER_HOST = 'affe::3';
 
 var BROKER_HTTP_PORT = 8889; 
-var BROKER_HOST = 'localhost'; 
+var BROKER_HOST = '10.1.1.9'; 
+//var BROKER_HOST = 'localhost'; 
 
 var dgram = require('dgram');
 var dataPath = './data';
@@ -45,10 +46,14 @@ var recordedData = {};
 var recordingStart = {};
 var recordingStop = {};
 
+var dirty = false;
+var cached = {};
+
 // received an update message - store info
 brokerUdpListener.on('message', function (message, remote) {
     if (message.length > 0)
     {
+	dirty = true;
         addNodeData(message.toString());
         systemStatus.udpip = 'OK';
         systemStatus.edgerouter = 'OK';
@@ -69,10 +74,17 @@ brokerListener.server.setTimeout(10000)
 brokerListener.pre(function(req, res, next) {
     //console.log("REQ:", req.url);
     res.header("Access-Control-Allow-Origin", "*"); 
-    res.header("Access-Control-Allow-Headers", "X-Requested-With");
-    res.setHeader('Content-Type', 'application/json');
+/*    res.header("Access-Control-Allow-Headers", "X-Requested-With");
+    res.setHeader('Content-Type', 'application/json');*/
+    console.log('s', new Date().getTime(), req.url);
     next();
 });
+
+brokerListener.on('after', function(req, res, next) {
+    console.log('f', new Date().getTime(), req.url);
+    dirty = false;
+});
+
 brokerListener.get('/', getRoot);
 
 brokerListener.get('/biotz', getAllBiotData);
@@ -87,6 +99,7 @@ brokerListener.get('/biotz/all/data', getAllBiotz);
 
 brokerListener.get('/biotz/addresses/recordings', getBiotRecordings);
 brokerListener.get('/biotz/addresses/:address', getBiotFull);
+brokerListener.del('/biotz/addresses/:address', deleteBiotNode);
 brokerListener.get('/biotz/addresses/:address/data', getBiotData);
 brokerListener.get('/biotz/addresses/:address/calibration', getBiotCalibration);
 brokerListener.put('/biotz/addresses/:address/calibration', putBiotCalibration);
@@ -138,6 +151,7 @@ function addDummyNode(req, res, next) {
 
 var lastUpdate = {};
 var allGood = 0;
+var jktmp = 0;
 function addNodeData(message) {
     /*
      * cmd#data#addr
@@ -154,6 +168,12 @@ function addNodeData(message) {
             'delta': 0
         };
     }
+if (bits[0] === 'do') {
+    var databits = bits[1].split(':');
+    var dif = databits[0] - jktmp;
+    console.log('s', bits[0], dif, now, now - lastUpdate[address].time);
+    jktmp = databits[0];
+}
 
     lastUpdate[address].delta = now - lastUpdate[address].time;
     lastUpdate[address].time = now;
@@ -200,13 +220,16 @@ function addNodeData(message) {
     }
 
     if (lastUpdate[address].delta > 110) {
-        console.log(lastUpdate[address].addr, lastUpdate[address].delta, lastUpdate[address].type, "was good for: " + allGood + "responses");
+        //console.log(lastUpdate[address].addr, lastUpdate[address].delta, lastUpdate[address].type, "was good for: " + allGood + "responses");
         allGood = 0;
         systemStatus.edgerouter = 'unknown';
         systemStatus.dodag = 'unknown';
     } else {
         allGood++;
     }
+
+    var tmpnow = new Date().getTime();
+    console.log('f', bits[0], tmpnow, tmpnow - lastUpdate[address].time);
 
 }
 
@@ -217,6 +240,7 @@ function biotIdentify(req, res, next) {
     var message = new Buffer('cled#3#' + address);
     var client = dgram.createSocket('udp6');
 
+console.log('identify', address);
     client.send(message, 0, message.length, BIOTZ_UDP_PORT, BIOTZ_ROUTER_HOST, function(err, bytes) {
         if (err)
         {
@@ -232,6 +256,7 @@ function biotSync(req, res, next) {
     var message = new Buffer('csyn##');
     var client = dgram.createSocket('udp6');
 
+console.log('sync', address);
     client.send(message, 0, message.length, BIOTZ_UDP_PORT, BIOTZ_ROUTER_HOST, function(err, bytes) {
         if (err)
         {
@@ -324,40 +349,51 @@ function getBiotCount(req, res, next) {
 }
 
 function getAllBiotz(req, res, next) {
-    var addresses = Object.keys(biotzData);
-    var value = {};
-    for (var i = 0; i < addresses.length; i++) {
-        var address = addresses[i];
-        value[address] = biotzData[address];
-    }
-    res.send(200, value);
-    next();
+	var value = {};
+	if (dirty) {
+		var addresses = Object.keys(biotzData);
+		for (var i = 0; i < addresses.length; i++) {
+			var address = addresses[i];
+			value[address] = biotzData[address];
+		}
+	} else {
+		console.log('cached');
+		value = cached;
+	}
+	res.send(200, value);
+	cached = value;
+	next();
 }
+
 
 function getBiotFull(req, res, next) {
 
     var address = req.params['address'];
     if (! address) {
-        // url entered with trailing slash
-        getBiotz(req, res, next);
-        return;
+	// url entered with trailing slash
+	getBiotz(req, res, next);
+	return;
     }
 
-    var bits = biotzStatus[address].split(":");
+    if (biotzStatus[address] !== undefined) {
+	    var bits = biotzStatus[address].split(":");
 
-    var data = biotzData[address];
-    var cal = biotzCal[address];
-    var value = {
-        'data': data,
-        'calibration': cal,
-        "status": biotzStatus[address],
-        "interval": bits[1],
-        "auto": bits[2],
-        "dof": bits[0],
-        "led": "?"
-    }
+	    var data = biotzData[address];
+	    var cal = biotzCal[address];
+	    var value = {
+		'data': data,
+		'calibration': cal,
+		"status": biotzStatus[address],
+		"interval": bits[1],
+		"auto": bits[2],
+		"dof": bits[0],
+		"led": "?"
+	    }
 
-    res.send(200, value);
+	    res.send(200, value);
+	} else {
+	    res.send(404, 'unknown address ' + address);
+	}
     next();
 }
 
@@ -608,6 +644,19 @@ function getDataValue(req, res, next) {
     });
 }
 
+function deleteBiotNode(req, res, next) {
+    var address = req.params['address'];
+	if (biotzData[address] !== undefined) {
+    delete biotzData[address];
+    delete biotzCal[address];
+    delete nodeStatus[address];
+    res.send('OK');
+        res.send(404, address);
+	} else {
+}
+    next();
+}
+
 function deleteDataValue(req, res, next) {
     var category = req.context['category'];
     var name = req.context['name'];
@@ -681,6 +730,7 @@ function putBiotAuto(req, res, next) {
     var message = new Buffer('cmcm#' + data + '#' + address);
     var client = dgram.createSocket('udp6');
 
+console.log('auto', address);
     client.send(message, 0, message.length, BIOTZ_UDP_PORT, BIOTZ_ROUTER_HOST, function(err, bytes) {
         if (err) {
             console.log('Error:', err);
@@ -701,6 +751,7 @@ function putBiotCalibration(req, res, next) {
     var message = new Buffer('ccav#' + data + '#' + address);
     var client = dgram.createSocket('udp6');
 
+console.log('cal', address);
     client.send(message, 0, message.length, BIOTZ_UDP_PORT, BIOTZ_ROUTER_HOST, function(err, bytes) {
         if (err) {
             console.log('Error:', err);
@@ -721,6 +772,7 @@ function putBiotInterval(req, res, next) {
     var message = new Buffer('cdup#' + data + '#' + address);
     var client = dgram.createSocket('udp6');
 
+console.log('interval', address);
     client.send(message, 0, message.length, BIOTZ_UDP_PORT, BIOTZ_ROUTER_HOST, function(err, bytes) {
         if (err) {
             console.log('Error:', err);
@@ -741,6 +793,7 @@ function putBiotDof(req, res, next) {
     var message = new Buffer('cdof#' + data + '#' + address);
     var client = dgram.createSocket('udp6');
 
+console.log('dof', address);
     client.send(message, 0, message.length, BIOTZ_UDP_PORT, BIOTZ_ROUTER_HOST, function(err, bytes) {
         if (err) {
             console.log('Error:', err);
@@ -761,6 +814,7 @@ function putBiotLed(req, res, next) {
     var message = new Buffer('cled#' + data + '#' + address);
     var client = dgram.createSocket('udp6');
 
+console.log('led', address);
     client.send(message, 0, message.length, BIOTZ_UDP_PORT, BIOTZ_ROUTER_HOST, function(err, bytes) {
         if (err) {
             console.log('Error:', err);
@@ -832,6 +886,7 @@ function sendPoke(address) {
     var message = new Buffer('cpok##' + address);
     var client = dgram.createSocket('udp6');
 
+console.log('poke', address);
     client.send(message, 0, message.length, BIOTZ_UDP_PORT, BIOTZ_ROUTER_HOST, function(err, bytes) {
         if (err) {
             console.log('Error:', err);

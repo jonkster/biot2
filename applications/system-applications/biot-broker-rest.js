@@ -9,14 +9,14 @@ var BIOTZ_UDP_PORT = 8888;
 var UDP_LOCAL_HOST = 'affe::1';
 var BIOTZ_ROUTER_HOST = 'affe::3';
 
+var ip = require('ip');
 var BROKER_HTTP_PORT = 8889; 
-var BROKER_HOST = '10.1.1.9'; 
+var BROKER_HOST = ip.address(); 
+//var BROKER_HOST = '10.1.1.41'; 
 //var BROKER_HOST = 'localhost'; 
 
 var dgram = require('dgram');
 var dataPath = './data';
-
-var startTime = 0;
 
 allNodes = {};
 
@@ -26,6 +26,8 @@ var systemStatus = {
     'edgerouter': 'unknown',
     'dodag': 'unknown'
 };
+
+var edgeRouterTime = {};
 
 var realNodes = {};
 var dummyNodes = {};
@@ -42,7 +44,7 @@ var cached = {};
 
 var lastAliveTime = 0;
 var interval = setInterval(function() {
-      testSystem();
+      testSystem(BIOTZ_ROUTER_HOST);
 }, 10000);
 
 // Listen for and act on Broker HTTP Requests
@@ -52,7 +54,7 @@ brokerListener.use(restify.bodyParser());
 brokerListener.server.setTimeout(100)
 
 brokerListener.pre(function(req, res, next) {
-    console.log("REQ:", req.url);
+    updateFromDB();
     res.header("Access-Control-Allow-Origin", "*"); 
     next();
 });
@@ -68,7 +70,8 @@ brokerListener.get('/biotz/count', getBiotCount);
 brokerListener.get('/biotz/status', getBiotzStatus);
 brokerListener.get('/biotz/synchronise', biotSync);
 brokerListener.get('/biotz/addresses', getBiotz);
-brokerListener.get('/biotz/all/data', getAllBiotz);
+brokerListener.get('/biotz/all/data', getAllBiotzData);
+brokerListener.get('/biotz/all/nodes', getAllBiotzNodes);
 
 //brokerListener.put('/biotz/addnode/:address', addDummyNode);
 //brokerListener.put('/biotz/dropnodes', dropDummyNodes);
@@ -116,14 +119,22 @@ var biotDataSchema = new Schema({
   updated_at: { type: Date, default: Date.now }
 });
 
+var edgeRouterSchema = new Schema({
+  name:  String,
+  updated_at: { type: Date, default: Date.now }
+});
+
+
 var nodeData = {};
+var edgeRouter = {};
 mongoose.connect('mongodb://localhost:27017/mydb', { useMongoClient: true, promiseLibrary: global.Promise });
 var db = mongoose.connection;
 db.on('error', console.error.bind(console, 'connection error:'));
 db.once('open', function() {
 		console.log("connected to data store"); 
 		nodeData = mongoose.model('BiotData', biotDataSchema);
-		updateFromDB();
+		edgeRouter = mongoose.model('EdgeRouter', edgeRouterSchema);
+		heartbeat();
 		});
 
 brokerListener.listen(BROKER_HTTP_PORT, BROKER_HOST, function() {
@@ -189,7 +200,6 @@ function getRoot(req, res, next) {
     /*
      * method: '/'
      */
-    console.log("X");
     var now = new Date();
     res.send({
         "title": "Biotz Broker REST API",
@@ -254,7 +264,7 @@ function getBiotCount(req, res, next) {
     next();
 }
 
-function getAllBiotz(req, res, next) {
+function getAllBiotzData(req, res, next) {
 	var value = {};
 	if (dirty) {
 		var addresses = Object.keys(allNodes);
@@ -265,6 +275,18 @@ function getAllBiotz(req, res, next) {
 	} else {
 		console.log('cached');
 		value = cached;
+	}
+	res.send(200, value);
+	cached = value;
+	next();
+}
+
+function getAllBiotzNodes(req, res, next) {
+	var value = {};
+	var addresses = Object.keys(allNodes);
+	for (var i = 0; i < addresses.length; i++) {
+		var address = addresses[i];
+		value[address] = allNodes[address];
 	}
 	res.send(200, value);
 	cached = value;
@@ -639,6 +661,21 @@ function getBiotRecordStatus(req, res, next) {
     next();
 }
 
+function heartbeat() {
+	setTimeout(function() {
+			updateFromDB();
+			edgeRouter.find(function(err, data) {
+					if (err) { console.error("error finding edge routers", err); return; }
+					for (var i = 0; i < data.length; i++) {
+						var er = data[i];
+						var ts = new Date(er.updated_at).getTime();
+						edgeRouterTime[er.name] = ts;
+					}
+			});
+			heartbeat();
+	}, 4000);
+}
+
 function isPowerOfTwo(n) {
         let k = Math.floor(Math.log(n) / Math.LN2)
         return (Math.pow(2, k) === n);
@@ -808,7 +845,6 @@ function sendPoke(address) {
     var message = new Buffer('cpok##' + address);
     var client = dgram.createSocket('udp6');
 
-console.log('poke', address);
     client.send(message, 0, message.length, BIOTZ_UDP_PORT, BIOTZ_ROUTER_HOST, function(err, bytes) {
         if (err) {
             console.log('Error:', err);
@@ -817,11 +853,17 @@ console.log('poke', address);
     });
 }
 
-function testSystem() {
-    var now = new Date();
-    var secsAlive = (now - lastAliveTime) / 1000;
-    if (secsAlive > 12) {
-        systemStatus.edgerouter = 'fault';
+function testSystem(erName) {
+    var now = new Date().getTime();
+    if (edgeRouterTime[erName] !== undefined) {
+	    var secsAlive = (now - edgeRouterTime[erName]) / 1000;
+	    if (secsAlive > 12) {
+		    systemStatus.edgerouter = 'fault';
+	    } else {
+		    systemStatus.edgerouter = 'OK';
+	    }
+    } else {
+        systemStatus.edgerouter = 'unknown';
     }
 
     let fault = true;
@@ -845,12 +887,24 @@ function testSystem() {
 
 
 function updateFromDB() {
-	console.log('finding...');
 	nodeData.find(function(err, data) {
+		if (err) { console.error("error finding data", err); return; }
+        	systemStatus.dodag = 'fault';
+		dirty = false;
 		for (var i = 0; i < data.length; i++) {
 			var node = data[i];
 			var address = node.address;
-			allNodes[address] = node;
+			var updateNode = false;
+			if (allNodes[address] === undefined) {
+				updateNode = true;
+			} else if (node.updated_at !== allNodes[address].updated_at) {
+				updateNode = true;
+			}
+			if (updateNode) {
+				dirty = true;
+				systemStatus.dodag = 'OK';
+				allNodes[address] = node;
+			}
 		}
 	});
 }

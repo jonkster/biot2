@@ -12,8 +12,11 @@
   ],
   "license": "0BSD",
   "dependencies": {
+    "ip": "^1.1.5",
     "is-reachable": "^2.3.2",
     "mkdirp": "^0.5.1",
+    "mongodb": "^2.2.31",
+    "mongoose": "^4.11.12",
     "net-ping": "^1.2.0",
     "restify": "^4.1.1"
   },

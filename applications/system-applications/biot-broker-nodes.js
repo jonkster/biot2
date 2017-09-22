@@ -22,13 +22,21 @@ var biotDataSchema = new Schema({
   updated_at: { type: Date, default: Date.now }
 });
 
+var edgeRouterSchema = new Schema({
+  name:  String,
+  updated_at: { type: Date, default: Date.now }
+});
+
 mongoose.connect('mongodb://localhost:27017/mydb', { useMongoClient: true, promiseLibrary: global.Promise });
 var db = mongoose.connection;
 db.on('error', console.error.bind(console, 'connection error:'));
 db.once('open', function() {
 		console.log("connected to data store"); 
 		var nodeData = mongoose.model('BiotData', biotDataSchema);
-		nodeData.remove({}, function(data) { console.log('initialise...', data)} );
+		var edgeRouter = mongoose.model('EdgeRouter', edgeRouterSchema);
+
+		edgeRouter.remove({}, function(data) { console.log('initialise edge router...')} );
+		nodeData.remove({}, function(data) { console.log('initialise node data...')} );
 
 		var startTime = 0;
 		// Listen to Biotz Router device
@@ -80,6 +88,16 @@ db.once('open', function() {
 					} else {
 					    console.log('scrambled ds', message);
 					}
+				} else if (bits[0] == 'da'){
+					var name = BIOTZ_ROUTER_HOST;
+					if (bits[1].match(/(.+)/)) {
+						name = bits[1];
+					}
+					edgeRouter.findOneAndUpdate({name: name}, {name: name}, {upsert:true}, function(err, data) {
+						if (err) { return console.error('ERR', err); }
+					});
+				} else {
+					console.log("wah?", message.toString());
 				}
 				if (dirty) {
 					nodeCache[address] = node;
