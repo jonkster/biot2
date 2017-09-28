@@ -19,6 +19,9 @@ endif
 CFLAGS += -DMAX_NODES=5
 CFLAGS += -DHAS_RGB_LED
 
+# to allow us to use strdup and strndup without warnings
+CFLAGS += -D_GNU_SOURCE
+
 USEMODULE += printf_float
     
 GNRC_NETIF_NUMOF := 2
@@ -45,7 +48,7 @@ USEMODULE += auto_init_gnrc_rpl
 # This application dumps received packets to STDIO using the pktdump module
 USEMODULE += gnrc_pktdump
 # Additional networking modules that can be dropped if not needed
-USEMODULE += gnrc_icmpv6_echo
+#USEMODULE += gnrc_icmpv6_echo
 
 # Specify the mandatory networking modules for 6LoWPAN border router
 USEMODULE += gnrc_sixlowpan_border_router_default

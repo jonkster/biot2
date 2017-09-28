@@ -16,7 +16,8 @@
 #include "msg.h"
 #include "udp_common.h"
 
-#define SERVER_MSG_QUEUE_SIZE  (16)
+#define SERVER_MSG_QUEUE_SIZE  (4)
+//#define SERVER_MSG_QUEUE_SIZE  (16)
 #define UDP_PORT               (8888)
 
 #define UDP_VERBOSE            0  // set == 1 for debugging

@@ -103,8 +103,8 @@ export class NodesComponent implements OnInit, AfterContentChecked {
                     if (! this.nodeHolderService.isNodeManaged(addr)) {
                         var q = { 'w': 0, 'x': 0, 'y': 1, 'z': 0 };
                         this.addNode(addr, 'detected-biot-node', 'biot-'+addr, 0, 0, 0, q, this.pickAColour(i));
-                        this.getRecordActive(addr);
                     }
+                    this.getRecordActive(addr);
                 }
             }
             this.adjustNodePositions();

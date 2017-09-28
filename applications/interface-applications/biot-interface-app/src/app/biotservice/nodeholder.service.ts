@@ -231,7 +231,7 @@ export class NodeholderService {
   }
 
   isNodeManaged(addr: string): boolean {
-      return this.managedNodeList[addr] !== undefined;
+      return (this.managedNodeList[addr] !== undefined);
   }
 
 

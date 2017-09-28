@@ -12,8 +12,6 @@ var BIOTZ_ROUTER_HOST = 'affe::3';
 var ip = require('ip');
 var BROKER_HTTP_PORT = 8889; 
 var BROKER_HOST = ip.address(); 
-//var BROKER_HOST = '10.1.1.41'; 
-//var BROKER_HOST = 'localhost'; 
 
 var dgram = require('dgram');
 var dataPath = './data';
@@ -29,15 +27,10 @@ var systemStatus = {
 
 var edgeRouterTime = {};
 
-var realNodes = {};
 var dummyNodes = {};
-var dummyTime = 0;
 var recording = {};
 var recordingExists = {};
-var recordingTime = {};
 var recordedData = {};
-var recordingStart = {};
-var recordingStop = {};
 
 var dirty = false;
 var cached = {};
@@ -53,7 +46,10 @@ var brokerListener = restify.createServer();
 brokerListener.use(restify.bodyParser());
 brokerListener.server.setTimeout(100)
 
+var timer = 0;
+
 brokerListener.pre(function(req, res, next) {
+    timer = new Date().getTime();
     updateFromDB();
     res.header("Access-Control-Allow-Origin", "*"); 
     next();
@@ -61,6 +57,10 @@ brokerListener.pre(function(req, res, next) {
 
 brokerListener.on('after', function(req, res, next) {
     updateFromDB();
+    var now = new Date().getTime();
+    var delta = now - timer;
+    if (delta > 3)
+        console.log('long response', delta, req.url);
 });
 
 brokerListener.get('/', getRoot);
@@ -119,6 +119,16 @@ var biotDataSchema = new Schema({
   updated_at: { type: Date, default: Date.now }
 });
 
+var recordedOrientationSchema = new Schema({
+  name:  String,
+  active: { type: Boolean, default: false },
+  start: Number,
+  stop: Number,
+  data: [String],
+  updated_at: { type: Date, default: Date.now }
+});
+
+
 var edgeRouterSchema = new Schema({
   name:  String,
   updated_at: { type: Date, default: Date.now }
@@ -127,6 +137,7 @@ var edgeRouterSchema = new Schema({
 
 var nodeData = {};
 var edgeRouter = {};
+var recordedData = {};
 mongoose.connect('mongodb://localhost:27017/mydb', { useMongoClient: true, promiseLibrary: global.Promise });
 var db = mongoose.connection;
 db.on('error', console.error.bind(console, 'connection error:'));
@@ -134,6 +145,7 @@ db.once('open', function() {
 		console.log("connected to data store"); 
 		nodeData = mongoose.model('BiotData', biotDataSchema);
 		edgeRouter = mongoose.model('EdgeRouter', edgeRouterSchema);
+		recordedData = mongoose.model('RecordedData', recordedOrientationSchema);
 		heartbeat();
 		});
 
@@ -496,7 +508,7 @@ function getBiotAliveTs(req, res, next) {
 
 function getBiotzStatus(req, res, next) {
     var nodeStatus = {};
-    let addresses = Object.keys(recordedData);
+    var addresses = Object.keys(allNodes);
     for (var i = 0; i < addresses.length; i++) {
 	    var address = addresses[i];
 
@@ -621,17 +633,26 @@ function deleteDataValue(req, res, next) {
 
 function getBiotRecord(req, res, next) {
     var address = req.context['address'];
-    if (recordedData[address] !== undefined) {
-        let samples =  recordedData[address].length;
-        let time =  (recordingStop[address] - recordingStart[address]) / 1000;
-        let sr =  samples / time;
-        res.send(200, {
-            'address': address,
-            'sampleRate': sr,
-            'interval': time,
-            'count': samples,
-            'data': recordedData[address]
+    if (recordingExists[address] !== undefined) {
+        recordedData.findOne({name: address}, function(err, data) {
+            if (err) {
+                console.error("error finding recording", err);
+                res.send(500, 'error finding recording:' + address);
+            } else {
+                let samples =  data.data.length;
+                let time =  (data.stop - data.start) / 1000;
+                let sr =  samples / time;
+                console.log('sending recording:', data);
+                res.send(200, {
+                    'address': address,
+                    'sampleRate': sr,
+                    'interval': time,
+                    'count': samples,
+                    'data': data.data
+                });
+            }
         });
+
     } else {
         res.send(404, 'recorded data for address:' + address + ' does not exist');
     }
@@ -639,7 +660,7 @@ function getBiotRecord(req, res, next) {
 }
 
 function getBiotRecordings(req, res, next) {
-    let addresses = Object.keys(recordedData);
+    let addresses = Object.keys(recordingExists);
     res.send(200, addresses);
     next();
 }
@@ -647,18 +668,25 @@ function getBiotRecordings(req, res, next) {
 function getBiotRecordStatus(req, res, next) {
     var address = req.context['address'];
     var recStatus = false;
-    if (recordingTime[address] !== undefined ) {
-        var now = new Date().getTime();
-        if (recordingTime[address] >= now) {
-            recStatus = true;
-        }
-    }
 
-    res.send(200, {
-        recordingActive: recording[address],
-        recordingExists: recordingExists[address]
+    let haveARecording = false;
+    let isRecording = false;
+    recordedData.findOne({name: address}, function(err, data) {
+        if (err) {
+            console.error("error finding recorded data", err);
+            res.send(500, err);
+        } else {
+            if (data !== null) {
+                 haveARecording = true;
+                 isRecording = data.active;
+            }
+            res.send(200, {
+                recordingActive: isRecording,
+                recordingExists: haveARecording
+            });
+        }
+        next();
     });
-    next();
 }
 
 function heartbeat() {
@@ -672,6 +700,13 @@ function heartbeat() {
 						edgeRouterTime[er.name] = ts;
 					}
 			});
+                        recordingExists = {};
+                        recordedData.find(function(err, data) {
+                            if (err) { console.error("error finding recorded data", err); return; }
+                            for (let i = 0; i < data.length; i++) {
+                                recordingExists[data[i].name] = true;
+                            }
+                        });
 			heartbeat();
 	}, 4000);
 }
@@ -788,19 +823,29 @@ console.log('led', address);
 
 function putBiotRecord(req, res, next) {
     var address = req.context['address'];
-    if (! recording[address]) {
+    if (true || ! recording[address]) {
         var seconds = req.body;
         if (seconds > 15) {
             console.log('changing recording time from', seconds, ' to ', 15);
             seconds = 15;
         }
         console.log('start recording', address);
-        recordingTime[address] = (new Date().getTime()) + (seconds * 1000);
-        recordingStart[address] = recordingTime[address];
-        recordingStop[address] = recordingTime[address];
-        recordingExists[address] = false;
-        recordedData[address] = [];
-        recording[address] = true;
+        recordedData.remove({name: address}, function(err) {
+            if (err) { console.error("error deleting recording", err); return; }
+            console.log("saving recording entry");
+            var now = new Date().getTime(); 
+            var rec = new recordedData({
+                name: address,
+                active: true,
+                start: now, 
+                stop: now + (seconds * 1000), 
+                data: [] });
+            rec.save(function(err, data) {
+                if (err) { console.error("error saving new recording", err); return; }
+                recording[address] = true;
+                console.log(recording);
+            });
+        });
     } else {
         console.log('already recording', address);
     }

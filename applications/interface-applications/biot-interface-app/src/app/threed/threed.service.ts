@@ -117,12 +117,18 @@ export class ThreedService {
     }
 
     dropNode(addr: string) {
-            console.log(this.scene);
-        let selectedObject = this.scene.getObjectByName('g_biot-' + addr);
-        if (selectedObject !== undefined) {
-            console.log(selectedObject);
-            selectedObject.parent.remove(selectedObject);
-            this.render();
+        console.log('dropping', addr, this.scene);
+        if (this.scene !== undefined) {
+            let selectedObject = this.scene.getObjectByName('g_biot-' + addr);
+            if (selectedObject !== undefined) {
+                console.log('dropped', selectedObject);
+                selectedObject.parent.remove(selectedObject);
+                this.render();
+            } else {
+                console.log('cannot find', addr);
+            }
+        } else {
+            console.log('scene does not exist yet...?');
         }
     }
 

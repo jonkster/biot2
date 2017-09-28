@@ -13,8 +13,10 @@
 #include "../common/udp/udp_common.h"
 #include "periph/gpio.h"
 
-#define PRIO    (THREAD_PRIORITY_MAIN + 1)
-#define Q_SZ    (4)
+//#define PRIO    (THREAD_PRIORITY_MAIN + 1)
+#define PRIO    (THREAD_PRIORITY_MAIN)
+#define Q_SZ    (0)
+//#define Q_SZ    (4)
 
 #define SYSTEM_SUBNET    "affe"
 #define ROUTER_6LOW_IF   "7"
@@ -33,7 +35,7 @@ bool isRootPending = false;
 bool isRoot = false;
 bool continuousWho = false;
 
-uint32_t timeSyncIntervalV       = 10000000;
+uint32_t timeSyncIntervalV       = 30 * ONE_SECOND_US;
 
 extern int udp_cmd(int argc, char **argv);
 extern int udp_send(char *addr_str, char *data);
@@ -183,7 +185,7 @@ void setRoot(void)
     batch(shell_commands, "ncache add " ROUTER_6SLIP_IF " " SYSTEM_SUBNET UDPIP_6SLIP_IP );
 
     puts("starting udpserver thread");
-    thread_create(udp_stack, sizeof(udp_stack), PRIO, THREAD_CREATE_STACKTEST, udp_server,
+    thread_create(udp_stack, sizeof(udp_stack), PRIO - 1, THREAD_CREATE_STACKTEST, udp_server,
                 NULL, "udp");
 
     initNodes();

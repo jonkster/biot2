@@ -4,6 +4,9 @@ RIOTBASE ?= $(CURDIR)/../../../RIOT
 
 CFLAGS += -DPI=3.14159265
 
+# to allow us to use strdup and strndup without warnings
+CFLAGS += -D_GNU_SOURCE
+
 USEMODULE += shell
 USEMODULE += shell_commands
 USEMODULE += ps

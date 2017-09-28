@@ -5,7 +5,8 @@
 
 myQuat_t orientationQ;
 
-uint32_t usDataUpdateIntervalV   = 50000;
+//uint32_t usDataUpdateIntervalV   = 50000;
+uint32_t usDataUpdateIntervalV   = 1073; // 15000 uS = 15 mS = 0.015 secs
 uint32_t usCalibrationIntervalV  = 1500000;
 uint32_t usStatusIntervalV       = 2500000;
 

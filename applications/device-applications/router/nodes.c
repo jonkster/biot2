@@ -7,6 +7,8 @@
 #include "../common/time/biotTime.h"
 #include "../common/udp/udp_common.h"
 
+//extern char *strdup(const char *s);
+
 
 nodeData_t nodeData[MAX_NODES];
 

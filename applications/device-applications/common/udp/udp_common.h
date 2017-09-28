@@ -4,7 +4,8 @@
 #include <stdbool.h>
 #include <netinet/in.h>
 
-#define SERVER_BUFFER_SIZE     (128)
+#define SERVER_BUFFER_SIZE     (96)
+//#define SERVER_BUFFER_SIZE     (128)
 
 #ifdef __cplusplus
 extern "C" {

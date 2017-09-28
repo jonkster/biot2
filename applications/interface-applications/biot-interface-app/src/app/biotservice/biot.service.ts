@@ -73,18 +73,23 @@ export class BiotService {
         let i = 0;
         let p = setInterval(() =>{
             if (i > 255) {
+                console.log('NONE FOUND: SET BROKER TO:', this.biotServerHost);
                 clearInterval(p);
             }
             let ip = net + i++;
             const url = "http://" + ip + ":" + this.biotServerPort + "/";
             this.http.get(url)
                 .timeout(40)
-                .subscribe(data => {
-                    this.statusOK = true;
-                    console.log('d', data);
-                    this.biotServerHost = ip;
-                    clearInterval(p);
-                }
+                .subscribe(
+                    data => {
+                        this.statusOK = true;
+                        console.log('GOT BROKER', ip);
+                        this.biotServerHost = ip;
+                        clearInterval(p);
+                    },
+                    error => {
+                        console.log('no broker at', ip);
+                    }
                 );
         }, 10);
     }
@@ -208,17 +213,19 @@ export class BiotService {
 
     private makeBrokerRequest(path: string) {
         const url = "http://" + this.biotServerHost + ":" + this.biotServerPort + "/" + path ;
-        return this.http.get(url)
-            .timeout(25)
+        console.log(path);
+        let src = this.http.get(url)
+            .timeout(20)
             .map(this.extractWSData)
             .catch((err: Response) => {
                 console.log(err);
                 if (err.status >= 500) {
                     this.statusOK = false;
                 } 
-                console.log('failed to get resource', path, err);
+                console.log('failed to get resource', url, err);
                 return this.handleError(err)
             });
+            return src;
 
     }
 
