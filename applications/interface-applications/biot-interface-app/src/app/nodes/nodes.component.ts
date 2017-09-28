@@ -45,6 +45,7 @@ export class NodesComponent implements OnInit, AfterContentChecked {
         this.limbMakerService = limbMakerService;
         this.nodeHolderService = nodeHolderService;
         this.router = router;
+        this.dropNodes();
         this.nodeHolderService.lostNodeSubscription().subscribe(
             nodeAddr => {
                 this.dropNode(nodeAddr);

@@ -68,6 +68,7 @@ export class NodeholderService {
 
   dropNode(addr) {
       if (this.managedNodeList[addr] !== undefined) {
+          console.log("!!dropping node", addr);
           delete this.managedNodeList[addr];
       }
       this.biotService.dropNode(addr);
@@ -174,30 +175,32 @@ export class NodeholderService {
 
   getAllNodeStatusData() {
       this.biotService.detectNodes();
-      let addresses = Object.keys(this.managedNodeList);
-      for (let i = 0; i < addresses.length; i++) {
-          const addr = addresses[i];
-          this.biotService.getANodesData(addr).subscribe(
-              rawData => {
-                  let node = this.getManagedNode(addr);
-                  if (node !== undefined) {
-                      node.calibration = rawData.calibration;
-                      node.interval = rawData.interval;
-                      node.auto = rawData.auto;
-                      node.dof = rawData.dof;
-                      node.led = rawData.led;
-
-                  } else {
-                      this.dropNode(addr);
+      this.biotService.getAllNodes().subscribe(
+          rawData => {
+              let addresses = Object.keys(this.managedNodeList);
+              for (let i = 0; i < addresses.length; i++) {
+                  const addr = addresses[i];
+                  let rawNode = rawData[addr];
+                  if (rawNode !== undefined) {
+                      let node = this.getManagedNode(addr);
+                      if (node !== undefined) {
+                          node.calibration = rawNode.dc;
+                          node.interval = rawNode.interval;
+                          let statusBits = rawNode.ds.split(/:/);
+                          node.auto = statusBits[2];
+                          node.dof = statusBits[0];
+                          node.led = '?';
+                          this.managedNodeList[addr] = node;
+                      } else {
+                          this.dropNode(addr);
+                      }
                   }
-              },
-              error => {
-                  console.log('error getting data:', error);
-                  if (this.unmanagedNodeList[addr] !== undefined) {
-                      delete this.unmanagedNodeList[addr];
-                  }
-              });
-      }
+              }
+          },
+          error => {
+              console.log('error getting data:', error);
+          }
+      );
   }
 
   getError(): string {
@@ -314,12 +317,10 @@ export class NodeholderService {
   }
 
   updateLoop(owner: any) {
-      let delay = 0;
-      if ((owner.counter % (delay+1)) === 0) {
-          owner.getAllNodePositionData();
-      }
       if ((owner.counter++ % 100) === 0) {
-              owner.getAllNodeStatusData();
+          owner.getAllNodeStatusData();
+      } else {
+          owner.getAllNodePositionData();
       }
   }
 

@@ -36,6 +36,10 @@ export class SystemComponent implements AfterViewInit {
         edgerouter: 'unknown',
         biots: 'unknown'
     }
+
+    private biotBrokerIP: string = '?';
+    private biotBrokerPort: string = '?';
+
     @ViewChild('sysCanvas') canvasRef: ElementRef;
     image = 'assets/architecture-1.png';
     hotspots = {
@@ -128,6 +132,8 @@ export class SystemComponent implements AfterViewInit {
     }
 
     getAllBiotData() {
+        this.biotBrokerIP = this.biotService.getBrokerIP();
+        this.biotBrokerPort = this.biotService.getBrokerPort();
         for (let i = 0; i < this.nodeStatus.count; i++) {
             let addr = this.nodeStatus.addresses[i];
             const status =  this.biotService.getStatus(addr);

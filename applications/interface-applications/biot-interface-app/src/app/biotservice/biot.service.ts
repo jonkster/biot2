@@ -5,7 +5,8 @@ import {Observable} from 'rxjs/Observable';
 import 'rxjs/add/operator/catch';
 import 'rxjs/add/operator/map';
 import 'rxjs/add/observable/throw';
-//import 'rxjs/add/operator/toPromise';
+
+declare const require: (moduleId: string) => any;
 
 @Injectable()
 export class BiotService {
@@ -13,10 +14,12 @@ export class BiotService {
     private statusOK:boolean = false;
     private resetRunning: boolean = false;
     private detectedAddresses: any = {};
-    private biotServerHost: string = '10.1.1.9';
+    private biotServerHost: string = '127.0.0.1';
     private biotServerPort: string = '8889';
 
-    constructor(private http: Http) { }
+    constructor(private http: Http) {
+        this.getBiotRouter();
+    }
 
     private extractWSData (res: Response) {
         const body = res.json();
@@ -63,6 +66,30 @@ export class BiotService {
             .map((response) => response.json());
     }
 
+    getBiotRouter()
+    {
+        var localHost = location.hostname;
+        var net = localHost.replace(/\.[0-9]+$/, '.');
+        let i = 0;
+        let p = setInterval(() =>{
+            if (i > 255) {
+                clearInterval(p);
+            }
+            let ip = net + i++;
+            const url = "http://" + ip + ":" + this.biotServerPort + "/";
+            this.http.get(url)
+                .timeout(40)
+                .subscribe(data => {
+                    this.statusOK = true;
+                    console.log('d', data);
+                    this.biotServerHost = ip;
+                    clearInterval(p);
+                }
+                );
+        }, 10);
+    }
+
+
     getDetectedAddresses(): string[] {
         return Object.keys(this.detectedAddresses);
     }
@@ -76,6 +103,14 @@ export class BiotService {
         return result;
     }
 
+    getBrokerIP() {
+        return this.biotServerHost;
+    }
+
+    getBrokerPort() {
+        return this.biotServerPort;
+    }
+
     getCalibration(addr) {
         const result = this.makeBrokerRequest('biotz/addresses/' + addr + '/calibration');
         return result;
@@ -83,6 +118,12 @@ export class BiotService {
 
     getANodesData(addr) {
         const path = 'biotz/addresses/' + addr;
+        const result = this.makeBrokerRequest(path);
+        return result;
+    }
+
+    getAllNodes() {
+        const path = 'biotz/all/nodes';
         const result = this.makeBrokerRequest(path);
         return result;
     }
@@ -119,6 +160,7 @@ export class BiotService {
         if (! this.statusOK) {
             if (! this.resetRunning) {
                 console.log('retry communication...');
+                this.getBiotRouter();
                 this.resetRunning = true;
                 setTimeout(e => {
                     this.resetService();
@@ -167,6 +209,7 @@ export class BiotService {
     private makeBrokerRequest(path: string) {
         const url = "http://" + this.biotServerHost + ":" + this.biotServerPort + "/" + path ;
         return this.http.get(url)
+            .timeout(25)
             .map(this.extractWSData)
             .catch((err: Response) => {
                 console.log(err);
