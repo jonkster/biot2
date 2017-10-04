@@ -22,7 +22,7 @@ CFLAGS += -DHAS_RGB_LED
 # to allow us to use strdup and strndup without warnings
 CFLAGS += -D_GNU_SOURCE
 
-USEMODULE += printf_float
+#USEMODULE += printf_float
     
 GNRC_NETIF_NUMOF := 2
 INCLUDES += -I$(CURDIR)
@@ -47,13 +47,13 @@ USEMODULE += gnrc_rpl
 USEMODULE += auto_init_gnrc_rpl
 # This application dumps received packets to STDIO using the pktdump module
 USEMODULE += gnrc_pktdump
-# Additional networking modules that can be dropped if not needed
-#USEMODULE += gnrc_icmpv6_echo
 
 # Specify the mandatory networking modules for 6LoWPAN border router
 USEMODULE += gnrc_sixlowpan_border_router_default
 # Add forwarding table
 USEMODULE += fib
+# Additional networking modules that can be dropped if not needed
+USEMODULE += gnrc_icmpv6_echo
 
 USEMODULE += gnrc_sock_ip
 
@@ -68,10 +68,7 @@ USEMODULE += netstats_rpl
 # include UHCP client
 #USEMODULE += gnrc_uhcpc
 
-#???
-USEMODULE += gnrc_conn_udp
-
-
+USEMODULE += gnrc_sock_udp
 
 # adding biot specific modules
 DIRS += ../common/batch/
@@ -108,7 +105,7 @@ ifneq (,$(filter cc110x,$(USEMODULE)))          # radio is cc110x sub-GHz
 else
   ifneq (,$(filter at86rf212b,$(USEMODULE)))    # radio is IEEE 802.15.4 sub-GHz
     DEFAULT_CHANNEL ?= 5
-    FLAGS += -DIEEE802154_DEFAULT_SUBGHZ_CHANNEL=$(DEFAULT_CHANNEL)
+    CFLAGS += -DIEEE802154_DEFAULT_SUBGHZ_CHANNEL=$(DEFAULT_CHANNEL)
   else                                          # radio is IEEE 802.15.4 2.4 GHz
     DEFAULT_CHANNEL ?= 26
     CFLAGS += -DIEEE802154_DEFAULT_CHANNEL=$(DEFAULT_CHANNEL)

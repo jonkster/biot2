@@ -12,7 +12,8 @@ extern "C" {
 #endif
 
 extern bool led_status;
-void *udp_server(void *);
+void *udp_server_loop(void *arg);
+//void *udp_server(void *);
 int udp_send_jk(struct in6_addr destAdd, char *data);
 int udp_send(char *addr_str, char *data);
 int udp_cmd(int argc, char **argv);

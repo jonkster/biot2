@@ -13,8 +13,8 @@
 #include "../common/udp/udp_common.h"
 #include "periph/gpio.h"
 
-//#define PRIO    (THREAD_PRIORITY_MAIN + 1)
-#define PRIO    (THREAD_PRIORITY_MAIN)
+#define PRIO    (THREAD_PRIORITY_MAIN + 1)
+//#define PRIO    (THREAD_PRIORITY_MAIN)
 #define Q_SZ    (0)
 //#define Q_SZ    (4)
 
@@ -39,13 +39,13 @@ uint32_t timeSyncIntervalV       = 30 * ONE_SECOND_US;
 
 extern int udp_cmd(int argc, char **argv);
 extern int udp_send(char *addr_str, char *data);
-extern void *udp_server(void *);
+extern void *udp_server_loop(void *);
 
 int about_cmd(int argc, char **argv)
 {
-    puts("-----------------------------------------------------------------------------");
-    puts("This application implements a 6lowPAN Edge Router for use in a Biotz System");
-    puts("-----------------------------------------------------------------------------");
+    puts("------------------------------------------------");
+    puts("A 6lowPAN Edge Router for use in a Biotz System");
+    puts("------------------------------------------------");
     return 0;
 }
 
@@ -158,9 +158,11 @@ static const shell_command_t shell_commands[] = {
 
 void sendAliveMessage(void)
 {
-    char buffer[MAX_MESSAGE_LENGTH];
-    memset(buffer, 0, MAX_MESSAGE_LENGTH);
-    sprintf(buffer, "da##");
+#define ALIVE_MSG   "da###"
+    uint8_t l = strlen(ALIVE_MSG);
+    char buffer[l];
+    memset(buffer, 0, l + 1);
+    sprintf(buffer, ALIVE_MSG);
     udp_send(SYSTEM_SUBNET UDPIP_6SLIP_IP, buffer);
     return;
 }
@@ -185,7 +187,7 @@ void setRoot(void)
     batch(shell_commands, "ncache add " ROUTER_6SLIP_IF " " SYSTEM_SUBNET UDPIP_6SLIP_IP );
 
     puts("starting udpserver thread");
-    thread_create(udp_stack, sizeof(udp_stack), PRIO - 1, THREAD_CREATE_STACKTEST, udp_server,
+    thread_create(udp_stack, sizeof(udp_stack), PRIO, THREAD_CREATE_STACKTEST, udp_server_loop,
                 NULL, "udp");
 
     initNodes();

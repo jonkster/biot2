@@ -48,6 +48,10 @@ void actOnTimCommandMessage(char *data)
     setCurrentTime(t);
 }
 
+void actOnPokeCommandMessage(void)
+{
+    puts("cannot do poke yet...");
+}
 
 void actOnRebCommandMessage(char *data)
 {
@@ -57,8 +61,9 @@ void actOnRebCommandMessage(char *data)
 
 void actOnOrientDataMessage(char* data, char* srcAdd)
 {
-    char buffer[MAX_MESSAGE_LENGTH];
-    memset(buffer, 0, MAX_MESSAGE_LENGTH);
+    int l = snprintf(NULL, 0, "%s#%s", data, srcAdd);
+    char buffer[l + 1];
+    memset(buffer, 0, l);
     sprintf(buffer, "%s#%s", data, srcAdd);
     relayMessage("do", buffer, "affe::1");
     updateNodeOrientation(srcAdd, data);
@@ -66,8 +71,9 @@ void actOnOrientDataMessage(char* data, char* srcAdd)
 
 void actOnCalibrDataMessage(char* data, char* srcAdd)
 {
-    char buffer[MAX_MESSAGE_LENGTH];
-    memset(buffer, 0, MAX_MESSAGE_LENGTH);
+    int l = snprintf(NULL, 0, "%s#%s", data, srcAdd);
+    char buffer[l + 1];
+    memset(buffer, 0, l);
     sprintf(buffer, "%s#%s", data, srcAdd);
     relayMessage("dc", buffer, "affe::1");
     updateNodeCalibration(srcAdd, data);
@@ -75,8 +81,9 @@ void actOnCalibrDataMessage(char* data, char* srcAdd)
 
 void actOnStatusDataMessage(char* data, char* srcAdd)
 {
-    char buffer[MAX_MESSAGE_LENGTH];
-    memset(buffer, 0, MAX_MESSAGE_LENGTH);
+    int l = snprintf(NULL, 0, "%s#%s", data, srcAdd);
+    char buffer[l + 1];
+    memset(buffer, 0, l);
     sprintf(buffer, "%s#%s", data, srcAdd);
     relayMessage("ds", buffer, "affe::1");
     registerNode(srcAdd, data);
@@ -142,6 +149,10 @@ void actOnCommand(char *cmdSt, char *src_addr)
     else if (strcmp(cmd, "csyn") == 0)
     {
         syncKnown();
+    }
+    else if (strcmp(cmd, "cpok") == 0)
+    {
+        actOnPokeCommandMessage();
     }
     else
     {

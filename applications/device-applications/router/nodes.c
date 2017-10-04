@@ -109,8 +109,13 @@ void registerNode(char *addr, char* data)
 
 void relayMessage(char *cmd, char *data, char *address)
 {
-    char buffer[MAX_MESSAGE_LENGTH];
-    memset(buffer, 0, MAX_MESSAGE_LENGTH);
+    uint8_t l = strlen(cmd) + strlen(data) + strlen("#") + 1;
+    if (l > MAX_MESSAGE_LENGTH) {
+        printf("could not print message length: %i '%s#%s'\n", l, cmd, data);
+        return;
+    }
+    char buffer[l];
+    memset(buffer, 0, l);
     //printf("relaying cmd:%s with data:%s to:%s\n", cmd, data, address);
     sprintf(buffer, "%s#%s", cmd, data);
     udp_send(address, buffer);
@@ -119,13 +124,15 @@ void relayMessage(char *cmd, char *data, char *address)
 
 void syncKnown(void)
 {
-    char buffer[MAX_MESSAGE_LENGTH];
-    memset(buffer, 0, MAX_MESSAGE_LENGTH);
+    uint32_t t = getCurrentTime();
+    int l = snprintf(NULL, 0, "ctim#%lu", t);
+    char buffer[l + 1];
+    memset(buffer, 0, l);
+    sprintf(buffer, "ctim#%lu", t);
     for (uint8_t i = 0; i < MAX_NODES; i++)
     {
         if (strlen(nodeData[i].ip6Address) > 0)
         {
-            sprintf(buffer, "ctim#%lu", getCurrentTime());
             udp_send(nodeData[i].ip6Address, buffer);
         }
         else

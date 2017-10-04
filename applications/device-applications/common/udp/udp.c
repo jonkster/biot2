@@ -8,7 +8,7 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
-#include "net/conn/udp.h"
+#include "net/sock/udp.h"
 #include "net/ipv6/addr.h"
 #include "net/sock/udp.h"
 #include <unistd.h>
@@ -33,8 +33,10 @@ void resetNetwork(void)
     udp_send("ff02::1", "creb##");
 }
 
-static void *udp_server_loop(void)
+void *udp_server_loop(void *arg)
 {
+    (void) arg;
+
     puts("initialising udp server...");
 
     msg_init_queue(msg_q, SERVER_MSG_QUEUE_SIZE);
@@ -192,17 +194,17 @@ int udp_send_jk(struct in6_addr destAdd, char *data)
 /*
  * trampoline for udp_server_loop()
  */
-void *udp_server(void *arg)
-{
-    (void) arg;
-
-    udp_server_loop();
-
-    puts("WARNING! udp server failed to start");
-
-    /* never reached hopefully */
-    return NULL;
-}
+//void *udp_server(void *arg)
+//{
+    //(void) arg;
+//
+    //udp_server_loop();
+//
+    //puts("WARNING! udp server failed to start");
+//
+    ///* never reached hopefully */
+    //return NULL;
+//}
 
 int udp_cmd(int argc, char **argv)
 {
