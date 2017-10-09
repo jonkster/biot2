@@ -6,9 +6,7 @@
 #include "nodes.h"
 #include "../common/time/biotTime.h"
 #include "../common/udp/udp_common.h"
-
-//extern char *strdup(const char *s);
-
+#include "../common/memory/memory.h"
 
 nodeData_t nodeData[MAX_NODES];
 
@@ -21,10 +19,10 @@ void cullNode(uint8_t idx)
         printf("dropping node #%i %s\n", idx, nodeData[idx].ip6Address);
         strcpy(nodeData[idx].ip6Address, "");
         nodeData[idx].timeStamp = 0;
-        free(nodeData[idx].nodeTime);
-        free(nodeData[idx].orientation);
-        free(nodeData[idx].calibration);
-        free(nodeData[idx].gamStatus);
+        safe_free("nt", nodeData[idx].nodeTime);
+        safe_free("no", nodeData[idx].orientation);
+        safe_free("nc", nodeData[idx].calibration);
+        safe_free("ng", nodeData[idx].gamStatus);
     }
     else
     {
@@ -87,16 +85,17 @@ void registerNode(char *addr, char* data)
     }
     else
     {
+        puts("XXXXXregister node...");
         for (idx = 0; idx < MAX_NODES; idx++)
         {
             if (strlen(nodeData[idx].ip6Address) == 0)
             {
                 strcpy(nodeData[idx].ip6Address, addr);
                 nodeData[idx].timeStamp = getCurrentTime();
-                nodeData[idx].nodeTime = strdup("?");
-                nodeData[idx].orientation = strdup("?");
-                nodeData[idx].calibration = strdup("?");
-                nodeData[idx].gamStatus = strdup("?");
+                nodeData[idx].nodeTime = safe_strdup("?", "?");
+                nodeData[idx].orientation = safe_strdup("?", "?");
+                nodeData[idx].calibration = safe_strdup("?", "?");
+                nodeData[idx].gamStatus = safe_strdup("?", "?");
                 updateNodeStatus(addr, data);
                 return;
             }
@@ -149,8 +148,8 @@ void updateNodeCalibration(char* srcAdd, char* data)
     if (idx >= 0)
     {
         nodeData[idx].timeStamp = getCurrentTime();
-        free(nodeData[idx].calibration);
-        nodeData[idx].calibration = strdup(data);
+        safe_free("nc", nodeData[idx].calibration);
+        nodeData[idx].calibration = safe_strdup("nc", data);
         return;
     }
 }
@@ -166,10 +165,10 @@ void updateNodeOrientation(char* srcAdd, char* data)
         if (p != NULL)
         {
             nodeData[idx].timeStamp = getCurrentTime();
-            free(nodeData[idx].orientation);
-            nodeData[idx].orientation = strdup(p+1);
-            free(nodeData[idx].nodeTime);
-            nodeData[idx].nodeTime = strndup(data, p - data);
+            safe_free("no", nodeData[idx].orientation);
+            nodeData[idx].orientation = safe_strdup("no", p+1);
+            safe_free("nt", nodeData[idx].nodeTime);
+            nodeData[idx].nodeTime = safe_strndup("nt", data, p - data);
         }
     }
 }
@@ -180,8 +179,8 @@ void updateNodeStatus(char* srcAdd, char* data)
     if (idx >= 0)
     {
         nodeData[idx].timeStamp = getCurrentTime();
-        free(nodeData[idx].gamStatus);
-        nodeData[idx].gamStatus = strdup(data);
+        safe_free("ng", nodeData[idx].gamStatus);
+        nodeData[idx].gamStatus = safe_strdup("ng", data);
         return;
     }
 }

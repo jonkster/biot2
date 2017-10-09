@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include "shell_commands.h"
+#include "../common/memory/memory.h"
 
 void print_help(const shell_command_t *command_list)
 {
@@ -64,7 +65,7 @@ static shell_command_handler_t find_handler(const shell_command_t *command_list,
 /* simplified arg processor - NB will not interpret quotes */
 void batch(const shell_command_t *command_list, char *line)
 {
-    char* argString = strdup(line);
+    char* argString = safe_strdup("line", line);
 
     enum { kMaxArgs = 5 };
     int argc = 0;
@@ -86,5 +87,5 @@ void batch(const shell_command_t *command_list, char *line)
     else {
         printf("shell: command not found: %s\n", argv[0]);
     }
-    free(argString);
+    safe_free("arg", argString);
 }

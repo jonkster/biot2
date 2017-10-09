@@ -120,8 +120,13 @@ void actOnPokeCommandMessage(char* data)
 
 void relayMessage(char *cmd, char *data, char *address)
 {
-    char buffer[MAX_MESSAGE_LENGTH];
-    memset(buffer, 0, MAX_MESSAGE_LENGTH);
+    uint8_t l = strlen(cmd) + strlen(data) + strlen("#") + 1;
+    if (l > MAX_MESSAGE_LENGTH) {
+        printf("could not print message length: %i '%s#%s'\n", l, cmd, data);
+        return;
+    }
+    char buffer[l];
+    memset(buffer, 0, l);
     sprintf(buffer, "%s#%s", cmd, data);
     udp_send(address, buffer);
     return;

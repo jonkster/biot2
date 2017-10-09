@@ -5,8 +5,10 @@
 
 myQuat_t orientationQ;
 
-//uint32_t usDataUpdateIntervalV   = 50000;
-uint32_t usDataUpdateIntervalV   = 1073; // 15000 uS = 15 mS = 0.015 secs
+extern void relayMessage(char *cmd, char *data, char *address);
+
+uint32_t usDataUpdateIntervalV   = 5000; // 1500 uS = 1.5mS = 0.0015 secs, 15000 uS = 15 mS = 0.015 secs
+//uint32_t usDataUpdateIntervalV   = 1533; // 1500 uS = 1.5mS = 0.0015 secs, 15000 uS = 15 mS = 0.015 secs
 uint32_t usCalibrationIntervalV  = 1500000;
 uint32_t usStatusIntervalV       = 2500000;
 
@@ -65,31 +67,34 @@ bool getCurrentPosition(void)
     return imuReady;
 }
 
-void sendNodeOrientation(void)
+void sendNodeOrientation(char *me)
 {
     if (imuOK)
     {
+
         uint32_t ts = getCurrentTime();
-        char buffer[SERVER_BUFFER_SIZE];
-        memset(buffer, 0, SERVER_BUFFER_SIZE);
-        sprintf(buffer, "do#%lu:%f:%f:%f:%f", ts, orientationQ.w, orientationQ.x, orientationQ.y, orientationQ.z);
-        udp_send("affe::2", buffer);
+        int l = snprintf(NULL, 0, "do#%lu:%f:%f:%f:%f#%s", ts, orientationQ.w, orientationQ.x, orientationQ.y, orientationQ.z, me);
+        char buffer[l + 1];
+        memset(buffer, 0, l+1);
+        sprintf(buffer, "do#%lu:%f:%f:%f:%f#%s", ts, orientationQ.w, orientationQ.x, orientationQ.y, orientationQ.z, me);
+        udp_send("affe::1", buffer);
     }
 }
 
-void sendNodeCalibration(void)
+void sendNodeCalibration(char *me)
 {
     if (imuOK)
     {
         int16_t *mc = getMagCalibration();
-        char buffer[SERVER_BUFFER_SIZE];
-        memset(buffer, 0, SERVER_BUFFER_SIZE);
-        sprintf(buffer, "dc#%i:%i:%i:%i:%i:%i", mc[0], mc[1], mc[2], mc[3], mc[4], mc[5]);
-        udp_send("affe::2", buffer);
+        int l = snprintf(NULL, 0, "dc#%i:%i:%i:%i:%i:%i#%s", mc[0], mc[1], mc[2], mc[3], mc[4], mc[5], me);
+        char buffer[l + 1];
+        memset(buffer, 0, l);
+        sprintf(buffer, "dc#%i:%i:%i:%i:%i:%i#%s", mc[0], mc[1], mc[2], mc[3], mc[4], mc[5], me);
+        udp_send("affe::1", buffer);
     }
 }
 
-void sendNodeStatus(void)
+void sendNodeStatus(char *me)
 {
     if (imuOK)
     {
@@ -108,10 +113,11 @@ void sendNodeStatus(void)
             if (is.calibrateMode)
                 mode = 1;
 
-            char buffer[SERVER_BUFFER_SIZE];
-            memset(buffer, 0, SERVER_BUFFER_SIZE);
-            sprintf(buffer, "ds#%d:%"SCNu32":%d", dof, is.dupInterval, mode);
-            udp_send("affe::2", buffer);
+            int l = snprintf(NULL, 0, "ds#%d:%"SCNu32":%d#%s", dof, is.dupInterval, mode, me);
+            char buffer[l + 1];
+            memset(buffer, 0, l);
+            sprintf(buffer, "ds#%d:%"SCNu32":%d#%s", dof, is.dupInterval, mode, me);
+            udp_send("affe::1", buffer);
         }
     }
     

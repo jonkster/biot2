@@ -16,9 +16,8 @@
 #include "msg.h"
 #include "udp_common.h"
 
-#define SERVER_MSG_QUEUE_SIZE  (4)
-//#define SERVER_MSG_QUEUE_SIZE  (16)
 #define UDP_PORT               (8888)
+#define SERVER_MSG_QUEUE_SIZE  4
 
 #define UDP_VERBOSE            0  // set == 1 for debugging
 
@@ -26,20 +25,21 @@ static msg_t msg_q[SERVER_MSG_QUEUE_SIZE];
 
 extern void actOnCommand(char *cmdSt, char *src_addr);
 
+extern void idleTask(void);
+
 static int serverSocket = -1;
+
+bool serverListen = false;
+bool runIdleTask = false;
 
 void resetNetwork(void)
 {
     udp_send("ff02::1", "creb##");
 }
 
-void *udp_server_loop(void *arg)
+bool udpInit(void)
 {
-    (void) arg;
-
     puts("initialising udp server...");
-
-    msg_init_queue(msg_q, SERVER_MSG_QUEUE_SIZE);
 
     if (serverSocket >= 0)
     {
@@ -58,62 +58,91 @@ void *udp_server_loop(void *arg)
     {
         puts("error initializing socket");
         serverSocket = -1;
-        return NULL;
+        return false;
     }
 
     if (bind(serverSocket, (struct sockaddr *)&serverSocketAddr, sizeof(serverSocketAddr)) < 0)
     {
         serverSocket = -1;
         puts("error binding socket");
-        return NULL;
+        return false;
     }
+    puts("udp server ready");
+    return true;
+}
 
-    puts("OK");
+void udpRunIdleTask(bool state)
+{
+    runIdleTask = state;
+}
+
+void *udp_server_loop(void *arg)
+{
+    (void) arg;
+
+    msg_init_queue(msg_q, SERVER_MSG_QUEUE_SIZE);
 
     static char serverBuffer[SERVER_BUFFER_SIZE];
+    memset(serverBuffer, 0, SERVER_BUFFER_SIZE);
     for(;;)
     {
-        memset(serverBuffer, 0, SERVER_BUFFER_SIZE);
-
-        struct sockaddr_in6 src;
-        socklen_t srcLen = sizeof (src);
-        bzero(&src, srcLen);
-
-        // this blocks :( no non blocking recvfrom in RIOT OS yet
-        int res = recvfrom(serverSocket,
-                serverBuffer,
-                sizeof(serverBuffer),
-                0,
-                (struct sockaddr *)&src,
-                &srcLen);
-
-        // get strings representing source and server ipv6 addresses
-        static char srcAdd[INET6_ADDRSTRLEN];
-
-        inet_ntop(src.sin6_family, &src.sin6_addr, srcAdd, INET6_ADDRSTRLEN);
-        if (strcmp(srcAdd, "affe::") == 0)
+        if (runIdleTask)
         {
-            puts("nodes have lost context with router...");
-            resetNetwork();
+            idleTask();
         }
-        else if (res < 0)
+
+        if (serverListen)
         {
-            printf("Error on RX %d:%s rx from: %s (%s)\n", errno, strerror(errno), srcAdd, serverBuffer);
-            xtimer_usleep(100);
-        }
-        else if (res == 0)
-        {
-            puts("Peer did shut down");
-        }
-        else if (res >= SERVER_BUFFER_SIZE)
-        {
-            puts("OVERFLOW!");
-        }
-        else
-        {
-            if (UDP_VERBOSE > 0)
-                printf("rx from: %s data:%s\n", srcAdd, serverBuffer);
-            actOnCommand(serverBuffer, srcAdd);
+            if (serverSocket == -1)
+            {
+                if (! udpInit()) {
+                    puts("turning of udp listen");
+                    serverListen = false;
+                    continue;
+                }
+            }
+            //memset(serverBuffer, 0, SERVER_BUFFER_SIZE);
+
+            struct sockaddr_in6 src;
+            socklen_t srcLen = sizeof (src);
+            bzero(&src, srcLen);
+
+            // this blocks :( no non blocking recvfrom in RIOT OS yet
+            int res = recvfrom(serverSocket,
+                    serverBuffer,
+                    sizeof(serverBuffer),
+                    0,
+                    (struct sockaddr *)&src,
+                    &srcLen);
+
+            // get strings representing source and server ipv6 addresses
+            static char srcAdd[INET6_ADDRSTRLEN];
+
+            inet_ntop(src.sin6_family, &src.sin6_addr, srcAdd, INET6_ADDRSTRLEN);
+            if (strcmp(srcAdd, "affe::") == 0)
+            {
+                puts("nodes have lost context with router...");
+                resetNetwork();
+            }
+            else if (res < 0)
+            {
+                printf("Error on RX %d:%s rx from: %s (%s)\n", errno, strerror(errno), srcAdd, serverBuffer);
+                //xtimer_usleep(100);
+            }
+            else if (res == 0)
+            {
+                puts("Peer did shut down");
+            }
+            else if (res >= SERVER_BUFFER_SIZE)
+            {
+                printf("OVERFLOW! %i (max %i) data=%s\n", res, SERVER_BUFFER_SIZE, serverBuffer);
+            }
+            else
+            {
+                if (UDP_VERBOSE > 0)
+                    printf("rx from: %s data:%s\n", srcAdd, serverBuffer);
+                actOnCommand(serverBuffer, srcAdd);
+            }
         }
     }
     return NULL;
@@ -122,6 +151,10 @@ void *udp_server_loop(void *arg)
 int udp_send(char *addr_str, char *data)
 {
     struct sockaddr_in6 src, dst;
+    if (data == NULL) {
+        puts("!!!!XX");
+        return 1;
+    }
     size_t data_len = strlen(data);
     //uint16_t port;
     int s;
@@ -142,69 +175,23 @@ int udp_send(char *addr_str, char *data)
         puts("error initializing socket");
         return 1;
     }
+    if (data == NULL) {
+        puts("!!!!");
+        return 1;
+    }
     if (sendto(s, data, data_len, 0, (struct sockaddr *)&dst, sizeof(dst)) < 0) {
         puts("could not send");
     }
     else {
-        if (UDP_VERBOSE > 0)
+        if (UDP_VERBOSE > 0) {
             printf("Success: send %u byte to %s:%u data:%s\n", (unsigned)data_len, addr_str, UDP_PORT, data);
+        }
     }
 
     close(s);
     return 0;
 }
 
-
-int udp_send_jk(struct in6_addr destAdd, char *data)
-{
-    struct sockaddr_in6 src, dst;
-    size_t data_len = strlen(data);
-    int s;
-    src.sin6_family = AF_INET6;
-    dst.sin6_family = AF_INET6;
-    memset(&src.sin6_addr, 0, sizeof(src.sin6_addr));
-    dst.sin6_addr = destAdd;
-    /* parse destination address */
-
-    dst.sin6_port = htons(UDP_PORT);
-    src.sin6_port = htons(UDP_PORT);
-
-    s = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
-
-    if (s < 0) {
-        printf("sending udp data JK - error initializing socket: %i\n", s);
-        return 1;
-    }
-
-    if (sendto(s, data, data_len, 0, (struct sockaddr *)&dst, sizeof(dst)) < 0) {
-        puts("error: could not send message");
-        close(s);
-        return 1;
-    }
-
-    if (UDP_VERBOSE > 0)
-        printf("Success: sent %u byte(s)\n", (unsigned)data_len);
-
-    close(s);
-
-    return 0;
-}
-
-
-/*
- * trampoline for udp_server_loop()
- */
-//void *udp_server(void *arg)
-//{
-    //(void) arg;
-//
-    //udp_server_loop();
-//
-    //puts("WARNING! udp server failed to start");
-//
-    ///* never reached hopefully */
-    //return NULL;
-//}
 
 int udp_cmd(int argc, char **argv)
 {
@@ -216,4 +203,7 @@ int udp_cmd(int argc, char **argv)
     return 1;
 }
 
-/** @} */
+void udp_serverListen(bool state) {
+    serverListen = state;
+}
+

@@ -19,6 +19,8 @@ extern "C" {
 
 extern void idleTask(void);
 
+void heartFire(void);
+
 void *housekeeping_handler(void *arg);
 
 void rapidHeartbeat(bool state);

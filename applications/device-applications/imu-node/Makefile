@@ -16,7 +16,6 @@ USEMODULE += posix
 USEMODULE += posix_sockets
 # UDP communication stuff
 USEMODULE += gnrc_udp
-USEMODULE += gnrc_conn_udp
 USEMODULE += gnrc_sock_udp
 USEMODULE += gnrc_sock_ip
 
@@ -43,7 +42,7 @@ USEMODULE += fib
 
 # Use minimal standard random number generator
 #USEMODULE += prng_minstd
-USEMODULE += random
+#USEMODULE += random
 USEMODULE += printf_float
 
 GNRC_NETIF_NUMOF := 1
@@ -72,6 +71,8 @@ USEMODULE += biot_time
 
 DIRS += ../common/udp/
 USEMODULE += biot_udp
+DIRS += ../common/memory/
+USEMODULE += biot_memory
 
 # Change this to 0 show detailed compilation info during build
 QUIET ?= 1

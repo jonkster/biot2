@@ -14,9 +14,6 @@
 #include "periph/gpio.h"
 
 #define PRIO    (THREAD_PRIORITY_MAIN + 1)
-//#define PRIO    (THREAD_PRIORITY_MAIN)
-#define Q_SZ    (0)
-//#define Q_SZ    (4)
 
 #define SYSTEM_SUBNET    "affe"
 #define ROUTER_6LOW_IF   "7"
@@ -25,8 +22,9 @@
 #define ROUTER_6SLIP_IP  "::3"
 #define UDPIP_6SLIP_IP   "::1" // address of PC endpoint
 
+#define MAIN_QUEUE_SIZE     (8)
+static msg_t _main_msg_queue[MAIN_QUEUE_SIZE];
 
-static msg_t msg_q[Q_SZ];
 bool led_status = false;
 static char udp_stack[THREAD_STACKSIZE_DEFAULT];
 static char housekeeping_stack[THREAD_STACKSIZE_DEFAULT];
@@ -39,7 +37,9 @@ uint32_t timeSyncIntervalV       = 30 * ONE_SECOND_US;
 
 extern int udp_cmd(int argc, char **argv);
 extern int udp_send(char *addr_str, char *data);
+extern void udpRunIdleTask(bool state);
 extern void *udp_server_loop(void *);
+extern void udp_serverListen(bool);
 
 int about_cmd(int argc, char **argv)
 {
@@ -186,9 +186,7 @@ void setRoot(void)
     puts("adding udp/ip endpoint address to cache");
     batch(shell_commands, "ncache add " ROUTER_6SLIP_IF " " SYSTEM_SUBNET UDPIP_6SLIP_IP );
 
-    puts("starting udpserver thread");
-    thread_create(udp_stack, sizeof(udp_stack), PRIO, THREAD_CREATE_STACKTEST, udp_server_loop,
-                NULL, "udp");
+    udp_serverListen(true);
 
     initNodes();
     LED_RGB_G_ON;
@@ -234,21 +232,30 @@ void idleTask(void)
             syncKnown();
         }
     }
+    //heartFire();
 }
 
 int main(void)
 {
-    msg_init_queue(msg_q, Q_SZ);
-
     LED0_OFF;
     LED_RGB_OFF;
+
+    /* we need a message queue for the thread running the shell in order to
+     * receive potentially fast incoming networking packets */
+    msg_init_queue(_main_msg_queue, MAIN_QUEUE_SIZE);
 
     puts("initialising rpl");
     batch(shell_commands, "rpl init " ROUTER_6LOW_IF );
 
     gpio_init_int(BUTTON_GPIO, GPIO_IN_PU, GPIO_FALLING, (gpio_cb_t)btnCallback, NULL);
-    thread_create(housekeeping_stack, sizeof(housekeeping_stack), PRIO, THREAD_CREATE_STACKTEST, housekeeping_handler,
-                NULL, "housekeeping");
+
+    puts("starting housekeeper thread");
+    thread_create(housekeeping_stack, sizeof(housekeeping_stack), PRIO, THREAD_CREATE_STACKTEST, housekeeping_handler, NULL, "housekeeper");
+
+    puts("starting udpserver thread");
+    udpRunIdleTask(false);
+    thread_create(udp_stack, sizeof(udp_stack), PRIO, THREAD_CREATE_STACKTEST, udp_server_loop, NULL, "udp");
+
 
     printf("Biotz Router\n");
     about_cmd(0, NULL);

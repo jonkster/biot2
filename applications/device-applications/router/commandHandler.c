@@ -6,8 +6,10 @@
 #include "../common/identify/biotIdentify.h"
 #include "../common/time/biotTime.h"
 #include "../common/udp/udp_common.h"
+#include "../common/memory/memory.h"
 #include "periph/pm.h"
 
+uint8_t count = 0;
 
 
 void actOnLedCommandMessage(char *data)
@@ -50,7 +52,7 @@ void actOnTimCommandMessage(char *data)
 
 void actOnPokeCommandMessage(void)
 {
-    puts("cannot do poke yet...");
+    //puts("cannot do poke yet...");
 }
 
 void actOnRebCommandMessage(char *data)
@@ -61,12 +63,15 @@ void actOnRebCommandMessage(char *data)
 
 void actOnOrientDataMessage(char* data, char* srcAdd)
 {
-    int l = snprintf(NULL, 0, "%s#%s", data, srcAdd);
-    char buffer[l + 1];
-    memset(buffer, 0, l);
-    sprintf(buffer, "%s#%s", data, srcAdd);
-    relayMessage("do", buffer, "affe::1");
     updateNodeOrientation(srcAdd, data);
+    if (true)
+    {
+        int l = snprintf(NULL, 0, "%s#%s", data, srcAdd);
+        char buffer[l + 1];
+        memset(buffer, 0, l);
+        sprintf(buffer, "%s#%s", data, srcAdd);
+        relayMessage("do", buffer, "affe::1");
+    }
 }
 
 void actOnCalibrDataMessage(char* data, char* srcAdd)
@@ -98,25 +103,25 @@ void actOnCommand(char *cmdSt, char *src_addr)
     char *p = strtok(cmdSt, "#");
     if (p > 0)
     {
-        cmd = strdup(p);
+        cmd = safe_strdup("extract cmd", p);
         p = strtok(NULL, "#");
         if (p)
         {
-            data = strdup(p);
+            data = safe_strdup("extract data", p);
             p = strtok(NULL, "#");
             if (p)
             {
                 char *address = NULL;
-                address = strdup(p);
+                address = safe_strdup("extract address", p);
                 if (cmd[0] != 'd')
                 {
                     relayMessage(cmd, data, address);
-                    free(cmd);
-                    free(data);
-                    free(address);
+                    safe_free("free 1 cmd", cmd);
+                    safe_free("free 1 data", data);
+                    safe_free("free 1 address", address);
                     return;
                 }
-                free(address);
+                safe_free("free 1a address", address);
             }
         }
     }
@@ -158,7 +163,7 @@ void actOnCommand(char *cmdSt, char *src_addr)
     {
         printf("rx unknown router udp msg from %s: '%s'\n", src_addr, cmdSt);
     }
-    free(cmd);
-    free(data);
+    safe_free("cmd", cmd);
+    safe_free("data", data);
 }
 

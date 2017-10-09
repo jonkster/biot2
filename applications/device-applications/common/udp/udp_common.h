@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <netinet/in.h>
 
-#define SERVER_BUFFER_SIZE     (96)
+#define SERVER_BUFFER_SIZE     (128)
 //#define SERVER_BUFFER_SIZE     (128)
 
 #ifdef __cplusplus
@@ -12,9 +12,10 @@ extern "C" {
 #endif
 
 extern bool led_status;
+
+void udpRunIdleTask(bool state);
+void udp_serverListen(bool state);
 void *udp_server_loop(void *arg);
-//void *udp_server(void *);
-int udp_send_jk(struct in6_addr destAdd, char *data);
 int udp_send(char *addr_str, char *data);
 int udp_cmd(int argc, char **argv);
 

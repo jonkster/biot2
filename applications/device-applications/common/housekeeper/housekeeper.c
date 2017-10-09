@@ -27,31 +27,39 @@ void beat(void)
     ledState = ! ledState;
 }
 
+void heartFire(void)
+{
+    uint32_t microSecs = getCurrentTime();
+    if (rapidBeat)
+    {
+        if (schedule(microSecs, ONE_SECOND_US/3, HEARTBEAT_TASK))
+        {
+            beat();
+        }
+    }
+    else
+    {
+        if (schedule(microSecs, ONE_SECOND_US, HEARTBEAT_TASK))
+        {
+            beat();
+        }
+    }
+}
+
 void rapidHeartbeat(bool state)
 {
     rapidBeat = state;
 }
 
+/**
+**  use if setting heartbeat as a seperate thread
+**/
 void *housekeeping_handler(void *arg)
 {
     while(1)
     {
         idleTask();
-        uint32_t microSecs = getCurrentTime();
-        if (rapidBeat)
-        {
-            if (schedule(microSecs, ONE_SECOND_US/3, HEARTBEAT_TASK))
-            {
-                beat();
-            }
-        }
-        else
-        {
-            if (schedule(microSecs, ONE_SECOND_US, HEARTBEAT_TASK))
-            {
-                beat();
-            }
-        }
+        heartFire();
     }
 }
 

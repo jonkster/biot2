@@ -16,11 +16,11 @@ bool getCurrentPosition(void);
 
 bool initIMU(void);
 
-void sendNodeOrientation(void);
+void sendNodeOrientation(char *);
 
-void sendNodeCalibration(void);
+void sendNodeCalibration(char *);
 
-void sendNodeStatus(void);
+void sendNodeStatus(char *);
 
 uint32_t usDataUpdateInterval(void);
 

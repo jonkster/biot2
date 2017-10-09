@@ -38,7 +38,7 @@ USEMODULE += gnrc_netdev_default
 USEMODULE += auto_init_gnrc_netif
 # Specify the mandatory networking modules for IPv6 and UDP
 USEMODULE += gnrc_ipv6_default
-USEMODULE += gnrc_ipv6_router_default
+#USEMODULE += gnrc_ipv6_router_default
 USEMODULE += gnrc_udp
 USEMODULE += gnrc_sock_udp
 USEMODULE += posix_sockets
@@ -49,7 +49,7 @@ USEMODULE += auto_init_gnrc_rpl
 USEMODULE += gnrc_pktdump
 
 # Specify the mandatory networking modules for 6LoWPAN border router
-USEMODULE += gnrc_sixlowpan_border_router_default
+#USEMODULE += gnrc_sixlowpan_border_router_default
 # Add forwarding table
 USEMODULE += fib
 # Additional networking modules that can be dropped if not needed
@@ -81,6 +81,8 @@ DIRS += ../common/time/
 USEMODULE += biot_time
 DIRS += ../common/udp/
 USEMODULE += biot_udp
+DIRS += ../common/memory/
+USEMODULE += biot_memory
 #
 
 # Comment this out to disable code in RIOT that does safety checking
@@ -88,6 +90,8 @@ USEMODULE += biot_udp
 # development process:
 CFLAGS += -DDEVELHELP
 CFLAGS += -DDEBUG_ASSERT_VERBOSE
+
+CFLAGS += -DXTIMER_ISR_BACKOFF=40
 
 # Comment this out to join RPL DODAGs even if DIOs do not contain
 # DODAG Configuration Options (see the doc for more info)

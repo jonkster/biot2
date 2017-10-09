@@ -57,10 +57,10 @@ brokerListener.pre(function(req, res, next) {
 
 brokerListener.on('after', function(req, res, next) {
     updateFromDB();
-    var now = new Date().getTime();
+    /*var now = new Date().getTime();
     var delta = now - timer;
     if (delta > 3)
-        console.log('long response', delta, req.url);
+        console.log('long response', delta, req.url);*/
 });
 
 brokerListener.get('/', getRoot);
@@ -157,6 +157,11 @@ brokerListener.listen(BROKER_HTTP_PORT, BROKER_HOST, function() {
 
 
 function addDummyNode(req, res, next) {
+    if (invalidRequest(req)) {
+        res.send(400, 'bad request syntax - missing argument perhaps?');
+        next();
+        return;
+    }
     var address = req.params['address'];
     nodeStatus[address] = {
         'status': 'dummy',
@@ -171,6 +176,11 @@ function addDummyNode(req, res, next) {
 
 
 function biotIdentify(req, res, next) {
+    if (invalidRequest(req)) {
+        res.send(400, 'bad request syntax - missing argument perhaps?');
+        next();
+        return;
+    }
     var address = req.params['address'];
     var message = new Buffer('cled#3#' + address);
     var client = dgram.createSocket('udp6');
@@ -245,7 +255,11 @@ function getAllBiotData(req, res, next) {
 }
 
 function getBiotData(req, res, next) {
-
+    if (invalidRequest(req)) {
+        res.send(400, 'bad request syntax - missing argument perhaps?');
+        next();
+        return;
+    }
     var address = req.params['address'];
     var value = allNodes[address];
     if (value === undefined) {
@@ -258,6 +272,11 @@ function getBiotData(req, res, next) {
 
 function getBiotCalibration(req, res, next) {
 
+    if (invalidRequest(req)) {
+        res.send(400, 'bad request syntax - missing argument perhaps?');
+        next();
+        return;
+    }
     var address = req.params['address'];
 
     var value = allNodes[address];
@@ -308,6 +327,11 @@ function getAllBiotzNodes(req, res, next) {
 
 function getBiotFull(req, res, next) {
 
+    if (invalidRequest(req)) {
+        res.send(400, 'bad request syntax - missing argument perhaps?');
+        next();
+        return;
+    }
     var address = req.params['address'];
     if (! address) {
 	// url entered with trailing slash
@@ -336,6 +360,11 @@ function getBiotFull(req, res, next) {
 
 function getBiotAuto(req, res, next) {
 
+    if (invalidRequest(req)) {
+        res.send(400, 'bad request syntax - missing argument perhaps?');
+        next();
+        return;
+    }
     var address = req.params['address'];
     if (! address) {
         // url entered with trailing slash
@@ -350,6 +379,11 @@ function getBiotAuto(req, res, next) {
 
 function getBiotDof(req, res, next) {
 
+    if (invalidRequest(req)) {
+        res.send(400, 'bad request syntax - missing argument perhaps?');
+        next();
+        return;
+    }
     var address = req.params['address'];
     if (! address) {
         // url entered with trailing slash
@@ -366,6 +400,11 @@ function getBiotDof(req, res, next) {
 
 function getBiotLed(req, res, next) {
 
+    if (invalidRequest(req)) {
+        res.send(400, 'bad request syntax - missing argument perhaps?');
+        next();
+        return;
+    }
     var address = req.params['address'];
     if (! address) {
         // url entered with trailing slash
@@ -383,6 +422,11 @@ function getBiotLed(req, res, next) {
 
 function getBiotInterval(req, res, next) {
 
+    if (invalidRequest(req)) {
+        res.send(400, 'bad request syntax - missing argument perhaps?');
+        next();
+        return;
+    }
     var address = req.params['address'];
     if (! address) {
         // url entered with trailing slash
@@ -399,6 +443,11 @@ function getBiotInterval(req, res, next) {
 
 function getBiotStatus(req, res, next) {
 
+    if (invalidRequest(req)) {
+        res.send(400, 'bad request syntax - missing argument perhaps?');
+        next();
+        return;
+    }
     var address = req.params['address'];
     if (! address) {
         // url entered with trailing slash
@@ -420,6 +469,11 @@ function getBiotz(req, res, next) {
 
 function getBiotAlive(req, res, next) {
 
+    if (invalidRequest(req)) {
+        res.send(400, 'bad request syntax - missing argument perhaps?');
+        next();
+        return;
+    }
 	var address = req.params['address'];
 
 	// poke biot to force activity
@@ -449,6 +503,11 @@ function getBiotAlive(req, res, next) {
 }
 
 function getBiotAliveStatus(req, res, next) {
+    if (invalidRequest(req)) {
+        res.send(400, 'bad request syntax - missing argument perhaps?');
+        next();
+        return;
+    }
 	var address = req.params['address'];
 
 	// poke biot to force activity
@@ -478,6 +537,11 @@ function getBiotAliveStatus(req, res, next) {
 }
 
 function getBiotAliveTs(req, res, next) {
+    if (invalidRequest(req)) {
+        res.send(400, 'bad request syntax - missing argument perhaps?');
+        next();
+        return;
+    }
 	var address = req.params['address'];
 
 	// poke biot to force activity
@@ -539,6 +603,11 @@ function getBiotzStatus(req, res, next) {
 
 function getDataCategories(req, res, next) {
 
+    if (invalidRequest(req)) {
+        res.send(400, 'bad request syntax - missing argument perhaps?');
+        next();
+        return;
+    }
     var category = req.params['category'];
     var path = dataPath + '/' + category + '/';
 
@@ -569,6 +638,11 @@ function getData(req, res, next) {
 }
 
 function getCachedAssembly(req, res, next) {
+    if (invalidRequest(req)) {
+        res.send(400, 'bad request syntax - missing argument perhaps?');
+        next();
+        return;
+    }
     var name = req.params['name'];
     var path = dataPath + '/assembly/' + name;
 
@@ -586,6 +660,11 @@ function getCachedAssembly(req, res, next) {
 }
 
 function getDataValue(req, res, next) {
+    if (invalidRequest(req)) {
+        res.send(400, 'bad request syntax - missing argument perhaps?');
+        next();
+        return;
+    }
     var category = req.params['category'];
     var name = req.params['name'];
     var path = dataPath + '/' + category + '/' + name;
@@ -603,6 +682,11 @@ function getDataValue(req, res, next) {
 }
 
 function deleteBiotNode(req, res, next) {
+    if (invalidRequest(req)) {
+        res.send(400, 'bad request syntax - missing argument perhaps?');
+        next();
+        return;
+    }
 	var address = req.params['address'];
 	if (allNodes[address] !== undefined) {
 		delete allNodes[address];
@@ -709,6 +793,18 @@ function heartbeat() {
                         });
 			heartbeat();
 	}, 4000);
+}
+
+function invalidRequest(req) {
+    if (req.params.length === 0) {
+        return true;
+    }
+    if (req.params.address !== undefined) {
+        if (! req.params.address.match(/:/)) {
+            return true;
+        }
+    }
+    return false;
 }
 
 function isPowerOfTwo(n) {

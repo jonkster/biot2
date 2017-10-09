@@ -7,6 +7,7 @@
 extern "C" {
 #endif
 void actOnCommand(char *cmdSt, char *src_addr);
+void relayMessage(char *cmd, char *data, char *address);
 #ifdef __cplusplus
 }
 #endif

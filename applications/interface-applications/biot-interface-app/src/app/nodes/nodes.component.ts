@@ -213,7 +213,7 @@ export class NodesComponent implements OnInit, AfterContentChecked {
                         this.recordingActive[addr] = rawData.recordingActive;
                         this.recordingExists[addr] = rawData.recordingExists;
                     },
-                    error => { this.debug("error getting node status node:" + addr + " : " + error); },
+                    error => { this.debug("error getting node status node:'" + addr + "' : " + error); },
                     
                 );
         }

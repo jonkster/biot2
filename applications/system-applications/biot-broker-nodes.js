@@ -80,7 +80,7 @@ db.once('open', function() {
                         var now = new Date().getTime();
                         var del = now - lastT;
                         if (del > 50) {
-                            console.log(del, message.toString());
+                            console.log('slow', del);
                         }
                         lastT = now;
 			if (message.length > 0)
