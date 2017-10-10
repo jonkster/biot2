@@ -22,12 +22,12 @@
 #define ROUTER_6SLIP_IP  "::3"
 #define UDPIP_6SLIP_IP   "::1" // address of PC endpoint
 
-#define MAIN_QUEUE_SIZE     (8)
+#define MAIN_QUEUE_SIZE     (4)
 static msg_t _main_msg_queue[MAIN_QUEUE_SIZE];
 
 bool led_status = false;
-static char udp_stack[THREAD_STACKSIZE_DEFAULT];
-static char housekeeping_stack[THREAD_STACKSIZE_DEFAULT];
+static char udp_stack[THREAD_STACKSIZE_DEFAULT+64];
+static char housekeeping_stack[THREAD_STACKSIZE_DEFAULT+128];
 static const shell_command_t shell_commands[];
 bool isRootPending = false;
 bool isRoot = false;

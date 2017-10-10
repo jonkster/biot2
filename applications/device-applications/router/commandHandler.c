@@ -128,10 +128,12 @@ void actOnCommand(char *cmdSt, char *src_addr)
 
     if (strcmp(cmd, "do") == 0)
     {
+        puts("do - should not get these!");
         actOnOrientDataMessage(data, src_addr);
     }
     else if (strcmp(cmd, "dc") == 0)
     {
+        puts("dc - should not get these!");
         actOnCalibrDataMessage(data, src_addr);
     }
     else if (strcmp(cmd, "ds") == 0)

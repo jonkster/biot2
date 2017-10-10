@@ -14,6 +14,7 @@ uint32_t startTime = 0;
 
 void cullNode(uint8_t idx)
 {
+    return;
     if (strlen(nodeData[idx].ip6Address) > 0)
     {
         printf("dropping node #%i %s\n", idx, nodeData[idx].ip6Address);
@@ -37,7 +38,7 @@ void cullOldNodes(void)
         if (strlen(nodeData[i].ip6Address) != 0)
         {
             int32_t recency = nodeAge(i);
-            if (recency > HERMIT_TIME_SECS)
+            if (recency > 4*HERMIT_TIME_SECS)
             {
                 cullNode(i);
                 return;

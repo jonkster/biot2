@@ -215,7 +215,7 @@ export class BiotService {
         const url = "http://" + this.biotServerHost + ":" + this.biotServerPort + "/" + path ;
         console.log(path);
         let src = this.http.get(url)
-            .timeout(20)
+            .timeout(60)
             .map(this.extractWSData)
             .catch((err: Response) => {
                 console.log(err);

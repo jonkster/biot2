@@ -39,6 +39,7 @@ export class SystemComponent implements AfterViewInit {
 
     private biotBrokerIP: string = '?';
     private biotBrokerPort: string = '?';
+    private debugHistory: string[] = [];
 
     @ViewChild('sysCanvas') canvasRef: ElementRef;
     image = 'assets/architecture-1.png';
@@ -59,11 +60,18 @@ export class SystemComponent implements AfterViewInit {
     }
 
     ngAfterViewInit() {
-	console.log('fire');
 	this.getRouterStatus();
 	this.setFaultStatus();
     	this.initCanvas();
 	this.drawImage();
+    }
+
+    debug(txt: string) {
+        if (this.debugHistory.length > 100) {
+            this.debugHistory.shift();
+            this.debugHistory[0] = 'earlier entries deleted...';
+        }
+        this.debugHistory.push(txt);
     }
 
     drawHotspot(name: string, status: string) {
@@ -160,6 +168,7 @@ export class SystemComponent implements AfterViewInit {
             error => {
                 this.routerStatus.status = 'ERROR';
                 this.systemStatus.biotbroker = 'fault';
+                this.debug("could not get addresses from biot service");
             }
         );
     }
@@ -179,6 +188,7 @@ export class SystemComponent implements AfterViewInit {
             error => {
                 this.routerStatus.status = 'ERROR';
                 this.systemStatus.biotbroker = 'fault';
+                this.debug("could not get router status from biot service");
             }
         );
         let siht = this;

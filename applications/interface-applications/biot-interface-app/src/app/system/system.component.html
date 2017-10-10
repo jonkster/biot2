@@ -11,22 +11,27 @@
         <tr>
             <td class="alt">TCP/IP Link</td>
             <td [class]="getClass(getSystemStatus().tcpip)">{{ getSystemStatus().tcpip }}</td>
+            <td [hidden]="getSystemStatus().tcpip === 'OK'" [class]="getClass(getSystemStatus().tcpip)">check network connection to host running biot broker - ping {{ biotBrokerIP }}</td>
         </tr>
         <tr>
             <td class="alt">Biot Broker</td>
             <td [class]="getClass(getSystemStatus().biotbroker)">{{ getSystemStatus().biotbroker }}</td>
+            <td [hidden]="getSystemStatus().biotbroker === 'OK'" [class]="getClass(getSystemStatus().biotbroker)">check biot broker application is running - <a href="http://{biotBrokerIP:8889}}/">link</a></td>
         </tr>
         <tr>
             <td class="alt">UDP/IP Link</td>
             <td [class]="getClass(getSystemStatus().udpip)">{{ getSystemStatus().udpip }}</td>
+            <td [hidden]="getSystemStatus().udpip === 'OK'" [class]="getClass(getSystemStatus().udpip)">check tunslip interface - from broker host ping6 affe::1</td>
         </tr>
         <tr>
             <td class="alt">Edge Router</td>
             <td [class]="getClass(getSystemStatus().edgerouter)">{{ getSystemStatus().edgerouter }}</td>
+            <td [hidden]="getSystemStatus().edgerouter === 'OK'" [class]="getClass(getSystemStatus().edgerouter)">check edge router working - check router and from broker host ping6 affe::2</td>
         </tr>
         <tr>
             <td class="alt">Biot Nodes</td>
             <td [class]="getClass(getSystemStatus().biots)">{{ getSystemStatus().biots }}</td>
+            <td [hidden]="getSystemStatus().biots === 'OK'" [class]="getClass(getSystemStatus().biots)">check if any biot nodes running</td>
         </tr>
     </table>
     <br/>
@@ -84,4 +89,7 @@
             <td class="special">{{ nodeStatus.nodeData[address] }} </td>
         </tr>
     </table>
+    <div class="debug" #debugHolder [scrollTop]="debugHolder.scrollHeight">
+        <div *ngFor="let txt of debugHistory; let i = index" >{{ i }} : {{ txt }}</div>
+    </div>
 </div>

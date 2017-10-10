@@ -7,7 +7,7 @@ myQuat_t orientationQ;
 
 extern void relayMessage(char *cmd, char *data, char *address);
 
-uint32_t usDataUpdateIntervalV   = 5000; // 1500 uS = 1.5mS = 0.0015 secs, 15000 uS = 15 mS = 0.015 secs
+uint32_t usDataUpdateIntervalV   = 20000; // 1500 uS = 1.5mS = 0.0015 secs, 15000 uS = 15 mS = 0.015 secs
 //uint32_t usDataUpdateIntervalV   = 1533; // 1500 uS = 1.5mS = 0.0015 secs, 15000 uS = 15 mS = 0.015 secs
 uint32_t usCalibrationIntervalV  = 1500000;
 uint32_t usStatusIntervalV       = 2500000;
@@ -117,7 +117,8 @@ void sendNodeStatus(char *me)
             char buffer[l + 1];
             memset(buffer, 0, l);
             sprintf(buffer, "ds#%d:%"SCNu32":%d#%s", dof, is.dupInterval, mode, me);
-            udp_send("affe::1", buffer);
+            //udp_send("affe::1", buffer);
+            udp_send("affe::2", buffer);
         }
     }
     
