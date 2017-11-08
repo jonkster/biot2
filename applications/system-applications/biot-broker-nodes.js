@@ -5,8 +5,10 @@
 var VERSION = "0.0.0";
 
 var BIOTZ_UDP_PORT = 8888;
-var UDP_LOCAL_HOST = 'affe::1';
-var BIOTZ_ROUTER_HOST = 'affe::3';
+var ip = require('ip');
+var UDP_LOCAL_HOST = ip.address();
+
+var BIOTZ_ROUTER_HOST = undefined;
 
 var nodeCache = {};
 
@@ -16,7 +18,7 @@ var mongoose = require('mongoose');
 mongoose.Promise = global.Promise;
 var Schema = mongoose.Schema;
 
-var heartBeatInterval = 2000;
+var heartBeatInterval = 5000;
 
 
 var biotDataSchema = new Schema({
@@ -58,14 +60,17 @@ db.once('open', function() {
 		var startTime = 0;
 		// Listen to Biotz Router device
 		var dgram = require('dgram');
-		var brokerUdpListener = dgram.createSocket('udp6');
-		brokerUdpListener.bind(BIOTZ_UDP_PORT, UDP_LOCAL_HOST);
-		brokerUdpListener.on('listening', function () {
-				var address = brokerUdpListener.address();
-				console.log('UDP Server listening on ' + address.address + ":" + address.port);
-				startTime = new Date();
-				
-		});
+		var brokerUdpListener = dgram.createSocket({type: 'udp4', reuseAddr: true});
+		brokerUdpListener.bind({port: BIOTZ_UDP_PORT, address: '0.0.0.0'});
+
+
+                brokerUdpListener.on('listening', function () {
+                    brokerUdpListener.setBroadcast(true);
+                    var address = brokerUdpListener.address();
+                    console.log('UDP Server listening on ' + address.address + ":" + address.port);
+                    startTime = new Date();
+
+                });
 
                 let recordingCache = [];
                 let recordingActive = {};
@@ -74,20 +79,16 @@ db.once('open', function() {
                     heartBeat(recordedData, recordingActive, recordingCache);
                 }, heartBeatInterval);
 
-                var lastT = new Date().getTime();
+                var lastT = {}; // = new Date().getTime();
 		// received an update message - store info
+                var avDelay = 0;
+                var delays = {};
 		brokerUdpListener.on('message', function (message, remote) {
-                        var now = new Date().getTime();
-                        var del = now - lastT;
-                        if (del > 50) {
-                            console.log('slow', del);
-                        }
-                        lastT = now;
-			if (message.length > 0)
+			if (remote.size > 0)
 			{
-				var now = new Date().getTime();
 				var dirty = false;
-				var bits = message.toString().split('#');
+				var msgSt = message.toString();
+				var bits = msgSt.split('#');
 				var address = bits[2];
 				var node = nodeCache[address];
 				if (node === undefined) {
@@ -99,9 +100,36 @@ db.once('open', function() {
 					};
 				}
 				if (bits[0] == 'do') {
-					if (bits[1].match(/[0-9]+:[\-0-9\.]+:[\-0-9\.]+:[\-0-9\.]+:[\-0-9\.]+/)) {
+					if (true || bits[1].match(/[0-9]+:[\-0-9\.]+:[\-0-9\.]+:[\-0-9\.]+:[\-0-9\.]+/)) {
 						dirty = true;
 						node['do'] = bits[1];
+                                                var now = new Date().getTime();
+                                                if (lastT[address] === undefined) {
+                                                        lastT[address] = now;
+                                                }
+                                                var del = now - lastT[address];
+                                                avDelay = (del + avDelay) / 2;
+                                                if (delays[address] === undefined) {
+                                                    delays[address] = 0;
+                                                }
+                                                if (del > 40) {
+                                                    console.log('slow', address, del);
+                                                    let addresses = Object.keys(lastT);
+                                                    for (let i = 0; i < addresses.length; i++) {
+                                                        if (addresses[i] !== address) {
+                                                            delays[addresses[i]]++;
+                                                        }
+                                                    }
+                                                    if (delays[address] > 1) {
+                                                        delays[address] = 0;
+                                                        //sendInhibit(address, 0);
+                                                    }
+                                                } else if (del < 30) {
+                                                    if (delays[address] > 0) {
+                                                        //sendInhibit(address, delays[address]);
+                                                    }
+                                                }
+                                                lastT[address] = now;
 					} else {
 					    console.log('scrambled do', message);
 					}
@@ -120,16 +148,27 @@ db.once('open', function() {
 					    console.log('scrambled ds', message);
 					}
 				} else if (bits[0] == 'da'){
-					var name = BIOTZ_ROUTER_HOST;
-					if (bits[1].match(/(.+)/)) {
-						name = bits[1];
+					if (BIOTZ_ROUTER_HOST !== undefined) {
+						var name = BIOTZ_ROUTER_HOST;
+						if (bits[1].match(/(.+)/)) {
+							name = bits[1];
+						}
+						edgeRouter.findOneAndUpdate({name: name}, {name: name}, {upsert:true}, function(err, data) {
+								if (err) { return console.error('ERR', err); }
+								});
 					}
-					edgeRouter.findOneAndUpdate({name: name}, {name: name}, {upsert:true}, function(err, data) {
-						if (err) { return console.error('ERR', err); }
-					});
-				} else {
-					console.log("wah?", message.toString());
-				}
+                                } else {
+                                    let er = "";
+                                    if (er = msgSt.match(/biot er on port (\d+)/)){
+					BIOTZ_ROUTER_HOST = remote.address;
+					edgeRouter.findOneAndUpdate({name: remote.address}, {name: remote.address}, {upsert:true}, function(err, data) {
+							if (err) { return console.error('ERR', err); }
+							});
+                                        sendBroadcastResponse(remote, er[1]);
+                                    } else {
+                                        console.log("wah?", message.toString());
+                                    }
+                                }
 				if (dirty) {
 					nodeCache[address] = node;
 					nodeData.findOneAndUpdate({address: address}, node, {upsert:true}, function(err, data) {
@@ -148,6 +187,38 @@ db.once('open', function() {
 			}
 		});
 });
+
+function sendBroadcastResponse(remote, port) {
+    console.log(remote, port);
+    let pout = parseInt(port) + 2;
+    var dgram = require('dgram');
+    var message = Buffer.from(UDP_LOCAL_HOST + ":" + BIOTZ_UDP_PORT);
+    var client = dgram.createSocket('udp4');
+    client.send(message, 0, message.length, pout, remote.address, function(err, bytes) {
+        if (err) {
+            console.log('Error:', err);
+        } else {
+            console.log('sent broadcast response to remote at', remote.address, 'port', pout, 'resp=', message.toString());
+        }
+        client.close();
+    });
+}
+
+function sendInhibit(address, count) {
+	if (BIOTZ_ROUTER_HOST !== undefined) {
+		var dgram = require('dgram');
+		var message = Buffer.from('cinh#' + count + '#' + address);
+		var client = dgram.createSocket('udp4');
+		client.send(message, 0, message.length, BIOTZ_UDP_PORT, BIOTZ_ROUTER_HOST, function(err, bytes) {
+				if (err) {
+				console.log('Error:', err);
+				} else {
+				console.log('set inhibit', address, message.toString());
+				}
+				client.close();
+				});
+	}
+}
 
 function heartBeat(recordedData, recordingActive, recordingCache) {
     recordedData.find({active: true}, function(err, recData) {

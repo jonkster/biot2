@@ -176,7 +176,7 @@ void sendBroadcast(char *buf)
 	return;
 }
 
-int findBroker(char **address, int *port)
+int findBroker(char **address, int *port, bool slow)
 {
 	printf("find broker...\n");
         int l = snprintf(NULL, 0, "biot er on port %d", BROKER_PORT);
@@ -188,7 +188,8 @@ int findBroker(char **address, int *port)
             printf("got it...\n");
             return 1;
         }
-        sleep(3);   /* Avoids flooding the network */
+	if (slow)
+        	sleep(3);   /* Avoids flooding the network */
         return 0;
 }
 

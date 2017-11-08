@@ -18,7 +18,7 @@
 #include "erbridge.h"
 #include "findBroker.h"
 
-extern int findBroker(char **address, int *port);
+extern int findBroker(char **address, int *port, bool slow);
 extern size_t uncompress(const unsigned char *compressed, const size_t compressedSize, char *text);
 
 static GHashTable *addressTable;
@@ -457,7 +457,6 @@ void mainLoop(int biotSock, int brokerSock)
                 waitpid(pid, NULL, 0);
             }
         }
-
     }
 }
 
@@ -466,7 +465,7 @@ int main()
         printf("main\n");
 	int brokerFound = 0;
 	while (! brokerFound) {
-		brokerFound = findBroker(&brokerAddress, &brokerPort);
+		brokerFound = findBroker(&brokerAddress, &brokerPort, true);
 		if (brokerFound)
 		{
 			printf("broker at %s:%d\n", brokerAddress, brokerPort);

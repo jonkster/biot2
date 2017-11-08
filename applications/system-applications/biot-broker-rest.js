@@ -6,8 +6,9 @@
 var VERSION = "0.0.0";
 
 var BIOTZ_UDP_PORT = 8888;
-var UDP_LOCAL_HOST = 'affe::1';
-var BIOTZ_ROUTER_HOST = 'affe::3';
+var ip = require('ip');
+var UDP_LOCAL_HOST = ip.address();
+var BIOTZ_ROUTER_HOST = undefined;
 
 var ip = require('ip');
 var BROKER_HTTP_PORT = 8889; 
@@ -32,12 +33,12 @@ var recording = {};
 var recordingExists = {};
 var recordedData = {};
 
-var dirty = false;
+var dirty = true;
 var cached = {};
 
 var lastAliveTime = 0;
 var interval = setInterval(function() {
-      testSystem(BIOTZ_ROUTER_HOST);
+      testSystem();
 }, 10000);
 
 // Listen for and act on Broker HTTP Requests
@@ -176,41 +177,45 @@ function addDummyNode(req, res, next) {
 
 
 function biotIdentify(req, res, next) {
-    if (invalidRequest(req)) {
-        res.send(400, 'bad request syntax - missing argument perhaps?');
-        next();
-        return;
-    }
-    var address = req.params['address'];
-    var message = new Buffer('cled#3#' + address);
-    var client = dgram.createSocket('udp6');
+	if (invalidRequest(req)) {
+		res.send(400, 'bad request syntax - missing argument perhaps?');
+		next();
+		return;
+	}
+	if (BIOTZ_ROUTER_HOST !== undefined) {
+		var address = req.params['address'];
+		var message = new Buffer('cled#3#' + address);
+		var client = dgram.createSocket('udp4');
 
-console.log('identify', address);
-    client.send(message, 0, message.length, BIOTZ_UDP_PORT, BIOTZ_ROUTER_HOST, function(err, bytes) {
-        if (err)
-        {
-            console.log('Error:', err);
-        }
-        client.close();
-    });
-    res.send('OK');
-    next();
+		console.log('identify', address);
+		client.send(message, 0, message.length, BIOTZ_UDP_PORT, BIOTZ_ROUTER_HOST, function(err, bytes) {
+				if (err) { console.log('Error:', err); }
+				client.close();
+				});
+		res.send('OK');
+	} else {
+		res.send(202, 'awaiting connection to biotz router');
+	}
+	next();
 }
 
 function biotSync(req, res, next) {
-    var message = new Buffer('csyn##');
-    var client = dgram.createSocket('udp6');
+	if (BIOTZ_ROUTER_HOST !== undefined) {
+		var message = new Buffer('csyn##');
+		var client = dgram.createSocket('udp4');
 
-console.log('sync', address);
-    client.send(message, 0, message.length, BIOTZ_UDP_PORT, BIOTZ_ROUTER_HOST, function(err, bytes) {
-        if (err)
-        {
-            console.log('Sync Error:', err);
-        }
-        client.close();
-    });
-    res.send(200, 'OK');
-    next();
+		console.log('sync', address);
+		client.send(message, 0, message.length, BIOTZ_UDP_PORT, BIOTZ_ROUTER_HOST, function(err, bytes) {
+			if (err) {
+				console.log('Sync Error:', err);
+			}
+			client.close();
+		});
+		res.send(200, 'OK');
+	} else {
+		res.send(202, 'awaiting connection to biotz router');
+	}
+	next();
 }
 
 function dropDummyNodes(req, res, next) {
@@ -229,6 +234,7 @@ function getRoot(req, res, next) {
         "version": VERSION,
         "UDP-IP-status": systemStatus.udpip,
         "Edge-Router-status": systemStatus.edgerouter,
+	"Edge-Router-address": BIOTZ_ROUTER_HOST,
         "DODAG-status": systemStatus.dodag,
         "time": now,
         "links": [
@@ -304,7 +310,7 @@ function getAllBiotzData(req, res, next) {
 			value[address] = allNodes[address].do;
 		}
 	} else {
-		console.log('cached');
+		//console.log('cached');
 		value = cached;
 	}
 	res.send(200, value);
@@ -778,8 +784,15 @@ function heartbeat() {
 			updateFromDB();
 			edgeRouter.find(function(err, data) {
 					if (err) { console.error("error finding edge routers", err); return; }
+					if (data.length === 0) {
+						console.log("No edge router set??");
+					}
 					for (var i = 0; i < data.length; i++) {
 						var er = data[i];
+						if ((BIOTZ_ROUTER_HOST !== undefined) || (BIOTZ_ROUTER+HOST !== er.name)) {
+							BIOTZ_ROUTER_HOST = er.name;
+							console.log("Setting router host to", BIOTZ_ROUTER_HOST);
+						}
 						var ts = new Date(er.updated_at).getTime();
 						edgeRouterTime[er.name] = ts;
 					}
@@ -813,108 +826,129 @@ function isPowerOfTwo(n) {
 }
 
 function putBiotAuto(req, res, next) {
+	if (BIOTZ_ROUTER_HOST !== undefined) {
+		var address = req.context['address'];
+		var data = req.body;
+		var message = new Buffer('cmcm#' + data + '#' + address);
+		var client = dgram.createSocket('udp4');
 
-    var address = req.context['address'];
-    var data = req.body;
-
-    var message = new Buffer('cmcm#' + data + '#' + address);
-    var client = dgram.createSocket('udp6');
-
-console.log('auto', address);
-    client.send(message, 0, message.length, BIOTZ_UDP_PORT, BIOTZ_ROUTER_HOST, function(err, bytes) {
-        if (err) {
-            console.log('Error:', err);
-            res.send(500, err);
-        } else {
-            res.send(200, 'OK');
-        }
-        client.close();
-        next();
-    });
+		console.log('auto', address);
+		client.send(message, 0, message.length, BIOTZ_UDP_PORT, BIOTZ_ROUTER_HOST, function(err, bytes) {
+				if (err) {
+					 console.log('Error:', err); res.send(500, err); 
+				} else { 
+					res.send(200, 'OK');
+				 }
+				client.close();
+				next();
+		});
+	} else {
+		res.send(202, 'awaiting connection to biotz router');
+		next();
+	}
 }
 
 function putBiotCalibration(req, res, next) {
 
-    var address = req.context['address'];
-    var data = req.body;
+	if (BIOTZ_ROUTER_HOST !== undefined) {
+		var address = req.context['address'];
+		var data = req.body;
 
-    var message = new Buffer('ccav#' + data + '#' + address);
-    var client = dgram.createSocket('udp6');
+		var message = new Buffer('ccav#' + data + '#' + address);
+		var client = dgram.createSocket('udp4');
 
-console.log('cal', address);
-    client.send(message, 0, message.length, BIOTZ_UDP_PORT, BIOTZ_ROUTER_HOST, function(err, bytes) {
-        if (err) {
-            console.log('Error:', err);
-            res.send(500, err);
-        } else {
-            res.send(200, 'OK');
-        }
-        client.close();
-        next();
-    });
+		console.log('cal', address);
+		client.send(message, 0, message.length, BIOTZ_UDP_PORT, BIOTZ_ROUTER_HOST, function(err, bytes) {
+			if (err) {
+				console.log('Error:', err);
+				res.send(500, err);
+			} else {
+				res.send(200, 'OK');
+			}
+			client.close();
+			next();
+		});
+	} else {
+		res.send(202, 'awaiting connection to biotz router');
+		next();
+	}
 }
 
 function putBiotInterval(req, res, next) {
+	if (BIOTZ_ROUTER_HOST !== undefined) {
+		var address = req.context['address'];
+		var data = req.body;
 
-    var address = req.context['address'];
-    var data = req.body;
+		var message = Buffer.from('cdup#' + data + '#' + address);
 
-    var message = new Buffer('cdup#' + data + '#' + address);
-    var client = dgram.createSocket('udp6');
-
-console.log('interval', address);
-    client.send(message, 0, message.length, BIOTZ_UDP_PORT, BIOTZ_ROUTER_HOST, function(err, bytes) {
-        if (err) {
-            console.log('Error:', err);
-            res.send(500, err);
-        } else {
-            res.send(200, 'OK');
-        }
-        client.close();
-        next();
-    });
+		var client = dgram.createSocket('udp4');
+		client.send(message, 0, message.length, BIOTZ_UDP_PORT, BIOTZ_ROUTER_HOST, function(err, bytes) {
+				if (err) {
+					console.log('Error:', err);
+					res.send(500, err);
+				} else {
+					console.log('set cdup', address, message.toString());
+					res.send(200, 'OK');
+				}
+				client.close();
+				next();
+			});
+	} else {
+		res.send(202, 'awaiting connection to biotz router');
+		next();
+	}
 }
 
 function putBiotDof(req, res, next) {
 
-    var address = req.context['address'];
-    var data = req.body;
+	if (BIOTZ_ROUTER_HOST !== undefined) {
+		var address = req.context['address'];
+		var data = req.body;
 
-    var message = new Buffer('cdof#' + data + '#' + address);
-    var client = dgram.createSocket('udp6');
+		var message = new Buffer('cdof#' + data + '#' + address);
+		var client = dgram.createSocket('udp4');
 
-console.log('dof', address);
-    client.send(message, 0, message.length, BIOTZ_UDP_PORT, BIOTZ_ROUTER_HOST, function(err, bytes) {
-        if (err) {
-            console.log('Error:', err);
-            res.send(500, err);
-        } else {
-            res.send(200, 'OK');
-        }
-        client.close();
-        next();
-    });
+		console.log('dof', address);
+		client.send(message, 0, message.length, BIOTZ_UDP_PORT, BIOTZ_ROUTER_HOST, function(err, bytes) {
+				if (err) {
+					console.log('Error:', err);
+					res.send(500, err);
+				} else {
+					res.send(200, 'OK');
+				}
+				client.close();
+				next();
+				});
+	} else {
+		res.send(202, 'awaiting connection to biotz router');
+		next();
+	}
 }
 
 function putBiotLed(req, res, next) {
 
-    var address = req.context['address'];
-    var data = req.body;
+	if (BIOTZ_ROUTER_HOST !== undefined) {
+		var address = req.context['address'];
+		var data = req.body;
 
-    var message = new Buffer('cled#' + data + '#' + address);
-    var client = dgram.createSocket('udp6');
+		var message = new Buffer('cled#' + data + '#' + address);
+		var client = dgram.createSocket('udp4');
 
-console.log('led', address);
-    client.send(message, 0, message.length, BIOTZ_UDP_PORT, BIOTZ_ROUTER_HOST, function(err, bytes) {
-        if (err) {
-            console.log('Error:', err);
-            res.send(500, err);
-        } else {
-            res.send(200, 'OK');
-        }
-        client.close();
-        next();
-    });
+		console.log('led', address);
+		client.send(message, 0, message.length, BIOTZ_UDP_PORT, BIOTZ_ROUTER_HOST, function(err, bytes) {
+			if (err) {
+				console.log('Error:', err);
+				res.send(500, err);
+			} else {
+				res.send(200, 'OK');
+			}
+			client.close();
+			next();
+		});
+	} else {
+		res.send(202, 'awaiting connection to biotz router');
+		next();
+	}
 }
 
 function putBiotRecord(req, res, next) {
@@ -983,47 +1017,57 @@ function putDataValue(req, res, next) {
 
 function sendPoke(address) {
 
-    var message = new Buffer('cpok##' + address);
-    var client = dgram.createSocket('udp6');
+	if (BIOTZ_ROUTER_HOST !== undefined) {
+		var message = new Buffer('cpok##' + address);
+		var client = dgram.createSocket('udp4');
 
-    client.send(message, 0, message.length, BIOTZ_UDP_PORT, BIOTZ_ROUTER_HOST, function(err, bytes) {
-        if (err) {
-            console.log('Error:', err);
-            client.close();
-        }
-    });
+		client.send(message, 0, message.length, BIOTZ_UDP_PORT, BIOTZ_ROUTER_HOST, function(err, bytes) {
+			if (err) {
+				console.log('Error:', err);
+				client.close();
+			}
+		});
+	} else {
+		res.send(202, 'awaiting connection to biotz router');
+	}
+	next();
 }
 
-function testSystem(erName) {
-    var now = new Date().getTime();
-    if (edgeRouterTime[erName] !== undefined) {
-	    var secsAlive = (now - edgeRouterTime[erName]) / 1000;
-	    if (secsAlive > 12) {
-		    systemStatus.edgerouter = 'fault';
-	    } else {
-		    systemStatus.edgerouter = 'OK';
-	    }
-    } else {
-        systemStatus.edgerouter = 'unknown';
-    }
+function testSystem() {
+	var now = new Date().getTime();
+	if (BIOTZ_ROUTER_HOST === undefined) {
+		console.log("cannot find Edge Router host...");
+		systemStatus.edgerouter = 'unknown';
+		return;
+	}
+	if (edgeRouterTime[BIOTZ_ROUTER_HOST] !== undefined) {
+		var secsAlive = (now - edgeRouterTime[BIOTZ_ROUTER_HOST]) / 1000;
+		if (secsAlive > 12) {
+			systemStatus.edgerouter = 'fault';
+		} else {
+			systemStatus.edgerouter = 'OK';
+		}
+	} else {
+		systemStatus.edgerouter = 'unknown';
+	}
 
-    let fault = true;
-    let os = require('os');
-    let interfaces = os.networkInterfaces();
-    let ifs = Object.keys(interfaces);
-    for (var i = 0; i < ifs.length; i++) {
-        var iface = interfaces[ifs[i]];
-        for (var j = 0; j < iface.length; j++) {
-            if (iface[j].address === UDP_LOCAL_HOST) {
-                fault = false;
-            }
-        }
-    }
-    if (fault) {
-        systemStatus.udpip = 'fault';
-    } else {
-        systemStatus.udpip = 'OK';
-    }
+	let fault = true;
+	let os = require('os');
+	let interfaces = os.networkInterfaces();
+	let ifs = Object.keys(interfaces);
+	for (var i = 0; i < ifs.length; i++) {
+		var iface = interfaces[ifs[i]];
+		for (var j = 0; j < iface.length; j++) {
+			if (iface[j].address === UDP_LOCAL_HOST) {
+				fault = false;
+			}
+		}
+	}
+	if (fault) {
+		systemStatus.udpip = 'fault';
+	} else {
+		systemStatus.udpip = 'OK';
+	}
 }
 
 
