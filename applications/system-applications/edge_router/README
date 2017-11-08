@@ -1,0 +1,13 @@
+Components needed for RPi edge router.
+
+The unstrung library used to build the sunshine program used to make RPi act as DODAG rooot.
+
+The bridge directory has code for making the RPi act as a bridge between the
+edge router intercae and wider TCP/IP network.
+
+
+To start Edge Router
+--------------------
+The shell script edgerouter.sh should start up the edge router.
+
+

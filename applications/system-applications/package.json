@@ -18,7 +18,8 @@
     "mongodb": "^2.2.31",
     "mongoose": "^4.11.12",
     "net-ping": "^1.2.0",
-    "restify": "^4.1.1"
+    "restify": "^4.1.1",
+    "validate-ip-node": "^1.0.6"
   },
   "repository": {
     "type": "git",
