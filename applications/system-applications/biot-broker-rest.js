@@ -789,9 +789,9 @@ function heartbeat() {
 					}
 					for (var i = 0; i < data.length; i++) {
 						var er = data[i];
-						if ((BIOTZ_ROUTER_HOST !== undefined) || (BIOTZ_ROUTER+HOST !== er.name)) {
+						if ((BIOTZ_ROUTER_HOST === undefined) || (BIOTZ_ROUTER_HOST !== er.name)) {
+							console.log("Setting router host to", er.name);
 							BIOTZ_ROUTER_HOST = er.name;
-							console.log("Setting router host to", BIOTZ_ROUTER_HOST);
 						}
 						var ts = new Date(er.updated_at).getTime();
 						edgeRouterTime[er.name] = ts;
