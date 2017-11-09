@@ -1,9 +1,18 @@
 <button (click)="addTestNode();">Add Test Node</button>
 <button *ngIf="!getCommunicationStatus()" (click)="resetService();">Retry Router Detection</button>
-<button (click)="dropNodes();">Redraw Nodes</button>
+<button (click)="dropNodes();">Redraw Nodes</button><br/>
+<span>
+    <input type="radio" name="nodeView" value="raw" (click)="setNodeView('raw')" [(ngModel)]="nodeView">Data View
+    <input type="radio" name="nodeView" value="limb" (click)="setNodeView('limb')" [(ngModel)]="nodeView">Limb View
+</span>
 <div appThreed [displaywidth]="1400" [displayheight]="400" class="centred"></div>
 <div appThreestats [statsstyle]="{position: 'inherit', float: 'left', display: 'flex'}"></div>
 <hr/>
+<span>
+    Auto Zoom
+    <input type="radio" name="autozoom" value="1" (click)="autoZoom = 1" [(ngModel)]="autoZoom">On
+    <input type="radio" name="autozoom" value="0" (click)="autoZoom = 0" [(ngModel)]="autoZoom">Off
+</span>
 
 <span>Router 
         <span *ngIf="!getCommunicationStatus()"> NOT </span>
@@ -11,7 +20,7 @@
 </span>
 
 <div>
-    <table>
+    <table *ngIf="nodeView === 'raw'">
         <tr>
             <th>colour</th>
             <th>#</th>
@@ -82,6 +91,30 @@
         </tr>
         </ng-template>
     </table>
+    <table *ngIf="nodeView === 'limb'">
+        <tr>
+            <th>colour</th>
+            <th>#</th>
+            <th>address</th>
+            <th>name</th>
+            <th>limb</th>
+            <th>position</th>
+            <th>parent limb</th>
+            <th>&nbsp;</th>
+        </tr>
+        <ng-template ngFor let-address [ngForOf]="nodeAddresses" let-i="index">
+            <tr (click)="openLimbControl(address)" [class.selectedTop]="selectedNodeAddress === address">
+            <td [style.background-color]="nodeData[address].colour">&nbsp;</td>
+            <td>#{{ i }}</td>
+            <td [style.color]="nodeData[address].colour">{{ address }}</td>
+            <td>{{ nodeData[address].limb.name }}</td>
+            <td>{{ nodeData[address].limb.limbModel }}</td>
+            <td>{{ showPosition(nodeData[address].limb.position) }}</td>
+            <td>{{ nodeData[address].limb.parentLimbName }}</td>
+            <td [style.background-color]="nodeData[address].colour">&nbsp;</td>
+        </tr>
+        </ng-template>
+    </table>
     <div class="debug" #debugHolder [scrollTop]="debugHolder.scrollHeight">
         <div *ngFor="let txt of debugHistory; let i = index" >{{ i }} : {{ txt }}</div>
     </div>
@@ -98,6 +131,28 @@
     <div class="app-modal-footer">
         <button type="button" class="btn btn-default" (click)="nodeRenameDialog.hide()">Cancel</button>
         <button type="button" class="btn btn-default" (click)="rename(selectedNodeAddress, candidateNodeName); nodeRenameDialog.hide()">Save</button>
+    </div>
+</app-dialog>
+
+<app-dialog #nodeLimbDialog>
+    <div class="app-modal-header">
+        Node: <b>{{ selectedNodeAddress }}</b>
+    </div>
+    <div class="app-modal-body">
+        Name <input type="text" name="limbName" [(ngModel)]="selectedLimb.name" /><br/>
+        Parent Limb Name <input type="text" name="parentLimbName" [(ngModel)]="selectedLimb.parentLimbName" /><br/>
+        Limb Model
+        <select [(ngModel)]="selectedLimb.limbModel">
+        <ng-template ngFor let-model [ngForOf]="knownModels" let-i="index">
+            <option [ngValue]="model">{{ model }}</option>
+        </ng-template>
+        </select><br/>
+        
+        <input type="text" name="limbModel" [(ngModel)]="selectedLimb.limbModel" /><br/>
+    </div>
+    <div class="app-modal-footer">
+        <button type="button" class="btn btn-default" (click)="nodeLimbDialog.hide()">Cancel</button>
+        <button type="button" class="btn btn-default" (click)="updateLimb(selectedNodeAddress); nodeLimbDialog.hide()">Save Values</button>
     </div>
 </app-dialog>
 

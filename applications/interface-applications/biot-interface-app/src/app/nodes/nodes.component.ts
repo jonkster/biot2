@@ -5,6 +5,7 @@ import {NodeholderService} from '../biotservice/nodeholder.service';
 import {PeriodicService} from '../periodic.service';
 import {ThreedService} from '../threed/threed.service';
 import {LimbmakerService} from '../3d-objects/limbmaker.service';
+import {LimbAssemblyService} from '../limb-assembly/limbAssembly.service';
 import {Router} from '@angular/router';
 import * as THREE from 'three';
 
@@ -17,16 +18,27 @@ export class NodesComponent implements OnInit, AfterContentChecked {
 
     @ViewChild('debugHolder') debugHolder: ElementRef;
 
-    private biotService: BiotService;
-    private threedService: ThreedService;
-    private limbMakerService: LimbmakerService;
-    private router: Router;
+    private autoZoom: number = 1;
     private worldSpace: THREE.Object3D = undefined;
-    private nodeHolderService: NodeholderService = undefined;
     private nodeData: any = {};
+    private knownModels: string[];
+    private chosenModel: string = "humerus.json"
+    private nodeView: string = "limb";
     private nodeAddresses: string[] = [];
     private recordingActive: any = {};
     private recordingExists: any = {};
+    private selectedLimb: any = {
+            name: '',
+            address: '',
+            limbModel: '',
+            parentLimbName: '',
+            position: {
+                      x: 0,
+                      y: 0,
+                      z: 0,
+                      q: new THREE.Quaternion(0, 0, 0, 1)
+                  }
+    };
     private selectedNode: any = undefined;
     private selectedNodeAddress: string = '';
     private selectedNodeName: string = '';
@@ -38,13 +50,16 @@ export class NodesComponent implements OnInit, AfterContentChecked {
 
     @ViewChild('nodeRenameDialog') nodeRenameDialog: DialogComponent;
     @ViewChild('nodeRecordDialog') nodeRecordDialog: DialogComponent;
+    @ViewChild('nodeLimbDialog') nodeLimbDialog: DialogComponent;
 
-    constructor(biotService: BiotService, threedService: ThreedService, limbMakerService: LimbmakerService, nodeHolderService: NodeholderService, router: Router, private periodicService: PeriodicService) {
-        this.biotService = biotService;
-        this.threedService = threedService;
-        this.limbMakerService = limbMakerService;
-        this.nodeHolderService = nodeHolderService;
-        this.router = router;
+    constructor(
+        private biotService: BiotService,
+        private threedService: ThreedService,
+        private limbMakerService: LimbmakerService,
+        private limbAssemblyService: LimbAssemblyService,
+        private nodeHolderService: NodeholderService,
+        private router: Router,
+        private periodicService: PeriodicService) {
         this.dropNodes();
         this.nodeHolderService.lostNodeSubscription().subscribe(
             nodeAddr => {
@@ -156,7 +171,7 @@ export class NodesComponent implements OnInit, AfterContentChecked {
             x += width;
         }
         // zoom out to show all nodes
-        if (count !== 0) {
+        if ((this.autoZoom === 1) && count !== 0) {
             this.threedService.setZoom(4/count);
         }
     }
@@ -228,6 +243,18 @@ export class NodesComponent implements OnInit, AfterContentChecked {
         return node;
     }
 
+    openLimbControl(addr: string) {
+        this.alertNode(addr);
+        this.selectedNodeAddress = addr;
+        this.selectedLimb = this.nodeData[addr].limb;
+        this.limbMakerService.lookupKnownModels().subscribe(
+            rawData => {
+                this.knownModels = rawData;
+            }
+        );
+        this.nodeLimbDialog.show({});
+    }
+
     openNodeControl(addr: string) {
         this.alertNode(addr);
         let node = this.nodeHolderService.getManagedNode(addr);
@@ -249,6 +276,28 @@ export class NodesComponent implements OnInit, AfterContentChecked {
 
     rename(addr: string, name: string) {
         this.nodeHolderService.rename(addr, name);
+    }
+
+    setNodeView(view: string) {
+        this.nodeView = view;
+    }
+
+    showPosition(p: any): string {
+        return p.x + ' ' + p.y + ' ' + p.z;
+    }
+
+    updateLimb(addr: string) {
+        let node = this.nodeHolderService.getManagedNode(addr);
+        let limbModel = node.model.getObjectByName("limbModel-" + addr);
+        if (limbModel !== undefined) {
+            node.model.remove(limbModel);
+        }
+        if (this.selectedLimb.limbModel.match(/.json/)) {
+            let l = this.limbMakerService.makeLimbFromModel(this.selectedLimb.limbModel);
+            l.name = "limbModel-" + addr;
+            node.model.add(l);
+        }
+        this.nodeData[addr].limb = this.selectedLimb;
     }
 
     nodeCalibrationMode(addr: string): number {

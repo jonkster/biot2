@@ -213,7 +213,7 @@ export class BiotService {
 
     private makeBrokerRequest(path: string) {
         const url = "http://" + this.biotServerHost + ":" + this.biotServerPort + "/" + path ;
-        console.log(path);
+        //console.log(path);
         let src = this.http.get(url)
             .timeout(60)
             .map(this.extractWSData)

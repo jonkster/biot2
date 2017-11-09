@@ -19,7 +19,8 @@ type biotNodeType = {
     'lasttime': number,
     'lastHeardSame': number,
     'colour': string,
-    'model': any
+    'model': any,
+    'limb': any
 };
 
 @Injectable()
@@ -49,8 +50,9 @@ export class NodeholderService {
           return false;
       } else {
         let quaternion = new THREE.Quaternion(q.x, q.y, q.z, q.w);
+        let limb = this.newLimb(addr);
         this.managedNodeList[addr] = this.makeNewNode(
-            addr, type, name, [x, y, z], quaternion, -1, undefined, undefined, undefined, undefined, undefined, -1, 0, colour
+            addr, type, name, [x, y, z], quaternion, -1, undefined, undefined, undefined, undefined, undefined, -1, 0, colour, undefined, limb
         );
         return true;
       }
@@ -186,9 +188,11 @@ export class NodeholderService {
                       if (node !== undefined) {
                           node.calibration = rawNode.dc;
                           node.interval = rawNode.interval;
-                          let statusBits = rawNode.ds.split(/:/);
-                          node.auto = statusBits[2];
-                          node.dof = statusBits[0];
+                          if (rawNode.ds !== null) {
+                              let statusBits = rawNode.ds.split(/:/);
+                              node.auto = statusBits[2];
+                              node.dof = statusBits[0];
+                          }
                           node.led = '?';
                           this.managedNodeList[addr] = node;
                       } else {
@@ -254,7 +258,8 @@ export class NodeholderService {
     lasttime: number = undefined,
     lastHeardSame: number = 0,
     colour: string = undefined,
-    model: any = undefined): biotNodeType {
+    model: any = undefined,
+    limb: any = undefined): biotNodeType {
         let n = {
             address: address,
             type: type,
@@ -270,8 +275,24 @@ export class NodeholderService {
             lasttime: lasttime,
             lastHeardSame: lastHeardSame,
             colour: colour,
-            model: model};
+            model: model,
+            limb: limb
+        };
         return n;
+  }
+
+  newLimb(name: string) {
+      return {
+          name: name,
+          limbModel: 'default',
+          parentLimbName: 'none',
+          position: {
+              x: 0,
+              y: 0,
+              z: 0,
+              q: new THREE.Quaternion(0, 0, 0, 1)
+          }
+      }
   }
 
 

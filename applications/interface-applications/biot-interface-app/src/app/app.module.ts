@@ -14,6 +14,7 @@ import { NotfoundComponent } from './notfound/notfound.component';
 
 import {ThreedService} from './threed/threed.service';
 import {LimbmakerService} from './3d-objects/limbmaker.service';
+import {LimbAssemblyService} from './limb-assembly/limbAssembly.service';
 import {NodemodelService} from './3d-objects/nodemodel.service';
 import {BiotService} from './biotservice/biot.service';
 import {NodeholderService} from './biotservice/nodeholder.service';
@@ -23,6 +24,7 @@ import { DialogComponent } from './dialog/dialog.component';
 import { RecordingsComponent } from './recordings/recordings.component';
 import { MonitorComponent } from './monitor/monitor.component';
 import { ThreestatsDirective } from './threestats.directive';
+import { AssembliesComponent } from './assemblies/assemblies.component';
 
 
 export const rootRouterConfig: Routes = [
@@ -32,7 +34,7 @@ export const rootRouterConfig: Routes = [
     {path: 'recordings', component: RecordingsComponent},
     {path: 'monitor', component: MonitorComponent},
     {path: 'system', component: SystemComponent},
-    // {path: 'assemblies', component: AssembliesComponent},
+    {path: 'assemblies', component: AssembliesComponent},
     {path: '**', component: NotfoundComponent }
 ];
 
@@ -47,7 +49,8 @@ export const rootRouterConfig: Routes = [
     DialogComponent,
     RecordingsComponent,
     MonitorComponent,
-    ThreestatsDirective
+    ThreestatsDirective,
+    AssembliesComponent
   ],
   imports: [
     BrowserModule,
@@ -56,7 +59,7 @@ export const rootRouterConfig: Routes = [
     HttpModule,
     RouterModule.forRoot(rootRouterConfig)
   ],
-  providers: [ThreedService, LimbmakerService, NodemodelService, BiotService, NodeholderService, PeriodicService],
+  providers: [ThreedService, LimbmakerService, LimbAssemblyService, NodemodelService, BiotService, NodeholderService, PeriodicService],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

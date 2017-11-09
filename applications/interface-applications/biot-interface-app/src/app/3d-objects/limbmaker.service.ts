@@ -1,15 +1,20 @@
 import { Injectable } from '@angular/core';
 import { NodemodelService } from './nodemodel.service';
+import { HttpModule, Http, Response, URLSearchParams } from '@angular/http';
 
 import * as THREE from 'three';
 
 @Injectable()
 export class LimbmakerService {
 
-    private nodemodel: NodemodelService = undefined;
+    constructor(private nodemodel: NodemodelService, private http: Http) {
+        this.lookupKnownModels();
+    }
 
-    constructor(nodemodel: NodemodelService) {
-        this.nodemodel = nodemodel;
+    lookupKnownModels() {
+        const url = "assets/models/modelnames.json";
+        return this.http.get(url)
+            .map((response) => response.json());
     }
 
     makeAxis(x: number, y: number, z: number, length: number, width: number, brightness: number) {
@@ -54,11 +59,11 @@ export class LimbmakerService {
         return group;
     }
 
-    makeGenericLimb() {
+    makeLimbFromModel(limbModelName) {
         var material = new THREE.MeshStandardMaterial( { color: '#7f7f7f'} );
         var box = new THREE.Group();
         var loader = new THREE.JSONLoader();
-        loader.load('./assets/prosthetic-foot.json',
+        loader.load('./assets/models/' + limbModelName,
             function(geometry) {
                 var obj = new THREE.Mesh(geometry, material);
                 geometry.center();
@@ -72,7 +77,7 @@ export class LimbmakerService {
     }
 
     makeLimbWithNode() {
-        let limb = this.makeGenericLimb();
+        let limb = this.makeLimbFromModel('prosthetic-foot.json');
         var node = this.makeNodeModel('test-node', 'DUMMY-IMU', 'TEST NODE', 0, -155, -35, '#ff2222');
         node.rotateZ(Math.PI);
         limb.add(node);
