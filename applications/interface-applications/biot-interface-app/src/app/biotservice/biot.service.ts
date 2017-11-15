@@ -35,18 +35,24 @@ export class BiotService {
 
     detectNodes() {
         let biotData = this.getData();
-        biotData.subscribe(
-            rawData => {
-                let addresses = Object.keys(rawData);
-                for (let i = 0; i < addresses.length; i++) {
-                    let address = addresses[i];
-                    let data = rawData[address];
-                    this.detectedAddresses[address] = data;
-                }
-            },
-            error => {
-                console.log('error getting data:', error);
-            });
+        if (biotData !== null) {
+            biotData.subscribe(
+                rawData => {
+                    let addresses = Object.keys(rawData);
+                    for (let i = 0; i < addresses.length; i++) {
+                        let address = addresses[i];
+                        if (address !== null) {
+                            let data = rawData[address];
+                            this.detectedAddresses[address] = data;
+                        }
+                    }
+                },
+                error => {
+                    console.log('error getting data:', error);
+                });
+        } else {
+            console.log('fix - ', biotData);
+        }
     }
 
     dropNode(addr: string) {
@@ -212,21 +218,24 @@ export class BiotService {
     }
 
     private makeBrokerRequest(path: string) {
-        const url = "http://" + this.biotServerHost + ":" + this.biotServerPort + "/" + path ;
-        //console.log(path);
-        let src = this.http.get(url)
-            .timeout(60)
-            .map(this.extractWSData)
-            .catch((err: Response) => {
-                console.log(err);
-                if (err.status >= 500) {
-                    this.statusOK = false;
-                } 
-                console.log('failed to get resource', url, err);
-                return this.handleError(err)
-            });
+        if (this.biotServerHost !== '127.0.0.1')
+        {
+            const url = "http://" + this.biotServerHost + ":" + this.biotServerPort + "/" + path ;
+            //console.log(path);
+            let src = this.http.get(url)
+                .timeout(60)
+                .map(this.extractWSData)
+                .catch((err: Response) => {
+                    console.log(err);
+                    if (err.status >= 500) {
+                        this.statusOK = false;
+                    } 
+                    console.log('failed to get resource', url, err);
+                    return this.handleError(err)
+                });
             return src;
-
+        }
+        return null;
     }
 
     postAssemblyToCache(name, data: string) {

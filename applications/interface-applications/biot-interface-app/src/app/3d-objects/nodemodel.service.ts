@@ -26,7 +26,7 @@ export class NodemodelService {
           'emissive': 0x000033,
           'shininess': 0
       });
-      let ledGeometry = new THREE.SphereGeometry( 5, 5, 5 );
+      let ledGeometry = new THREE.SphereGeometry( 0.3, 0.3, 0.3 );
       let ledOn = new THREE.Mesh( ledGeometry, ledOnMaterial );
       let ledOff = new THREE.Mesh( ledGeometry, ledOffMaterial );
       ledOn.name = 'led-on';
@@ -37,7 +37,7 @@ export class NodemodelService {
       ledHolder.name = 'led-holder';
       ledHolder.add(ledOn);
       ledHolder.add(ledOff);
-      ledHolder.position.set(0, 0, -5);
+      ledHolder.position.set(0, 0, -0.3);
       return ledHolder;
   }
 
@@ -66,15 +66,17 @@ export class NodemodelService {
         box.add(this.makeLed());
 
         let siht = this;
-        let loader = new THREE.JSONLoader();
+        let loader = new THREE.ObjectLoader();
         loader.load('./assets/nodemodel.json',
-            function(geometry) {
-                geometry.center();
-                geometry.rotateX(Math.PI);
+            function(obj) {
+                if (obj.type === "Scene") {
+                    obj = obj.children[0];
+                }
+                obj.geometry.center();
                 let material = new THREE.MeshPhongMaterial( mOpts );
-                let obj = new THREE.Mesh(geometry, material);
+                obj.material = material;
                 obj.name = 'nodemodel-' + name;
-                obj.scale.set(40, 40, 40);
+                obj.geometry.scale(10, 10, 10);
                 obj.position.set(x, y, z);
                 obj.castShadow = true;
                 obj.receiveShadow = true;

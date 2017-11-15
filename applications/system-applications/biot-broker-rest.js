@@ -1030,7 +1030,6 @@ function sendPoke(address) {
 	} else {
 		res.send(202, 'awaiting connection to biotz router');
 	}
-	next();
 }
 
 function testSystem() {

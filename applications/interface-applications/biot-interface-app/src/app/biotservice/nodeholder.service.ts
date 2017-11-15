@@ -121,90 +121,98 @@ export class NodeholderService {
 
   getAllNodePositionData() {
       let allNodeAddresses = this.biotService.getDetectedAddresses();
-      this.biotService.getData().subscribe(
+      let data = this.biotService.getData();
+      if (data !== null) {
+          data.subscribe(
               allData => {
                   for (let i = 0; i < allNodeAddresses.length; i++) {
                       const addr = allNodeAddresses[i];
-                      let posData = allData[addr];
+                      if (addr !== null) {
+                          let posData = allData[addr];
 
-                      let managed = true;
-                      let node = this.getManagedNode(addr);
-                      if (node === undefined) {
-                          node = this.getUnmanagedNode(addr);
+                          let managed = true;
+                          let node = this.getManagedNode(addr);
                           if (node === undefined) {
-                              node = this.makeNewNode(addr);
-                              this.unmanagedNodeList[addr] = node;
+                              node = this.getUnmanagedNode(addr);
+                              if (node === undefined) {
+                                  node = this.makeNewNode(addr);
+                                  this.unmanagedNodeList[addr] = node;
+                              }
+                              managed = false;
                           }
-                          managed = false;
-                      }
-                      if (node !== undefined) {
-                          if (posData !== undefined) {
-                              let parts = posData.split(/:/);
-                              node.lasttime = node.timeStamp;
-                              node.timeStamp = Number(parts[0]);
-                              var q3js = new THREE.Quaternion(Number(parts[2]), Number(parts[3]), Number(parts[4]), Number(parts[1]));
-                              node.quaternion = q3js;
-                              this.setRotation(node, q3js);
-                              if (this.lastChange[addr] !== undefined)
-                              {
-                                  let lastHeard = this.lastChange[addr].lastHeard;
-                                  this.lastChange[addr].timesLastHeardSame++;
-                                  if (node.lasttime != lastHeard) {
-                                      this.lastChange[addr].timesLastHeardSame = 0;
-                                      this.lastChange[addr].lastHeard = node.lasttime;
+                          if (node !== undefined) {
+                              if (posData !== undefined) {
+                                  let parts = posData.split(/:/);
+                                  node.lasttime = node.timeStamp;
+                                  node.timeStamp = Number(parts[0]);
+                                  var q3js = new THREE.Quaternion(Number(parts[2]), Number(parts[3]), Number(parts[4]), Number(parts[1]));
+                                  node.quaternion = q3js;
+                                  this.setRotation(node, q3js);
+                                  if (this.lastChange[addr] !== undefined)
+                                  {
+                                      let lastHeard = this.lastChange[addr].lastHeard;
+                                      this.lastChange[addr].timesLastHeardSame++;
+                                      if (node.lasttime != lastHeard) {
+                                          this.lastChange[addr].timesLastHeardSame = 0;
+                                          this.lastChange[addr].lastHeard = node.lasttime;
+                                      }
+                                  } else {
+                                      this.lastChange[addr] = {
+                                          lastHeard: node.lasttime,
+                                          timesLastHeardSame: 0
+                                      }
+                                  }
+                                  node.lastHeardSame = this.lastChange[addr].timesLastHeardSame;
+                                  if (managed && this.lastChange[addr].timesLastHeardSame > 25) {
+                                      this.warnLostNode(addr);
                                   }
                               } else {
-                                  this.lastChange[addr] = {
-                                      lastHeard: node.lasttime,
-                                      timesLastHeardSame: 0
-                                  }
+                                  this.dropNode(addr);
                               }
-                              node.lastHeardSame = this.lastChange[addr].timesLastHeardSame;
-                              if (managed && this.lastChange[addr].timesLastHeardSame > 25) {
-                                  this.warnLostNode(addr);
-                              }
-                          } else {
-                              this.dropNode(addr);
-                          }
-                      };
+                          };
+                      }
                   }
               },
               error => {
                   console.log('error getting data:', error);
               }
-      );
+          );
+      }
   }
 
   getAllNodeStatusData() {
       this.biotService.detectNodes();
-      this.biotService.getAllNodes().subscribe(
-          rawData => {
-              let addresses = Object.keys(this.managedNodeList);
-              for (let i = 0; i < addresses.length; i++) {
-                  const addr = addresses[i];
-                  let rawNode = rawData[addr];
-                  if (rawNode !== undefined) {
-                      let node = this.getManagedNode(addr);
-                      if (node !== undefined) {
-                          node.calibration = rawNode.dc;
-                          node.interval = rawNode.interval;
-                          if (rawNode.ds !== null) {
-                              let statusBits = rawNode.ds.split(/:/);
-                              node.auto = statusBits[2];
-                              node.dof = statusBits[0];
+      let data = this.biotService.getAllNodes();
+      if (data !== null) {
+          data.subscribe(
+              rawData => {
+                  let addresses = Object.keys(this.managedNodeList);
+                  for (let i = 0; i < addresses.length; i++) {
+                      const addr = addresses[i];
+                      let rawNode = rawData[addr];
+                      if (rawNode !== undefined) {
+                          let node = this.getManagedNode(addr);
+                          if (node !== undefined) {
+                              node.calibration = rawNode.dc;
+                              node.interval = rawNode.interval;
+                              if (rawNode.ds !== null) {
+                                  let statusBits = rawNode.ds.split(/:/);
+                                  node.auto = statusBits[2];
+                                  node.dof = statusBits[0];
+                              }
+                              node.led = '?';
+                              this.managedNodeList[addr] = node;
+                          } else {
+                              this.dropNode(addr);
                           }
-                          node.led = '?';
-                          this.managedNodeList[addr] = node;
-                      } else {
-                          this.dropNode(addr);
                       }
                   }
+              },
+              error => {
+                  console.log('error getting data:', error);
               }
-          },
-          error => {
-              console.log('error getting data:', error);
-          }
-      );
+          );
+      }
   }
 
   getError(): string {
@@ -286,6 +294,7 @@ export class NodeholderService {
           name: name,
           limbModel: 'default',
           parentLimbName: 'none',
+          limbLength: 30,
           position: {
               x: 0,
               y: 0,

@@ -159,41 +159,45 @@ export class SystemComponent implements AfterViewInit {
 
     getBiotAddresses() {
         const status =  this.biotService.getAddresses();
-        status.subscribe(
-            rawData => {
-                this.nodeStatus.addresses = rawData;
-                this.nodeStatus.count = rawData.length;
-                this.getAllBiotData();
-            },
-            error => {
-                this.routerStatus.status = 'ERROR';
-                this.systemStatus.biotbroker = 'fault';
-                this.debug("could not get addresses from biot service");
-            }
-        );
+        if (status !== null) {
+            status.subscribe(
+                rawData => {
+                    this.nodeStatus.addresses = rawData;
+                    this.nodeStatus.count = rawData.length;
+                    this.getAllBiotData();
+                },
+                error => {
+                    this.routerStatus.status = 'ERROR';
+                    this.systemStatus.biotbroker = 'fault';
+                    this.debug("could not get addresses from biot service");
+                }
+            );
+        }
     }
 
     getRouterStatus() {
         const status =  this.biotService.getRouterStatus();
-        status.subscribe(
-            rawData => {
-                this.routerStatus = rawData;
-                this.routerStatus.status = 'Connected';
-                this.systemStatus.biotbroker = 'OK';
-                this.systemStatus.tcpip = 'OK';
-                this.systemStatus.udpip = this.routerStatus['UDP-IP-status'];
-                this.systemStatus.edgerouter = this.routerStatus['Edge-Router-status'];
-                this.systemStatus.biots = this.routerStatus['DODAG-status'];
-            },
-            error => {
-                this.routerStatus.status = 'ERROR';
-                this.systemStatus.biotbroker = 'fault';
-                this.debug("could not get router status from biot service");
-            }
-        );
-        let siht = this;
-        this.getBiotAddresses();
-        setTimeout(function(){ siht.getRouterStatus() }, 3000);
+        if (status !== null) {
+            status.subscribe(
+                rawData => {
+                    this.routerStatus = rawData;
+                    this.routerStatus.status = 'Connected';
+                    this.systemStatus.biotbroker = 'OK';
+                    this.systemStatus.tcpip = 'OK';
+                    this.systemStatus.udpip = this.routerStatus['UDP-IP-status'];
+                    this.systemStatus.edgerouter = this.routerStatus['Edge-Router-status'];
+                    this.systemStatus.biots = this.routerStatus['DODAG-status'];
+                },
+                error => {
+                    this.routerStatus.status = 'ERROR';
+                    this.systemStatus.biotbroker = 'fault';
+                    this.debug("could not get router status from biot service");
+                }
+            );
+            let siht = this;
+            this.getBiotAddresses();
+            setTimeout(function(){ siht.getRouterStatus() }, 3000);
+        }
     }
 
     getSystemStatus() {

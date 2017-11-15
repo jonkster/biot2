@@ -98,6 +98,7 @@
             <th>address</th>
             <th>name</th>
             <th>limb</th>
+            <th>length</th>
             <th>position</th>
             <th>parent limb</th>
             <th>&nbsp;</th>
@@ -109,6 +110,7 @@
             <td [style.color]="nodeData[address].colour">{{ address }}</td>
             <td>{{ nodeData[address].limb.name }}</td>
             <td>{{ nodeData[address].limb.limbModel }}</td>
+            <td>{{ nodeData[address].limb.limbLength }}</td>
             <td>{{ showPosition(nodeData[address].limb.position) }}</td>
             <td>{{ nodeData[address].limb.parentLimbName }}</td>
             <td [style.background-color]="nodeData[address].colour">&nbsp;</td>
@@ -140,15 +142,25 @@
     </div>
     <div class="app-modal-body">
         Name <input type="text" name="limbName" [(ngModel)]="selectedLimb.name" /><br/>
-        Parent Limb Name <input type="text" name="parentLimbName" [(ngModel)]="selectedLimb.parentLimbName" /><br/>
+
+        Parent Limb Name
+        <select [(ngModel)]="selectedLimb.parentLimbName">
+        <ng-template ngFor let-parent [ngForOf]="selectedLimb.potentialLimbs">
+            <option [ngValue]="parent">{{ parent }}</option>
+        </ng-template>
+        </select><br/>
+
         Limb Model
-        <select [(ngModel)]="selectedLimb.limbModel">
+        <select [(ngModel)]="selectedLimb.proposedLimbModel">
         <ng-template ngFor let-model [ngForOf]="knownModels" let-i="index">
             <option [ngValue]="model">{{ model }}</option>
         </ng-template>
         </select><br/>
         
-        <input type="text" name="limbModel" [(ngModel)]="selectedLimb.limbModel" /><br/>
+        <input type="text" name="limbModel" [(ngModel)]="selectedLimb.proposedLimbModel" /><br/>
+        length cm 
+        <mat-slider min="1" max="50" step="0.5" value="30" tickInterval="5" thumbLabel (input)="adjustLimbLength(selectedNodeAddress, $event.value)"></mat-slider>
+        <input type="text" name="limbLength" [(ngModel)]="selectedLimb.proposedLimbLength" /><br/>
     </div>
     <div class="app-modal-footer">
         <button type="button" class="btn btn-default" (click)="nodeLimbDialog.hide()">Cancel</button>

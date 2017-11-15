@@ -5,6 +5,9 @@ import { HttpModule } from '@angular/http';
 import { RouterModule, Routes } from '@angular/router';
 
 import { ChartsModule } from 'ng2-charts';
+import {MatSliderModule} from '@angular/material/slider';
+import {CdkTableModule} from '@angular/cdk/table';
+import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 
 import { AppComponent } from './app.component';
 import { ThreedDirective } from './threed.directive';
@@ -57,6 +60,9 @@ export const rootRouterConfig: Routes = [
     ChartsModule,
     FormsModule,
     HttpModule,
+    MatSliderModule,
+    CdkTableModule,
+    BrowserAnimationsModule,
     RouterModule.forRoot(rootRouterConfig)
   ],
   providers: [ThreedService, LimbmakerService, LimbAssemblyService, NodemodelService, BiotService, NodeholderService, PeriodicService],

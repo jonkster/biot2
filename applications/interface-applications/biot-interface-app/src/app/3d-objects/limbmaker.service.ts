@@ -24,33 +24,66 @@ export class LimbmakerService {
         var g = new THREE.Color(0.1, 0.5, 0.1).offsetHSL(0, 0, brightness);
         var b = new THREE.Color(0.1, 0.1, 0.5).offsetHSL(0, 0, brightness);
 
+        let tickSpacing = 10;
+        let tickWidth = 1;
+
+        // red X
         var lmaterial = new THREE.LineBasicMaterial( {color: r.getHex(), linewidth: width});
         var lgeometry = new THREE.Geometry();
         lgeometry.vertices.push(new THREE.Vector3(0, 0, 0));
         lgeometry.vertices.push(new THREE.Vector3(length, 0, 0));
         var line = new THREE.Line(lgeometry, lmaterial);
-        group.add(line);
-        group.name = 'axis:' + x + '-' + y + '-' + z + ':' + length + 'x' + width;
         line.castShadow = true;
         line.receiveShadow = true;
+        group.add(line);
+        for (let i = 0; i < length; i += tickSpacing) {
+            var lgeometry = new THREE.Geometry();
+            lgeometry.vertices.push(new THREE.Vector3(i, -tickWidth, 0));
+            lgeometry.vertices.push(new THREE.Vector3(i, tickWidth, 0));
+            line = new THREE.Line(lgeometry, lmaterial);
+            line.castShadow = true;
+            line.receiveShadow = true;
+            group.add(line);
+        }
+        group.name = 'axis:' + x + '-' + y + '-' + z + ':' + length + 'x' + width;
 
+        // green Y
         lmaterial = new THREE.LineBasicMaterial( {color: g.getHex(), linewidth: width} );
         lgeometry = new THREE.Geometry();
         lgeometry.vertices.push(new THREE.Vector3(0, 0, 0));
         lgeometry.vertices.push(new THREE.Vector3(0, length, 0));
         line = new THREE.Line(lgeometry, lmaterial);
-        group.add(line);
         line.castShadow = true;
         line.receiveShadow = true;
+        group.add(line);
+        for (let i = 0; i < length; i += tickSpacing) {
+            var lgeometry = new THREE.Geometry();
+            lgeometry.vertices.push(new THREE.Vector3(0, i, -tickWidth));
+            lgeometry.vertices.push(new THREE.Vector3(0, i, tickWidth));
+            line = new THREE.Line(lgeometry, lmaterial);
+            line.castShadow = true;
+            line.receiveShadow = true;
+            group.add(line);
+        }
 
+        // blue Z
         lmaterial = new THREE.LineBasicMaterial( {color: b.getHex(), linewidth: width} );
         lgeometry = new THREE.Geometry();
         lgeometry.vertices.push(new THREE.Vector3(0, 0, 0));
         lgeometry.vertices.push(new THREE.Vector3(0, 0, length));
         line = new THREE.Line(lgeometry, lmaterial);
-        group.add(line);
         line.castShadow = true;
         line.receiveShadow = true;
+        group.add(line);
+        for (let i = 0; i < length; i += tickSpacing) {
+            var lgeometry = new THREE.Geometry();
+            lgeometry.vertices.push(new THREE.Vector3(0, -tickWidth, i));
+            lgeometry.vertices.push(new THREE.Vector3(0, tickWidth, i));
+            line = new THREE.Line(lgeometry, lmaterial);
+            line.castShadow = true;
+            line.receiveShadow = true;
+            group.add(line);
+        }
 
         group.position.x = x;
         group.position.y = y;
@@ -59,17 +92,31 @@ export class LimbmakerService {
         return group;
     }
 
-    makeLimbFromModel(limbModelName) {
+
+    makeLimbFromModel(limbModelName, scale) {
+        var factor = 10;  
         var material = new THREE.MeshStandardMaterial( { color: '#7f7f7f'} );
         var box = new THREE.Group();
-        var loader = new THREE.JSONLoader();
+        var loader = new THREE.ObjectLoader();
         loader.load('./assets/models/' + limbModelName,
-            function(geometry) {
-                var obj = new THREE.Mesh(geometry, material);
-                geometry.center();
-                obj.rotateX(Math.PI/2);
-                obj.scale.set(70, 70, 70);
-                obj.position.set(0, 160, 0);
+            function(obj) {
+                if (obj.type === "Scene") {
+                    obj = obj.children[0];
+                }
+                obj.geometry.computeBoundingSphere();
+                obj.userData['defaultBoundingSphereRadiusCm'] = obj.geometry.boundingSphere.radius * obj.scale.x * factor;
+                obj.userData['defaultBoundingSphereRadiusThree'] = obj.geometry.boundingSphere.radius;
+                obj.name = limbModelName.replace(/.json$/, '');
+                obj.geometry.center();
+                obj.position.set(0, 0, 0);
+                // make hinge at end
+                let matrix  = new THREE.Matrix4().makeTranslation(0, -obj.geometry.boundingSphere.radius, 0 );
+                obj.geometry.applyMatrix( matrix );
+                // size adjust
+                obj.geometry.scale(scale, scale, scale);
+                obj.geometry.scale(factor, factor, factor);
+                obj.geometry.computeBoundingSphere();
+                obj.userData['defaultBoundingSphereRadiusThree'] = obj.geometry.boundingSphere.radius;
                 box.add(obj);
             }
         );
@@ -77,7 +124,7 @@ export class LimbmakerService {
     }
 
     makeLimbWithNode() {
-        let limb = this.makeLimbFromModel('prosthetic-foot.json');
+        let limb = this.makeLimbFromModel('prosthetic-foot.json', 70);
         var node = this.makeNodeModel('test-node', 'DUMMY-IMU', 'TEST NODE', 0, -155, -35, '#ff2222');
         node.rotateZ(Math.PI);
         limb.add(node);
@@ -155,8 +202,9 @@ export class LimbmakerService {
 
     makeNodeModel(name: string, type: string, displayName: string, x: number, y: number, z: number, colour: string) {
         let node = this.nodemodel.makeNodeModel(name, type, displayName, x, y, z, colour);
-        var localAxis = this.makeAxis(0, 0, 0, 140, 2, 0.35);
+        var localAxis = this.makeAxis(0, 0, 0, 30, 0.1, 0.35);
         node.add(localAxis);
         return node;
     }
+
 }

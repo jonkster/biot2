@@ -85,23 +85,24 @@ export class ThreedService {
         this.scene.add(hemiLight);
 
         const light = new THREE.DirectionalLight(0x7f3333, 1);
-        light.position.set(50, 50, 50);
+        light.position.set(50, 50, 500);
         light.position.multiplyScalar(1.3);
 
         light.castShadow = true;
-        light.shadowCameraVisible = true;
 
-        light.shadowMapWidth = 512;
-        light.shadowMapHeight = 512;
+        light.shadow.mapSize.width = 512;
+        light.shadow.mapSize.height = 512;
 
         const d = 1000;
-        light.shadowCameraLeft = -d;
-        light.shadowCameraRight = d;
-        light.shadowCameraTop = d;
-        light.shadowCameraBottom = -d;
+        light.shadow.camera.left = -d;
+        light.shadow.camera.right = d;
+        light.shadow.camera.top = d;
+        light.shadow.camera.bottom = -d;
 
-        light.shadowCameraFar = 1000;
-        light.shadowDarkness = 0.8;
+        light.shadow.camera.far = 1000;
+        /*let shadowCHelper = new THREE.CameraHelper( light.shadow.camera );
+        this.scene.add( shadowCHelper );*/
+
         light.target = lightTarget;
         this.scene.add(light);
     }
@@ -183,7 +184,7 @@ export class ThreedService {
         this.camera.name = 'camera';
         this.scene.add(this.camera);
         this.camera.up.set( 0, 0, 1 );
-        this.camera.position.x =  1000;
+        this.camera.position.x =  200; // ~ 2 metres
         this.camera.position.y = 0;
         this.camera.position.z = 0;
         this.camera.lookAt(new THREE.Vector3(0,0,0));

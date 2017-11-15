@@ -17,7 +17,8 @@ export class AssembliesComponent implements OnInit {
 
     @ViewChild('debugHolder') debugHolder: ElementRef;
 
-    private knownModels: string[];
+    private knownNodes: any[] = [];
+    private knownModels: string[] = [];
     private worldSpace: THREE.Object3D = undefined;
 
     constructor(private biotService: BiotService,
@@ -28,8 +29,9 @@ export class AssembliesComponent implements OnInit {
         private periodicService: PeriodicService) {
     }
 
-  ngOnInit() {
-  }
+    ngOnInit() {
+        this.addActiveNodes();
+    }
 
   ngAfterViewInit() {
         this.threedService.addLighting(0, 0, 0);
@@ -61,15 +63,59 @@ export class AssembliesComponent implements OnInit {
 
         this.threedService.add(this.worldSpace);
 
-        this.limbMakerService.lookupKnownModels().subscribe(
-            rawData => {
-                this.knownModels = rawData;
-                console.log(this.knownModels);
-                let l = this.limbMakerService.makeLimbFromModel(this.knownModels[2]);
-                this.worldSpace.add(l);
-            }
-        );
-
     }
+
+    
+  addActiveNodes() {
+      setTimeout(e => {
+          var addresses = this.biotService.getDetectedAddresses();
+          for (let i = 0; i < addresses.length; i++) {
+              let addr = addresses[i];
+              if (this.knownNodes[addr] === undefined) {
+                  this.knownNodes[addr] = this.limbMakerService.makeLimb(null,
+                      addr,
+                      'limb-' + addr,
+                      i * 40, 0, 0,
+                      this.pickAColour(i),
+                      30);
+                this.threedService.add(this.knownNodes[addr]);
+              }
+          }
+          this.addActiveNodes();
+      }, 1000);
+  }
+
+
+  pickAColour(idx: number) {
+      var colours = [
+          '#FF0000',
+          '#4385FF',
+          '#AA6E28',
+          '#808000',
+          '#FFFAC8',
+          '#BEFF00',
+          '#FFD8B1',
+          '#00BE00',
+          '#FFEA00',
+          '#AAFFC3',
+          '#008080',
+          '#64FFFF',
+          '#FFC9DE',
+          '#000080',
+          '#820096',
+          '#E6BEFF',
+          '#FF00FF',
+          '#800000',
+          '#FF9900',
+          '#808080',
+          '#330000',
+          '#438533',
+          '#336E28',
+          '#303000',
+          '#533500',
+          '#448822',
+          '#404040'];
+      return colours[idx % colours.length];
+  }
 
 }
