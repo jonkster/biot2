@@ -1,0 +1,79 @@
+when designing board in KiCad
+
+1. set origin at suitable point near bottom left of board
+
+
+pcb2gcode
+---------
+
+don't use vectorial core (due thickness of cutting tool)
+
+Backside mirroring = Y axis
+
+Milling depth -0.1mm
+200 mm/min horiz speed
+drill depth -3.0mm
+    mill holes, use single bit (0.8mm?)
+
+outline 0.8mm
+-2.5mm depth
+horiz speed 100mm/min
+max single pass depth 1mm
+
+
+
+
+
+CNC
+--------
+
+When first starting up CNC (or if need to drill reference/holding holes in a
+fresh PCB)
+
+1. jog Y axis so spindle clear of clamps when X homes
+
+2. Home all axes
+
+3. Set Touch Off on X and Y to initialise starting point (important if drilling
+   reference marks for new PCB)
+
+4. bring drill close to work surface and touch off Z   
+
+
+Tools
+-----
+
+Currently using 0.8mm end mill
+
+
+Milling PCB
+-------------
+
+After exporting gcode from pcb2gcode application:
+
+1. load BACK surface gcode
+
+1. jog spindle to suitable point on PCB
+
+2. touch off X and Y (and if necessary bring Z close to surface and touch off Z)
+   (may need to rejog at this point to get outline at a suitable point)
+
+3. run BACK gcode (will prompt for auto level probe etc)
+
+4. G0 X0, G0 Y0 to bring drill back to origin and drill a reference hole
+
+5. flip board and load FRONT gcode
+
+6. Jog X until it lines up with the reference hole exactly
+
+7. touch off X
+
+7. run FRONT gcode
+
+8. load and run drill gcode
+
+9. load and run outline gcode
+
+
+
+

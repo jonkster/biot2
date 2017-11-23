@@ -1,0 +1,651 @@
+( pcb2gcode 1.3.2 )
+( Gcode for LinuxCNC )
+
+G94 ( Millimeters per minute feed rate. )
+G21 ( Units == Millimeters. )
+
+G90 ( Absolute coordinates. )
+S10000 ( RPM spindle speed. )
+G64 P0.01000 ( set maximum deviation from commanded toolpath )
+F200.00000 ( Feedrate. )
+
+o2 sub ( G01 with Z-correction subroutine )
+    #3 = 0 ( x-tile offset [minus the initial offset] )
+    #4 = 0 ( x-tile offset [minus the initial offset] )
+    #5 = [ FIX[ [ #1 - -38.06191 + #3 ] / 12.67121 ] ] ( Lower left point X index )
+    #6 = [ FIX[ [ #2 - -0.18032 + #4 ] / 15.19682 ] ] ( Lower left point Y index )
+    #7 = [ #5 * 3 + [ #6 + 1 ] + 500 ] ( Upper left point parameter number )
+    #8 = [ [ #5 + 1 ] *3 + [ #6 + 1 ] + 500 ] ( Upper right point parameter number )
+    #9 = [ #5 * 3 + #6 + 500 ] ( Lower left point parameter number )
+    #10 = [ [ #5 + 1 ] * 3 + #6 + 500 ] ( Lower right point parameter number )
+    #11 = [ [ #2 + #4 - -0.18032 - #6 * 15.19682 ] / 15.19682 ] ( Distance between the point and the left border of the rectangle, normalized to 1 )
+    #12 = [ [ #1 + #3 - -38.06191 - #5 * 12.67121 ] / 12.67121 ] ( Distance between the point and the bottom border of the rectangle, normalized to 1 ) 
+    #13 = [ ##9 + [ ##7 - ##9 ] * #11 ] ( Linear interpolation of the x-min elements )
+    #14 = [ ##10 + [ ##8 - ##10 ] * #11 ] ( Linear interpolation of the x-max elements )
+    #15 = [ #13 + [ #14 - #13 ] * #12 ] ( Linear interpolation of previously interpolated points )
+    G01 X#1 Y#2 Z[-0.10000+#15]
+o2 endsub
+
+o3 sub ( Y probe subroutine )
+    G0 Z5.000 ( Move to probe height )
+    X[#101 * 12.67121 + -38.06191] Y[#102 * 15.19682 + -0.18032] ( Move to the current probe point )
+    G38.2 Z-3 F100.000000 ( Probe it )
+    #[#101 * 3 + #102 + 500] = #5063 ( Save the probe in the correct parameter )
+    #102 = [#102 + #103] ( Increment/decrement by 1 the Y counter )
+o3 endsub
+
+o4 sub ( X probe subroutine )
+    o5 repeat [#104]
+        o3 call
+    o5 endrepeat
+    #104 = 3
+    #103 = [0 - #103]
+    #102 = [#102 + #103]
+    #101 = [#101 + 1] ( Increment by 1 the X counter )
+o4 endsub
+
+#107 = 0
+#108 = 0
+
+(MSG, Attach the probe tool)
+M0 ( Temporary machine stop. )
+G0 Z5.000 ( Move Z to safe height )
+G0 X-38.06191 Y-0.18032 ( Move XY to start point )
+G0 Z5.000 ( Move Z to probe height )
+(PROBEOPEN RawProbeLog.txt) ( Record all probes in RawProbeLog.txt )
+G38.2 Z-3 F100.000000 ( Z-probe )
+#500 = 0 ( Probe point [0, 0] is our reference )
+G10 L20 P0 Z0 ( Set the current Z as zero-value )
+
+( We now start the real probing: move the Z axis to the probing height, move to )
+( the probing XY position, probe it and save the result, parameter #5063, )
+( in a numbered parameter; we will make 4 probes on the X-axis and )
+( 3 probes on the Y-axis, for a grand total of 12 probes )
+
+#101 = 0 ( X iterator )
+#102 = 1 ( Y iterator )
+#103 = 1 ( UP or DOWN increment )
+#104 = 2 ( number of Y points; the 1st Y row can be done one time less )
+o6 repeat [4]
+    o4 call
+o6 endrepeat
+
+G0 Z5.000 ( Move Z to safe height )
+(PROBECLOSE) ( Close the probe log file )
+( Probing has ended, each Z-coordinate will be corrected with a bilinear interpolation )
+(MSG, Detach the probe tool)
+M0 ( Temporary machine stop. )
+
+F200.00000 ( Feedrate. )
+M3 ( Spindle on clockwise. )
+G04 P0 ( dwell for no time -- G64 should not smooth over this point )
+G00 Z5.00000 ( retract )
+
+G00 X-36.77159 Y28.71980 ( rapid move to begin. )
+F100.00000
+o2 call [-36.7716] [28.7198]
+G04 P0 ( dwell for no time -- G64 should not smooth over this point )
+F200.00000
+o2 call [-36.7716] [14.953]
+o2 call [-36.7716] [1.1862]
+o2 call [-36.6954] [1.11]
+o2 call [-24.9352] [1.11]
+o2 call [-13.175] [1.11]
+o2 call [-1.41479] [1.11]
+o2 call [-1.33859] [1.1862]
+o2 call [-1.33859] [15.0165]
+o2 call [-1.33859] [28.8468]
+o2 call [-1.41479] [28.923]
+o2 call [-13.175] [28.923]
+o2 call [-24.9352] [28.923]
+o2 call [-36.6954] [28.923]
+o2 call [-36.7716] [28.8468]
+o2 call [-36.7716] [28.7198]
+G04 P0 ( dwell for no time -- G64 should not smooth over this point )
+G00 Z5.00000 ( retract )
+
+G00 X-21.60779 Y26.00200 ( rapid move to begin. )
+F100.00000
+o2 call [-21.6078] [26.002]
+G04 P0 ( dwell for no time -- G64 should not smooth over this point )
+F200.00000
+o2 call [-21.6078] [24.1478]
+o2 call [-19.5504] [24.1478]
+o2 call [-19.5504] [26.2052]
+o2 call [-21.6078] [26.2052]
+o2 call [-21.6078] [26.002]
+G04 P0 ( dwell for no time -- G64 should not smooth over this point )
+G00 Z5.00000 ( retract )
+
+G00 X-15.76579 Y26.00200 ( rapid move to begin. )
+F100.00000
+o2 call [-15.7658] [26.002]
+G04 P0 ( dwell for no time -- G64 should not smooth over this point )
+F200.00000
+o2 call [-15.7658] [24.1478]
+o2 call [-13.7084] [24.1478]
+o2 call [-13.7084] [26.2052]
+o2 call [-15.7658] [26.2052]
+o2 call [-15.7658] [26.002]
+G04 P0 ( dwell for no time -- G64 should not smooth over this point )
+G00 Z5.00000 ( retract )
+
+G00 X-12.94639 Y26.00200 ( rapid move to begin. )
+F100.00000
+o2 call [-12.9464] [26.002]
+G04 P0 ( dwell for no time -- G64 should not smooth over this point )
+F200.00000
+o2 call [-13.0734] [25.9004]
+o2 call [-13.1242] [25.748]
+o2 call [-13.2004] [25.6718]
+o2 call [-13.2258] [25.5194]
+o2 call [-13.2258] [24.8336]
+o2 call [-13.2004] [24.6812]
+o2 call [-13.1242] [24.605]
+o2 call [-13.0734] [24.4526]
+o2 call [-12.8448] [24.2494]
+o2 call [-12.6162] [24.1478]
+o2 call [-11.778] [24.1478]
+o2 call [-11.6256] [24.1986]
+o2 call [-11.4986] [24.3256]
+o2 call [-11.4478] [24.3256]
+o2 call [-11.2446] [24.5796]
+o2 call [-11.1684] [24.8336]
+o2 call [-11.1684] [25.5194]
+o2 call [-11.1938] [25.6718]
+o2 call [-11.2954] [25.7988]
+o2 call [-11.3208] [25.9004]
+o2 call [-11.5494] [26.1036]
+o2 call [-11.778] [26.2052]
+o2 call [-12.6162] [26.2052]
+o2 call [-12.7686] [26.1544]
+o2 call [-12.9464] [26.002]
+G04 P0 ( dwell for no time -- G64 should not smooth over this point )
+G00 Z5.00000 ( retract )
+
+G00 X-10.40639 Y26.00200 ( rapid move to begin. )
+F100.00000
+o2 call [-10.4064] [26.002]
+G04 P0 ( dwell for no time -- G64 should not smooth over this point )
+F200.00000
+o2 call [-10.5334] [25.9004]
+o2 call [-10.5842] [25.748]
+o2 call [-10.6604] [25.6718]
+o2 call [-10.6858] [25.5194]
+o2 call [-10.6858] [24.8336]
+o2 call [-10.6604] [24.6812]
+o2 call [-10.5842] [24.605]
+o2 call [-10.5334] [24.4526]
+o2 call [-10.3048] [24.2494]
+o2 call [-10.0762] [24.1478]
+o2 call [-9.23799] [24.1478]
+o2 call [-9.08559] [24.1986]
+o2 call [-8.95859] [24.3256]
+o2 call [-8.90779] [24.3256]
+o2 call [-8.70459] [24.5796]
+o2 call [-8.62839] [24.8336]
+o2 call [-8.62839] [25.5194]
+o2 call [-8.65379] [25.6718]
+o2 call [-8.75539] [25.7988]
+o2 call [-8.78079] [25.9004]
+o2 call [-9.00939] [26.1036]
+o2 call [-9.23799] [26.2052]
+o2 call [-10.0762] [26.2052]
+o2 call [-10.2286] [26.1544]
+o2 call [-10.4064] [26.002]
+G04 P0 ( dwell for no time -- G64 should not smooth over this point )
+G00 Z5.00000 ( retract )
+
+G00 X-7.86639 Y26.00200 ( rapid move to begin. )
+F100.00000
+o2 call [-7.86639] [26.002]
+G04 P0 ( dwell for no time -- G64 should not smooth over this point )
+F200.00000
+o2 call [-7.99339] [25.9004]
+o2 call [-8.04419] [25.748]
+o2 call [-8.12039] [25.6718]
+o2 call [-8.14579] [25.5194]
+o2 call [-8.14579] [24.8336]
+o2 call [-8.12039] [24.6812]
+o2 call [-8.04419] [24.605]
+o2 call [-7.99339] [24.4526]
+o2 call [-7.76479] [24.2494]
+o2 call [-7.53619] [24.1478]
+o2 call [-6.69799] [24.1478]
+o2 call [-6.54559] [24.1986]
+o2 call [-6.41859] [24.3256]
+o2 call [-6.36779] [24.3256]
+o2 call [-6.16459] [24.5796]
+o2 call [-6.08839] [24.8336]
+o2 call [-6.08839] [25.5194]
+o2 call [-6.11379] [25.6718]
+o2 call [-6.21539] [25.7988]
+o2 call [-6.24079] [25.9004]
+o2 call [-6.46939] [26.1036]
+o2 call [-6.69799] [26.2052]
+o2 call [-7.53619] [26.2052]
+o2 call [-7.68859] [26.1544]
+o2 call [-7.86639] [26.002]
+G04 P0 ( dwell for no time -- G64 should not smooth over this point )
+G00 Z5.00000 ( retract )
+
+G00 X-5.32639 Y26.00200 ( rapid move to begin. )
+F100.00000
+o2 call [-5.32639] [26.002]
+G04 P0 ( dwell for no time -- G64 should not smooth over this point )
+F200.00000
+o2 call [-5.45339] [25.9004]
+o2 call [-5.50419] [25.748]
+o2 call [-5.58039] [25.6718]
+o2 call [-5.60579] [25.5194]
+o2 call [-5.60579] [24.8336]
+o2 call [-5.58039] [24.6812]
+o2 call [-5.50419] [24.605]
+o2 call [-5.45339] [24.4526]
+o2 call [-5.22479] [24.2494]
+o2 call [-4.99619] [24.1478]
+o2 call [-4.15799] [24.1478]
+o2 call [-4.00559] [24.1986]
+o2 call [-3.87859] [24.3256]
+o2 call [-3.82779] [24.3256]
+o2 call [-3.62459] [24.5796]
+o2 call [-3.54839] [24.8336]
+o2 call [-3.54839] [25.5194]
+o2 call [-3.57379] [25.6718]
+o2 call [-3.67539] [25.7988]
+o2 call [-3.70079] [25.9004]
+o2 call [-3.92939] [26.1036]
+o2 call [-4.15799] [26.2052]
+o2 call [-4.99619] [26.2052]
+o2 call [-5.14859] [26.1544]
+o2 call [-5.32639] [26.002]
+G04 P0 ( dwell for no time -- G64 should not smooth over this point )
+G00 Z5.00000 ( retract )
+
+G00 X-4.91999 Y21.76020 ( rapid move to begin. )
+F100.00000
+o2 call [-4.91999] [21.7602]
+G04 P0 ( dwell for no time -- G64 should not smooth over this point )
+F200.00000
+o2 call [-4.91999] [20.2616]
+o2 call [-3.21819] [20.2616]
+o2 call [-3.21819] [21.9634]
+o2 call [-4.91999] [21.9634]
+o2 call [-4.91999] [21.7602]
+G04 P0 ( dwell for no time -- G64 should not smooth over this point )
+G00 Z5.00000 ( retract )
+
+G00 X-4.76759 Y17.74700 ( rapid move to begin. )
+F100.00000
+o2 call [-4.76759] [17.747]
+G04 P0 ( dwell for no time -- G64 should not smooth over this point )
+F200.00000
+o2 call [-4.91999] [17.4422]
+o2 call [-4.91999] [16.7564]
+o2 call [-4.76759] [16.4262]
+o2 call [-4.71679] [16.4262]
+o2 call [-4.53899] [16.2738]
+o2 call [-4.38659] [16.2484]
+o2 call [-3.59919] [16.2738]
+o2 call [-3.49759] [16.3754]
+o2 call [-3.37059] [16.4262]
+o2 call [-3.21819] [16.7564]
+o2 call [-3.21819] [17.4422]
+o2 call [-3.37059] [17.7724]
+o2 call [-3.42139] [17.7724]
+o2 call [-3.59919] [17.9248]
+o2 call [-4.38659] [17.9502]
+o2 call [-4.58979] [17.8994]
+o2 call [-4.76759] [17.747]
+G04 P0 ( dwell for no time -- G64 should not smooth over this point )
+G00 Z5.00000 ( retract )
+
+G00 X-4.76759 Y15.74040 ( rapid move to begin. )
+F100.00000
+o2 call [-4.76759] [15.7404]
+G04 P0 ( dwell for no time -- G64 should not smooth over this point )
+F200.00000
+o2 call [-4.91999] [15.4356]
+o2 call [-4.91999] [14.7498]
+o2 call [-4.76759] [14.4196]
+o2 call [-4.71679] [14.4196]
+o2 call [-4.53899] [14.2672]
+o2 call [-4.38659] [14.2418]
+o2 call [-3.59919] [14.2672]
+o2 call [-3.49759] [14.3688]
+o2 call [-3.37059] [14.4196]
+o2 call [-3.21819] [14.7498]
+o2 call [-3.21819] [15.4356]
+o2 call [-3.37059] [15.7658]
+o2 call [-3.42139] [15.7658]
+o2 call [-3.59919] [15.9182]
+o2 call [-4.38659] [15.9436]
+o2 call [-4.58979] [15.8928]
+o2 call [-4.76759] [15.7404]
+G04 P0 ( dwell for no time -- G64 should not smooth over this point )
+G00 Z5.00000 ( retract )
+
+G00 X-4.76759 Y13.75920 ( rapid move to begin. )
+F100.00000
+o2 call [-4.76759] [13.7592]
+G04 P0 ( dwell for no time -- G64 should not smooth over this point )
+F200.00000
+o2 call [-4.91999] [13.4544]
+o2 call [-4.91999] [12.7686]
+o2 call [-4.76759] [12.4384]
+o2 call [-4.71679] [12.4384]
+o2 call [-4.53899] [12.286]
+o2 call [-4.38659] [12.2606]
+o2 call [-3.59919] [12.286]
+o2 call [-3.49759] [12.3876]
+o2 call [-3.37059] [12.4384]
+o2 call [-3.21819] [12.7686]
+o2 call [-3.21819] [13.4544]
+o2 call [-3.37059] [13.7846]
+o2 call [-3.42139] [13.7846]
+o2 call [-3.59919] [13.937]
+o2 call [-4.38659] [13.9624]
+o2 call [-4.58979] [13.9116]
+o2 call [-4.76759] [13.7592]
+G04 P0 ( dwell for no time -- G64 should not smooth over this point )
+G00 Z5.00000 ( retract )
+
+G00 X-4.76759 Y11.75260 ( rapid move to begin. )
+F100.00000
+o2 call [-4.76759] [11.7526]
+G04 P0 ( dwell for no time -- G64 should not smooth over this point )
+F200.00000
+o2 call [-4.91999] [11.4478]
+o2 call [-4.91999] [10.762]
+o2 call [-4.76759] [10.4318]
+o2 call [-4.71679] [10.4318]
+o2 call [-4.53899] [10.2794]
+o2 call [-4.38659] [10.254]
+o2 call [-3.59919] [10.2794]
+o2 call [-3.49759] [10.381]
+o2 call [-3.37059] [10.4318]
+o2 call [-3.21819] [10.762]
+o2 call [-3.21819] [11.4478]
+o2 call [-3.37059] [11.778]
+o2 call [-3.42139] [11.778]
+o2 call [-3.59919] [11.9304]
+o2 call [-4.38659] [11.9558]
+o2 call [-4.58979] [11.905]
+o2 call [-4.76759] [11.7526]
+G04 P0 ( dwell for no time -- G64 should not smooth over this point )
+G00 Z5.00000 ( retract )
+
+G00 X-4.76759 Y9.74600 ( rapid move to begin. )
+F100.00000
+o2 call [-4.76759] [9.746]
+G04 P0 ( dwell for no time -- G64 should not smooth over this point )
+F200.00000
+o2 call [-4.91999] [9.4412]
+o2 call [-4.91999] [8.7554]
+o2 call [-4.76759] [8.4252]
+o2 call [-4.71679] [8.4252]
+o2 call [-4.53899] [8.2728]
+o2 call [-4.38659] [8.2474]
+o2 call [-3.59919] [8.2728]
+o2 call [-3.49759] [8.3744]
+o2 call [-3.37059] [8.4252]
+o2 call [-3.21819] [8.7554]
+o2 call [-3.21819] [9.4412]
+o2 call [-3.37059] [9.7714]
+o2 call [-3.49759] [9.8222]
+o2 call [-3.59919] [9.9238]
+o2 call [-4.38659] [9.9492]
+o2 call [-4.58979] [9.8984]
+o2 call [-4.76759] [9.746]
+G04 P0 ( dwell for no time -- G64 should not smooth over this point )
+G00 Z5.00000 ( retract )
+
+G00 X-10.68579 Y13.81000 ( rapid move to begin. )
+F100.00000
+o2 call [-10.6858] [13.81]
+G04 P0 ( dwell for no time -- G64 should not smooth over this point )
+F200.00000
+o2 call [-10.6858] [11.9558]
+o2 call [-8.62839] [11.9558]
+o2 call [-8.62839] [14.0132]
+o2 call [-10.6858] [14.0132]
+o2 call [-10.6858] [13.81]
+G04 P0 ( dwell for no time -- G64 should not smooth over this point )
+G00 Z5.00000 ( retract )
+
+G00 X-10.40639 Y18.89000 ( rapid move to begin. )
+F100.00000
+o2 call [-10.4064] [18.89]
+G04 P0 ( dwell for no time -- G64 should not smooth over this point )
+F200.00000
+o2 call [-10.5334] [18.7884]
+o2 call [-10.5842] [18.636]
+o2 call [-10.6604] [18.5598]
+o2 call [-10.6858] [18.4074]
+o2 call [-10.6858] [17.7216]
+o2 call [-10.6604] [17.5692]
+o2 call [-10.5842] [17.493]
+o2 call [-10.5334] [17.3406]
+o2 call [-10.3048] [17.1374]
+o2 call [-10.0762] [17.0358]
+o2 call [-9.23799] [17.0358]
+o2 call [-9.08559] [17.0866]
+o2 call [-8.95859] [17.2136]
+o2 call [-8.90779] [17.2136]
+o2 call [-8.70459] [17.4676]
+o2 call [-8.62839] [17.7216]
+o2 call [-8.62839] [18.4074]
+o2 call [-8.65379] [18.5598]
+o2 call [-8.75539] [18.6868]
+o2 call [-8.78079] [18.7884]
+o2 call [-9.00939] [18.9916]
+o2 call [-9.23799] [19.0932]
+o2 call [-10.0762] [19.0932]
+o2 call [-10.2286] [19.0424]
+o2 call [-10.4064] [18.89]
+G04 P0 ( dwell for no time -- G64 should not smooth over this point )
+G00 Z5.00000 ( retract )
+
+G00 X-10.40639 Y21.43000 ( rapid move to begin. )
+F100.00000
+o2 call [-10.4064] [21.43]
+G04 P0 ( dwell for no time -- G64 should not smooth over this point )
+F200.00000
+o2 call [-10.5334] [21.3284]
+o2 call [-10.5842] [21.176]
+o2 call [-10.6604] [21.0998]
+o2 call [-10.6858] [20.9474]
+o2 call [-10.6858] [20.2616]
+o2 call [-10.6604] [20.1092]
+o2 call [-10.5842] [20.033]
+o2 call [-10.5334] [19.8806]
+o2 call [-10.3048] [19.6774]
+o2 call [-10.0762] [19.5758]
+o2 call [-9.23799] [19.5758]
+o2 call [-9.08559] [19.6266]
+o2 call [-8.95859] [19.7536]
+o2 call [-8.90779] [19.7536]
+o2 call [-8.70459] [20.0076]
+o2 call [-8.62839] [20.2616]
+o2 call [-8.62839] [20.9474]
+o2 call [-8.65379] [21.0998]
+o2 call [-8.75539] [21.2268]
+o2 call [-8.78079] [21.3284]
+o2 call [-9.00939] [21.5316]
+o2 call [-9.23799] [21.6332]
+o2 call [-10.0762] [21.6332]
+o2 call [-10.2286] [21.5824]
+o2 call [-10.4064] [21.43]
+G04 P0 ( dwell for no time -- G64 should not smooth over this point )
+G00 Z5.00000 ( retract )
+
+G00 X-14.47039 Y7.46000 ( rapid move to begin. )
+F100.00000
+o2 call [-14.4704] [7.46]
+G04 P0 ( dwell for no time -- G64 should not smooth over this point )
+F200.00000
+o2 call [-14.5974] [7.3584]
+o2 call [-14.6482] [7.206]
+o2 call [-14.7244] [7.1298]
+o2 call [-14.7498] [6.9774]
+o2 call [-14.7498] [6.2916]
+o2 call [-14.7244] [6.1392]
+o2 call [-14.6482] [6.063]
+o2 call [-14.5974] [5.9106]
+o2 call [-14.2926] [5.6566]
+o2 call [-14.1402] [5.6058]
+o2 call [-13.302] [5.6058]
+o2 call [-13.1496] [5.6566]
+o2 call [-13.0226] [5.7836]
+o2 call [-12.9718] [5.7836]
+o2 call [-12.7686] [6.0376]
+o2 call [-12.6924] [6.2916]
+o2 call [-12.6924] [6.9774]
+o2 call [-12.7178] [7.1298]
+o2 call [-12.8194] [7.2568]
+o2 call [-12.8448] [7.3584]
+o2 call [-13.0734] [7.5616]
+o2 call [-13.302] [7.6632]
+o2 call [-14.1402] [7.6632]
+o2 call [-14.2926] [7.6124]
+o2 call [-14.4704] [7.46]
+G04 P0 ( dwell for no time -- G64 should not smooth over this point )
+G00 Z5.00000 ( retract )
+
+G00 X-17.01039 Y7.46000 ( rapid move to begin. )
+F100.00000
+o2 call [-17.0104] [7.46]
+G04 P0 ( dwell for no time -- G64 should not smooth over this point )
+F200.00000
+o2 call [-17.1374] [7.3584]
+o2 call [-17.1882] [7.206]
+o2 call [-17.2644] [7.1298]
+o2 call [-17.2898] [6.9774]
+o2 call [-17.2898] [6.2916]
+o2 call [-17.2644] [6.1392]
+o2 call [-17.1882] [6.063]
+o2 call [-17.1374] [5.9106]
+o2 call [-16.9088] [5.7074]
+o2 call [-16.6802] [5.6058]
+o2 call [-15.842] [5.6058]
+o2 call [-15.6896] [5.6566]
+o2 call [-15.5626] [5.7836]
+o2 call [-15.5118] [5.7836]
+o2 call [-15.3086] [6.0376]
+o2 call [-15.2324] [6.2916]
+o2 call [-15.2324] [6.9774]
+o2 call [-15.2578] [7.1298]
+o2 call [-15.3594] [7.2568]
+o2 call [-15.3848] [7.3584]
+o2 call [-15.6134] [7.5616]
+o2 call [-15.842] [7.6632]
+o2 call [-16.6802] [7.6632]
+o2 call [-16.8326] [7.6124]
+o2 call [-17.0104] [7.46]
+G04 P0 ( dwell for no time -- G64 should not smooth over this point )
+G00 Z5.00000 ( retract )
+
+G00 X-19.55039 Y7.46000 ( rapid move to begin. )
+F100.00000
+o2 call [-19.5504] [7.46]
+G04 P0 ( dwell for no time -- G64 should not smooth over this point )
+F200.00000
+o2 call [-19.6774] [7.3584]
+o2 call [-19.7282] [7.206]
+o2 call [-19.8044] [7.1298]
+o2 call [-19.8298] [6.9774]
+o2 call [-19.8298] [6.2916]
+o2 call [-19.8044] [6.1392]
+o2 call [-19.7282] [6.063]
+o2 call [-19.6774] [5.9106]
+o2 call [-19.3726] [5.6566]
+o2 call [-19.2202] [5.6058]
+o2 call [-18.382] [5.6058]
+o2 call [-18.2296] [5.6566]
+o2 call [-18.1026] [5.7836]
+o2 call [-18.0518] [5.7836]
+o2 call [-17.8486] [6.0376]
+o2 call [-17.7724] [6.2916]
+o2 call [-17.7724] [6.9774]
+o2 call [-17.7978] [7.1298]
+o2 call [-17.8994] [7.2568]
+o2 call [-17.9248] [7.3584]
+o2 call [-18.1534] [7.5616]
+o2 call [-18.382] [7.6632]
+o2 call [-19.2202] [7.6632]
+o2 call [-19.3726] [7.6124]
+o2 call [-19.5504] [7.46]
+G04 P0 ( dwell for no time -- G64 should not smooth over this point )
+G00 Z5.00000 ( retract )
+
+G00 X-22.09039 Y7.46000 ( rapid move to begin. )
+F100.00000
+o2 call [-22.0904] [7.46]
+G04 P0 ( dwell for no time -- G64 should not smooth over this point )
+F200.00000
+o2 call [-22.2174] [7.3584]
+o2 call [-22.2682] [7.206]
+o2 call [-22.3444] [7.1298]
+o2 call [-22.3698] [6.9774]
+o2 call [-22.3698] [6.2916]
+o2 call [-22.3444] [6.1392]
+o2 call [-22.2682] [6.063]
+o2 call [-22.2174] [5.9106]
+o2 call [-21.9126] [5.6566]
+o2 call [-21.7602] [5.6058]
+o2 call [-20.922] [5.6058]
+o2 call [-20.7696] [5.6566]
+o2 call [-20.6426] [5.7836]
+o2 call [-20.5918] [5.7836]
+o2 call [-20.3886] [6.0376]
+o2 call [-20.3124] [6.2916]
+o2 call [-20.3124] [6.9774]
+o2 call [-20.3378] [7.1298]
+o2 call [-20.4394] [7.2568]
+o2 call [-20.4648] [7.3584]
+o2 call [-20.6934] [7.5616]
+o2 call [-20.922] [7.6632]
+o2 call [-21.7602] [7.6632]
+o2 call [-21.9126] [7.6124]
+o2 call [-22.0904] [7.46]
+G04 P0 ( dwell for no time -- G64 should not smooth over this point )
+G00 Z5.00000 ( retract )
+
+G00 X-24.63039 Y7.46000 ( rapid move to begin. )
+F100.00000
+o2 call [-24.6304] [7.46]
+G04 P0 ( dwell for no time -- G64 should not smooth over this point )
+F200.00000
+o2 call [-24.7574] [7.3584]
+o2 call [-24.8082] [7.206]
+o2 call [-24.8844] [7.1298]
+o2 call [-24.9098] [6.9774]
+o2 call [-24.9098] [6.2916]
+o2 call [-24.8844] [6.1392]
+o2 call [-24.8082] [6.063]
+o2 call [-24.7574] [5.9106]
+o2 call [-24.4526] [5.6566]
+o2 call [-24.3002] [5.6058]
+o2 call [-23.462] [5.6058]
+o2 call [-23.3096] [5.6566]
+o2 call [-23.1826] [5.7836]
+o2 call [-23.1318] [5.7836]
+o2 call [-22.9286] [6.0376]
+o2 call [-22.8524] [6.2916]
+o2 call [-22.8524] [6.9774]
+o2 call [-22.8778] [7.1298]
+o2 call [-22.9794] [7.2568]
+o2 call [-23.0048] [7.3584]
+o2 call [-23.2334] [7.5616]
+o2 call [-23.462] [7.6632]
+o2 call [-24.3002] [7.6632]
+o2 call [-24.4526] [7.6124]
+o2 call [-24.6304] [7.46]
+
+G04 P0 ( dwell for no time -- G64 should not smooth over this point )
+G00 Z5.000 ( retract )
+
+M5 ( Spindle off. )
+M9 ( Coolant off. )
+M2 ( Program end. )
+
