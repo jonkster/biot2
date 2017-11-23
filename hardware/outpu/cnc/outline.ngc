@@ -1,5 +1,5 @@
 ( pcb2gcode 1.3.2 )
-( Software-independent Gcode )
+( Gcode for LinuxCNC )
 
 G94 ( Millimeters per minute feed rate. )
 G21 ( Units == Millimeters. )
@@ -11,6 +11,9 @@ F100.00000 ( Feedrate. )
 
 F100.00000 ( Feedrate. )
 M3 ( Spindle on clockwise. )
+
+o1 sub ( Main subroutine )
+
 G04 P0 ( dwell for no time -- G64 should not smooth over this point )
 G00 Z5.00000 ( retract )
 
@@ -84,6 +87,14 @@ F100.00000
 G01 X37.68599 Y29.88820
 X37.73679 Y29.83740
 X37.73679 Y29.48180
+
+o1 endsub
+
+o1 call
+G92 X[#5420-[37.881598]]
+o1 call
+G92 Y[#5421-[-0.000000]]
+G92 X[#5420-[-37.881598]]
 
 G04 P0 ( dwell for no time -- G64 should not smooth over this point )
 G00 Z5.000 ( retract )
