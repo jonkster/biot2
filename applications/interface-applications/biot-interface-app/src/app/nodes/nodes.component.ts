@@ -82,16 +82,30 @@ export class NodesComponent implements OnInit, AfterContentChecked {
     ngAfterContentChecked() {
     }
 
+    makeMaterialFromFile(name: string) {
+        let material = new THREE.MeshLambertMaterial({opacity: 0.4, transparent: true});
+	let loader = new THREE.TextureLoader().load(
+	    name,
+	    function (texture) {
+		texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+		texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+		texture.repeat.set( 4, 4 );
+		material.map = texture;
+        	material.side = THREE.DoubleSide;
+	    },
+	    function(xhr) { },
+	    function(xhr) { console.log('error loading texture', xhr); }
+	);
+	return material;
+    }
+
     ngAfterViewInit() {
         this.threedService.addLighting(0, 0, 0);
 
         this.threedService.setBackgroundColour('#e0ffff');
-        const texture = THREE.ImageUtils.loadTexture('./assets/mocap.png');
-        texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-        texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-        texture.repeat.set( 1, 1 );
-        const material = new THREE.MeshLambertMaterial({map: texture, opacity: 0.4, transparent: true});
-        material.side = THREE.DoubleSide;
+	let material = this.makeMaterialFromFile('./assets/mocap.png');
+
+
         const geometry = new THREE.PlaneGeometry(2000, 2000, 0);
         geometry.translate(0, 0, -165);
         let floor = new THREE.Mesh(geometry, material);

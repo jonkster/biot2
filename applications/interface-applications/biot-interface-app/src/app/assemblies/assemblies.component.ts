@@ -16,9 +16,21 @@ import * as THREE from 'three';
 export class AssembliesComponent implements OnInit {
 
     @ViewChild('debugHolder') debugHolder: ElementRef;
+    @ViewChild('nodeLimbDialog') nodeLimbDialog: DialogComponent;
 
-    private knownNodes: any[] = [];
+    private debugHistory: string[] = [];
+    private knownLimbs: { [key: string]: any} = {};
+    private knownNodeAddresses: string[] = [];
     private knownModels: string[] = [];
+    private selectedLimbAddress: string = '';
+    private selectedLimb: any = {
+        address: '',
+        name: '',
+        parentLimbName: '',
+        limbModelName: '',
+        limbLength: '',
+        potentialParentLimbs: []
+    };
     private worldSpace: THREE.Object3D = undefined;
 
     constructor(private biotService: BiotService,
@@ -31,6 +43,11 @@ export class AssembliesComponent implements OnInit {
 
     ngOnInit() {
         this.addActiveNodes();
+        this.limbMakerService.lookupKnownModels().subscribe(
+            rawData => {
+                this.knownModels = rawData;
+            }
+        );
     }
 
   ngAfterViewInit() {
@@ -71,18 +88,118 @@ export class AssembliesComponent implements OnInit {
           var addresses = this.biotService.getDetectedAddresses();
           for (let i = 0; i < addresses.length; i++) {
               let addr = addresses[i];
-              if (this.knownNodes[addr] === undefined) {
-                  this.knownNodes[addr] = this.limbMakerService.makeLimb(null,
+              if (this.knownLimbs[addr] === undefined) {
+                  this.knownLimbs[addr] = this.limbMakerService.makeLimb(null,
                       addr,
-                      'limb-' + addr,
-                      i * 40, 0, 0,
+                      'limb-' + i,
+                      0, i * 40, 0,
                       this.pickAColour(i),
                       30);
-                this.threedService.add(this.knownNodes[addr]);
+                  this.threedService.add(this.knownLimbs[addr]);
+                  this.nodeHolderService.registerLimb(this.knownLimbs[addr]);
               }
           }
+          this.knownNodeAddresses = Object.keys(this.knownLimbs);
           this.addActiveNodes();
       }, 1000);
+  }
+
+  adjustLimbLength(addr, value) {
+      this.knownLimbs[addr].limbLength = value;
+      if (this.selectedLimbAddress === addr) {
+        this.selectedLimb.limbLength = value;
+      }
+  }
+
+  debug(txt: string) {
+      if (this.debugHistory.length > 100) {
+          this.debugHistory.shift();
+          this.debugHistory[0] = 'earlier entries deleted...';
+      }
+      this.debugHistory.push(txt);
+  }
+
+  attachLimbToParent(limb, parentLimbName) {
+      let parentLimb = this.getLimbByName(parentLimbName);
+      if (parentLimb !== null) {
+        let newLimb = this.limbMakerService.attachLimbToParent(limb, parentLimb);
+        let addr = limb.userData.address;
+        this.knownLimbs[addr] = newLimb;
+        this.nodeHolderService.registerLimb(newLimb);
+        this.threedService.remove(limb);
+      }
+  }
+
+  getLimbByName(name: string): any {
+      for (let i = 0; i < this.knownNodeAddresses.length; i++) {
+          let addr = this.knownNodeAddresses[i];
+          let limb = this.knownLimbs[addr];
+          if (limb.userData.displayName === name) {
+              return limb;
+          }
+      }
+      return null;
+  }
+
+  getAssembly(): string {
+      let assembly = {};
+      let addresses = Object.keys(this.knownLimbs);
+      for (let i = 0; i < addresses.length; i++) {
+          let address = addresses[i];
+          let limb = this.knownLimbs[address];
+          assembly[address] = limb.userData;
+      }
+      return JSON.stringify(assembly);
+  }
+
+  getPotentialParents(addr: string): string[] {
+      let parentNames: string[] = [];
+      for (let i = 0; i < this.knownNodeAddresses.length; i++) {
+          let paddr = this.knownNodeAddresses[i];
+          if (paddr !== addr) {
+              let pp = this.knownLimbs[paddr];
+              parentNames.push(pp.userData.displayName);
+          }
+      }
+      return parentNames;
+  }
+
+  loadAssembly() {
+      this.biotService.getCachedAssembly('my-assembly').subscribe(
+          rawData => { this.debug("got assembly stuff:" + rawData);
+              let data = JSON.parse(rawData);
+              let addresses = Object.keys(data);
+              for (let i = 0; i < addresses.length; i++) {
+                  let address = addresses[i];
+                  let limbData = data[address];
+                  this.selectedLimb.name = limbData.displayName;
+                  this.selectedLimb.colour = limbData.colour;
+                  this.selectedLimb.limbLength = limbData.limbLength;
+                  this.selectedLimb.limbModelName = limbData.limbModelName;
+                  this.selectedLimb.parentLimbName = limbData.parentLimbName;
+                  this.updateLimb(address);
+              }
+          },
+          error => { this.debug("error when getting assembly:" + error); }
+      );
+  }
+
+  openLimbControl(addr: string) {
+      this.selectedLimbAddress = addr;
+      let limb = this.knownLimbs[addr];
+      if (limb !== undefined) {
+          let potentialParentLimbs: string[] = this.getPotentialParents(addr);
+          this.selectedLimb = {
+              address: addr,
+              colour: limb.userData.colour, 
+              name: this.knownLimbs[addr].userData.displayName,
+              parentLimbName: limb.userData.parentLimbName,
+              limbModelName: limb.userData.limbModelName, 
+              limbLength: limb.userData.limbLength,
+              potentialParentLimbs: potentialParentLimbs
+          }
+          this.nodeLimbDialog.show({});
+      }
   }
 
 
@@ -116,6 +233,33 @@ export class AssembliesComponent implements OnInit {
           '#448822',
           '#404040'];
       return colours[idx % colours.length];
+  }
+
+  saveAssembly()  {
+      let siht = this;
+      let assembly = this.getAssembly();
+      this.biotService.postAssemblyToCache('my-assembly', assembly).subscribe(
+          rawData => { this.debug("saved my assembly stuff"); },
+          error => { this.debug("error when saving assembly:" + error); }
+      );
+  }
+
+  updateLimb(addr: string) {
+      let limb = this.knownLimbs[addr];
+      if (limb !== undefined) {
+          limb.userData.displayName = this.selectedLimb.name;
+          limb.userData.colour = this.selectedLimb.colour;
+          limb.userData.limbLength = this.selectedLimb.limbLength;
+          limb.userData.parentLimbName = this.selectedLimb.parentLimbName;
+          limb.userData.limbModelName = this.selectedLimb.limbModelName;
+          if (this.selectedLimb.limbModelName !== "") {
+              this.limbMakerService.attachModelToLimb(limb, this.selectedLimb.limbModelName);
+          }
+          if ((this.selectedLimb.parentLimbName !== "") && (this.selectedLimb.parentLimbName !== "none")) {
+              this.attachLimbToParent(limb, this.selectedLimb.parentLimbName);
+          }
+
+      }
   }
 
 }

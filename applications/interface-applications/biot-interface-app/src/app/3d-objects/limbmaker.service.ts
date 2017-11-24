@@ -11,6 +11,25 @@ export class LimbmakerService {
         this.lookupKnownModels();
     }
 
+    attachLimbToParent(limb: THREE.Object3D, parentLimb: THREE.Object3D) {
+        let p = parentLimb.position;
+        let l = parentLimb.userData.limbLength;
+        let newLimb = this.makeLimb(parentLimb,
+                      limb.userData.address,
+                      limb.userData.displayName,
+                      0, 0, 0,
+                      limb.userData.colour,
+                      limb.userData.limbLength);
+        newLimb.userData = limb.userData;
+        console.log(newLimb);
+        return newLimb;
+    }
+
+    attachModelToLimb(limb: THREE.Object3D, modelName: string) {
+        let model = this.makeLimbFromModel(modelName, 1);
+        limb.add(model);
+    }
+
     lookupKnownModels() {
         const url = "assets/models/modelnames.json";
         return this.http.get(url)
@@ -145,45 +164,72 @@ export class LimbmakerService {
         limb.position.y = y;
         limb.position.z = z;
 
+
+
+
+        /* JOINT */
+        var jointMaterial = new THREE.MeshPhongMaterial({
+            'transparent': true,
+            'color': 0xff7f7f,
+            'specular': 0xffffff,
+            'shininess': 10 
+        });
+
+        // make a joint object for the limb
+        var geometry = new THREE.BoxGeometry(2, limbLength/2, 2);
+        var joint = new THREE.Mesh(geometry, jointMaterial);
+        limb.add(joint);
+        /* end JOINT */
+
+
+
+        /* Make an ENVELOPE for the Limb */
         var limbRadius = limbLength/10;
-        var limbGeometry = new THREE.CylinderGeometry( limbRadius, limbRadius, limbLength, 50 );
+        var envelopeGeometry = new THREE.CylinderGeometry( limbRadius, limbRadius, limbLength, 50 );
         var matrix = new THREE.Matrix4();
         // shift so hinge point is at end of limb not middle
         matrix  = new THREE.Matrix4().makeTranslation(0, -limbLength/2, 0 );
-        limbGeometry.applyMatrix( matrix );
+        envelopeGeometry.applyMatrix( matrix );
 
-        /* Make an ENVELOPE for the Limb */
-        var limbMaterial = this.makeLimbMaterial(colour);
+        var envelopeMaterial = this.makeLimbMaterial(colour);
 
-        var limbEnvelope = new THREE.Mesh( limbGeometry, limbMaterial );
+        var limbEnvelope = new THREE.Mesh( envelopeGeometry, envelopeMaterial );
+        // align limbs long axis along X
         limbEnvelope.rotateZ(Math.PI/2);
         limbEnvelope.position.z = 0;
         limbEnvelope.castShadow = true;
         limbEnvelope.receiveShadow = true;
         limbEnvelope.name = 'envelope-' + name;
         limbEnvelope.userData['type'] = 'envelope';
-        limb.add(limbEnvelope);
+        joint.add(limbEnvelope);
 
         limb.name = name;
+        let parentName = "";
+        if (parent !== null) {
+             parentName = parent.name;
+        }
         limb.castShadow = true;
         limb.receiveShadow = true;
         limb.userData = {
-            'parent': null,
+            'parent': parentName,
             'address': name,
+            'colour': colour,
             'displayName': displayName,
             'limbLength': limbLength,
             'limbRadius': limbRadius,
+            'limbModelName': '',
             'defaultX' : x,
             'defaultY' : y,
             'defaultZ' : z
         };
 
-        var localAxis = this.makeAxis(0, 0, 0, 40, 2, 0.35);
+        var localAxis = this.makeAxis(0, 0, 0, limbLength*1.2, 2, 0.35);
         localAxis.castShadow = true;
         limb.add(localAxis);
 
         if (parentLimb !== null) {
             parentLimb.add(limb);
+            limb.position.x = parentLimb.userData.limbLength;
         }
         return limb;
     }

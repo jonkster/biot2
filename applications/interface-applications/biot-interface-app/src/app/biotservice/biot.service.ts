@@ -50,8 +50,6 @@ export class BiotService {
                 error => {
                     console.log('error getting data:', error);
                 });
-        } else {
-            console.log('fix - ', biotData);
         }
     }
 
@@ -241,7 +239,7 @@ export class BiotService {
     postAssemblyToCache(name, data: string) {
         const path = 'data/assembly/' + name;
         const url = "http://" + this.biotServerHost + ":" + this.biotServerPort + "/" + path ;
-        return this.http.post(url, data)
+        return this.http.put(url, data)
             .map((response) => response.json());
     }
 
@@ -329,6 +327,13 @@ export class BiotService {
         const path = 'biotz/addresses/' + addr + '/calibration';
         const url = "http://" + this.biotServerHost + ":" + this.biotServerPort + "/" + path ;
         return this.http.put(url, '0:0:0:0:0:0')
+            .map((response) => response.json());
+    }
+
+    saveData(key, value) {
+        const path = 'data/config/' + key;
+        const url = "http://" + this.biotServerHost + ":" + this.biotServerPort + "/" + path ;
+        return this.http.post(url, value)
             .map((response) => response.json());
     }
 

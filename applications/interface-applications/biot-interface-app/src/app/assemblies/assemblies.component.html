@@ -1,2 +1,65 @@
+<button (click)="loadAssembly();">Load Previous Assembly</button>
 <div appThreed [displaywidth]="1400" [displayheight]="400" class="centred"></div>
 <div appThreestats [statsstyle]="{position: 'inherit', float: 'left', display: 'flex'}"></div>
+<div>
+    <button (click)="saveAssembly();">Save This Assembly</button>
+    <span><b>Limb Assembly</b>&nbsp;<span class="hint">(click row to edit)</span></span>
+    <table>
+        <tr>
+            <th>colour</th>
+            <th>name</th>
+            <th>limb length</th>
+            <th>limb model</th>
+            <th>biot address</th>
+            <th>attached to</th>
+            <th>&nbsp;</th>
+        </tr>
+        <ng-template ngFor let-address [ngForOf]="knownNodeAddresses" let-i="index">
+        <tr (click)="openLimbControl(address)" [class.selectedTop]="selectedLimbAddress === address">
+            <td [style.background-color]="knownLimbs[address].userData.colour">#{{ i }}&nbsp;</td>
+            <td>{{ knownLimbs[address].userData.displayName }}</td>
+            <td>{{ knownLimbs[address].userData.limbLength }}</td>
+            <td>{{ knownLimbs[address].userData.limbModelName }}</td>
+            <td [style.color]="knownLimbs[address].userData.colour">{{ address }}</td>
+            <td>{{ knownLimbs[address].userData.parentLimbName }}</td>
+            <td [style.background-color]="knownLimbs[address].userData.colour">&nbsp;</td>
+        </tr>
+        </ng-template>
+    </table>
+</div>
+    <div class="debug" #debugHolder [scrollTop]="debugHolder.scrollHeight">
+        <div *ngFor="let txt of debugHistory; let i = index" >{{ i }} : {{ txt }}</div>
+    </div>
+
+<app-dialog #nodeLimbDialog>
+    <div class="app-modal-header">
+        Biot Node: <b>{{ selectedLimbAddress }}</b>
+    </div>
+    <div class="app-modal-body">
+        Name <input type="text" name="limbName" [(ngModel)]="selectedLimb.name" /><br/>
+
+        <div *ngIf="selectedLimb.potentialParentLimbs.length > 0">
+        Parent Limb Name
+        <select [(ngModel)]="selectedLimb.parentLimbName">
+            <option [ngValue]="'none'">none</option>
+        <ng-template ngFor let-parent [ngForOf]="selectedLimb.potentialParentLimbs">
+            <option [ngValue]="parent">{{ parent }}</option>
+        </ng-template>
+        </select>
+        </div><br/>
+
+        Limb Model
+        <select [(ngModel)]="selectedLimb.limbModelName">
+        <ng-template ngFor let-model [ngForOf]="knownModels" let-i="index">
+            <option [ngValue]="model">{{ model }}</option>
+        </ng-template>
+        </select><br/>
+        length cm 
+        <mat-slider min="1" max="50" step="0.5" value="30" tickInterval="5" thumbLabel (input)="adjustLimbLength(selectedLimbAddress, $event.value)"></mat-slider>
+        <input type="text" name="limbLength" [(ngModel)]="selectedLimb.limbLength" /><br/>
+    </div>
+    <div class="app-modal-footer">
+        <button type="button" class="btn btn-default" (click)="nodeLimbDialog.hide()">Cancel</button>
+        <button type="button" class="btn btn-default" (click)="updateLimb(selectedLimbAddress); nodeLimbDialog.hide()">Save Values</button>
+    </div>
+</app-dialog>

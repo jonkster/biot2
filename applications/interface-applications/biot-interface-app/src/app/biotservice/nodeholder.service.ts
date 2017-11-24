@@ -27,6 +27,7 @@ type biotNodeType = {
 export class NodeholderService {
 
     private lostNodes: Subject<string> = new Subject();
+    private knownLimbs: { [key: string]: THREE.Object3D } = {};
     private managedNodeList: { [addr: string]: biotNodeType } = {};
     private unmanagedNodeList: { [addr: string]: biotNodeType } = {};
     private lastChange: {
@@ -141,13 +142,14 @@ export class NodeholderService {
                               managed = false;
                           }
                           if (node !== undefined) {
-                              if (posData !== undefined) {
+                              if ((posData !== undefined) && (posData !== null)) {
                                   let parts = posData.split(/:/);
                                   node.lasttime = node.timeStamp;
                                   node.timeStamp = Number(parts[0]);
                                   var q3js = new THREE.Quaternion(Number(parts[2]), Number(parts[3]), Number(parts[4]), Number(parts[1]));
                                   node.quaternion = q3js;
                                   this.setRotation(node, q3js);
+                                  this.setLimbRotation(addr, q3js);
                                   if (this.lastChange[addr] !== undefined)
                                   {
                                       let lastHeard = this.lastChange[addr].lastHeard;
@@ -304,6 +306,10 @@ export class NodeholderService {
       }
   }
 
+  registerLimb(limbObject: THREE.Object3D) {
+      this.knownLimbs[limbObject.userData.address] = limbObject;
+  }
+
 
   rename(addr: string, name: string) {
       let node = this.getManagedNode(addr);
@@ -324,6 +330,17 @@ export class NodeholderService {
       }
   }
 
+  setLimbRotation(addr: string, q: any) {
+      //if (addr !== 'affe:dead:beef::123') return;
+      if (this.knownLimbs[addr] !== undefined) {
+          let quaternion = new THREE.Quaternion(q.x, q.y, q.z, q.w);
+          let limb = this.knownLimbs[addr];
+          limb.setRotationFromQuaternion(quaternion);
+          if (limb.userData.parent !== '') {
+              //this.unrotateParentRotation(limb);
+          }
+      }
+  }
 
   setPosition(node: any, x: number, y: number, z: number) {
       if  (node.model !== undefined) {
@@ -341,8 +358,8 @@ export class NodeholderService {
           node.quaternion = q;
           node.model.setRotationFromQuaternion(quaternion);
       } else {
-          /*this.lastError = 'attempt to set rotation of non displayed node';
-          console.log(node, this.getError());*/
+          this.lastError = 'attempt to set rotation of non displayed node';
+          console.log(node, this.getError());
       }
   }
 
@@ -352,6 +369,13 @@ export class NodeholderService {
       } else {
           owner.getAllNodePositionData();
       }
+  }
+
+  unrotateParentRotation(limb) {
+      let parent = limb.parent;
+      let pQ = parent.quaternion;
+      var revQ = limb.quaternion.inverse().multiply(pQ);
+      limb.setRotationFromQuaternion(revQ);
   }
 
   warnLostNode(addr) {

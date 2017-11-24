@@ -12,6 +12,7 @@
   ],
   "license": "0BSD",
   "dependencies": {
+    "gl-quat": "^1.0.0",
     "ip": "^1.1.5",
     "is-reachable": "^2.3.2",
     "mkdirp": "^0.5.1",

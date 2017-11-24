@@ -13,7 +13,7 @@ export class NodemodelService {
           'opacity': 0.8,*/
           'color': 0xff0000,
           'specular': 0xffff00,
-          'ambient': 0x000000,
+          //'ambient': 0x000000,
           'emissive': 0xd0d0d0,
           'shininess': 30
       });
@@ -22,7 +22,7 @@ export class NodemodelService {
           'opacity': 0.7,
           'color': 0xaa7f7f,
           'specular': 0xffff00,
-          'ambient': 0x000000,
+          //'ambient': 0x000000,
           'emissive': 0x000033,
           'shininess': 0
       });
