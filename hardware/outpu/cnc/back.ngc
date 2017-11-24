@@ -10,15 +10,15 @@ G64 P0.01000 ( set maximum deviation from commanded toolpath )
 F200.00000 ( Feedrate. )
 
 o2 sub ( G01 with Z-correction subroutine )
-    #3 = 0 ( x-tile offset [minus the initial offset] )
-    #4 = 0 ( x-tile offset [minus the initial offset] )
+    #3 = [ #5211 - #107 ] ( x-tile offset [minus the initial offset] )
+    #4 = [ #5212 - #108 ] ( y-tile offset [minus the initial offset] )
     #5 = [ FIX[ [ #1 - -37.23253 + #3 ] / 12.81088 ] ] ( Lower left point X index )
-    #6 = [ FIX[ [ #2 - -0.40252 + #4 ] / 15.40632 ] ] ( Lower left point Y index )
-    #7 = [ #5 * 3 + [ #6 + 1 ] + 500 ] ( Upper left point parameter number )
-    #8 = [ [ #5 + 1 ] *3 + [ #6 + 1 ] + 500 ] ( Upper right point parameter number )
-    #9 = [ #5 * 3 + #6 + 500 ] ( Lower left point parameter number )
-    #10 = [ [ #5 + 1 ] * 3 + #6 + 500 ] ( Lower right point parameter number )
-    #11 = [ [ #2 + #4 - -0.40252 - #6 * 15.40632 ] / 15.40632 ] ( Distance between the point and the left border of the rectangle, normalized to 1 )
+    #6 = [ FIX[ [ #2 - -0.40252 + #4 ] / 15.20506 ] ] ( Lower left point Y index )
+    #7 = [ #5 * 5 + [ #6 + 1 ] + 500 ] ( Upper left point parameter number )
+    #8 = [ [ #5 + 1 ] *5 + [ #6 + 1 ] + 500 ] ( Upper right point parameter number )
+    #9 = [ #5 * 5 + #6 + 500 ] ( Lower left point parameter number )
+    #10 = [ [ #5 + 1 ] * 5 + #6 + 500 ] ( Lower right point parameter number )
+    #11 = [ [ #2 + #4 - -0.40252 - #6 * 15.20506 ] / 15.20506 ] ( Distance between the point and the left border of the rectangle, normalized to 1 )
     #12 = [ [ #1 + #3 - -37.23253 - #5 * 12.81088 ] / 12.81088 ] ( Distance between the point and the bottom border of the rectangle, normalized to 1 ) 
     #13 = [ ##9 + [ ##7 - ##9 ] * #11 ] ( Linear interpolation of the x-min elements )
     #14 = [ ##10 + [ ##8 - ##10 ] * #11 ] ( Linear interpolation of the x-max elements )
@@ -28,9 +28,9 @@ o2 endsub
 
 o3 sub ( Y probe subroutine )
     G0 Z5.000 ( Move to probe height )
-    X[#101 * 12.81088 + -37.23253] Y[#102 * 15.40632 + -0.40252] ( Move to the current probe point )
+    X[#101 * 12.81088 + -37.23253] Y[#102 * 15.20506 + -0.40252] ( Move to the current probe point )
     G38.2 Z-3 F100.000000 ( Probe it )
-    #[#101 * 3 + #102 + 500] = #5063 ( Save the probe in the correct parameter )
+    #[#101 * 5 + #102 + 500] = #5063 ( Save the probe in the correct parameter )
     #102 = [#102 + #103] ( Increment/decrement by 1 the Y counter )
 o3 endsub
 
@@ -38,14 +38,14 @@ o4 sub ( X probe subroutine )
     o5 repeat [#104]
         o3 call
     o5 endrepeat
-    #104 = 3
+    #104 = 5
     #103 = [0 - #103]
     #102 = [#102 + #103]
     #101 = [#101 + 1] ( Increment by 1 the X counter )
 o4 endsub
 
-#107 = 0
-#108 = 0
+#107 = #5211
+#108 = #5212
 
 (MSG, Attach the probe tool)
 M0 ( Temporary machine stop. )
@@ -60,12 +60,12 @@ G10 L20 P0 Z0 ( Set the current Z as zero-value )
 ( We now start the real probing: move the Z axis to the probing height, move to )
 ( the probing XY position, probe it and save the result, parameter #5063, )
 ( in a numbered parameter; we will make 4 probes on the X-axis and )
-( 3 probes on the Y-axis, for a grand total of 12 probes )
+( 5 probes on the Y-axis, for a grand total of 20 probes )
 
 #101 = 0 ( X iterator )
 #102 = 1 ( Y iterator )
 #103 = 1 ( UP or DOWN increment )
-#104 = 2 ( number of Y points; the 1st Y row can be done one time less )
+#104 = 4 ( number of Y points; the 1st Y row can be done one time less )
 o6 repeat [4]
     o4 call
 o6 endrepeat
@@ -78,6 +78,9 @@ M0 ( Temporary machine stop. )
 
 F200.00000 ( Feedrate. )
 M3 ( Spindle on clockwise. )
+
+o1 sub ( Main subroutine )
+
 G04 P0 ( dwell for no time -- G64 should not smooth over this point )
 G00 Z5.00000 ( retract )
 
@@ -1407,6 +1410,13 @@ o2 call [-9.75366] [19.59]
 o2 call [-9.63764] [19.4318]
 o2 call [-9.53682] [19.3218]
 o2 call [-7.69951] [19.3218]
+
+o1 endsub
+
+o1 call
+G92 Y[#5421-[30.007594]]
+o1 call
+G92 Y[#5421-[-30.007594]]
 
 G04 P0 ( dwell for no time -- G64 should not smooth over this point )
 G00 Z8.000 ( retract )
