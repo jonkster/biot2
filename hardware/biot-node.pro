@@ -1,4 +1,4 @@
-update=Wed 01 Nov 2017 16:20:51 AEDT
+update=Fri 24 Nov 2017 14:06:51 AEDT
 version=1
 last_client=kicad
 [pcbnew]
@@ -23,8 +23,6 @@ ModuleOutlineThickness=0.150000000000
 [cvpcb]
 version=1
 NetIExt=net
-[general]
-version=1
 [schematic_editor]
 version=1
 PageLayoutDescrFile=
@@ -69,3 +67,5 @@ LibName27=atmel
 LibName28=contrib
 LibName29=valves
 LibName30=mylib/atmelSAM
+[general]
+version=1
