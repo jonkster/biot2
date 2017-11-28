@@ -21,12 +21,12 @@ export class LimbmakerService {
                       limb.userData.colour,
                       limb.userData.limbLength);
         newLimb.userData = limb.userData;
-        console.log(newLimb);
         return newLimb;
     }
 
     attachModelToLimb(limb: THREE.Object3D, modelName: string) {
         let model = this.makeLimbFromModel(modelName, 1);
+        console.log(limb);
         limb.add(model);
     }
 
@@ -129,14 +129,15 @@ export class LimbmakerService {
                 obj.geometry.center();
                 obj.position.set(0, 0, 0);
                 // make hinge at end
-                let matrix  = new THREE.Matrix4().makeTranslation(0, -obj.geometry.boundingSphere.radius, 0 );
+                let matrix  = new THREE.Matrix4().makeTranslation(-obj.geometry.boundingSphere.radius, 0.5, 0 );
+                //let matrix  = new THREE.Matrix4().makeTranslation(-obj.geometry.boundingSphere.radius, 0, 0 );
                 obj.geometry.applyMatrix( matrix );
                 // size adjust
                 obj.geometry.scale(scale, scale, scale);
                 obj.geometry.scale(factor, factor, factor);
                 obj.geometry.computeBoundingSphere();
                 obj.userData['defaultBoundingSphereRadiusThree'] = obj.geometry.boundingSphere.radius;
-                box.add(obj);
+                box.add(obj); 
             }
         );
         return box;
@@ -205,13 +206,13 @@ export class LimbmakerService {
 
         limb.name = name;
         let parentName = "";
-        if (parent !== null) {
-             parentName = parent.name;
+        if (parentLimb !== null) {
+             parentName = parentLimb.name;
         }
         limb.castShadow = true;
         limb.receiveShadow = true;
         limb.userData = {
-            'parent': parentName,
+            'parentLimbName': parentName,
             'address': name,
             'colour': colour,
             'displayName': displayName,
@@ -222,6 +223,7 @@ export class LimbmakerService {
             'defaultY' : y,
             'defaultZ' : z
         };
+        console.log('made limb', limb.userData);
 
         var localAxis = this.makeAxis(0, 0, 0, limbLength*1.2, 2, 0.35);
         localAxis.castShadow = true;

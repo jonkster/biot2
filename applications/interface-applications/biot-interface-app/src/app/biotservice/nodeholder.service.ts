@@ -331,13 +331,13 @@ export class NodeholderService {
   }
 
   setLimbRotation(addr: string, q: any) {
-      //if (addr !== 'affe:dead:beef::123') return;
       if (this.knownLimbs[addr] !== undefined) {
           let quaternion = new THREE.Quaternion(q.x, q.y, q.z, q.w);
           let limb = this.knownLimbs[addr];
-          limb.setRotationFromQuaternion(quaternion);
-          if (limb.userData.parent !== '') {
-              //this.unrotateParentRotation(limb);
+          if (limb.userData.parentLimbName !== '') {
+              this.unrotateByParentRotation(limb, quaternion);
+          } else {
+              limb.setRotationFromQuaternion(quaternion);
           }
       }
   }
@@ -358,8 +358,8 @@ export class NodeholderService {
           node.quaternion = q;
           node.model.setRotationFromQuaternion(quaternion);
       } else {
-          this.lastError = 'attempt to set rotation of non displayed node';
-          console.log(node, this.getError());
+          /*this.lastError = 'attempt to set rotation of non displayed node';
+          console.log(node, this.getError());*/
       }
   }
 
@@ -371,11 +371,11 @@ export class NodeholderService {
       }
   }
 
-  unrotateParentRotation(limb) {
+  unrotateByParentRotation(limb, q) {
       let parent = limb.parent;
-      let pQ = parent.quaternion;
-      var revQ = limb.quaternion.inverse().multiply(pQ);
-      limb.setRotationFromQuaternion(revQ);
+      let revQ = parent.quaternion.clone().conjugate();
+      let rev = revQ.multiply(q);
+      limb.setRotationFromQuaternion(rev);
   }
 
   warnLostNode(addr) {
