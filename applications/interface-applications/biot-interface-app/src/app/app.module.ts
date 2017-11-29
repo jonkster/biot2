@@ -8,6 +8,7 @@ import { ChartsModule } from 'ng2-charts';
 import {MatSliderModule} from '@angular/material/slider';
 import {CdkTableModule} from '@angular/cdk/table';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
+import { AngularDraggableModule } from 'angular2-draggable';
 
 import { AppComponent } from './app.component';
 import { ThreedDirective } from './threed.directive';
@@ -58,6 +59,7 @@ export const rootRouterConfig: Routes = [
   imports: [
     BrowserModule,
     ChartsModule,
+    AngularDraggableModule,
     FormsModule,
     HttpModule,
     MatSliderModule,

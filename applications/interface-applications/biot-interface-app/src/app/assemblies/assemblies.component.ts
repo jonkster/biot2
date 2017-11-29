@@ -29,7 +29,8 @@ export class AssembliesComponent implements OnInit {
         parentLimbName: '',
         limbModelName: '',
         limbLength: '',
-        limbRotation: 0,
+        limbRotationZ: 0,
+        limbRotationX: 0,
         potentialParentLimbs: []
     };
     private worldSpace: THREE.Object3D = undefined;
@@ -115,9 +116,14 @@ export class AssembliesComponent implements OnInit {
       this.knownLimbs[addr] = limb;
   }
 
-  adjustLimbRotation(addr, value) {
+  adjustLimbRotationX(addr, value) {
       let limb = this.knownLimbs[addr];
-      limb.userData['limbRotation'] = value;
+      limb.userData['limbRotationX'] = Math.PI * value / 180;
+  }
+
+  adjustLimbRotationZ(addr, value) {
+      let limb = this.knownLimbs[addr];
+      limb.userData['limbRotationZ'] = Math.PI * value / 180;
   }
 
   debug(txt: string) {
