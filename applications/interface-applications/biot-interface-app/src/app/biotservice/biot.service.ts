@@ -18,7 +18,7 @@ export class BiotService {
     private biotServerPort: string = '8889';
 
     constructor(private http: Http) {
-        this.getBiotRouter();
+        //this.getBiotRouter();
     }
 
     private extractWSData (res: Response) {
@@ -33,6 +33,22 @@ export class BiotService {
             .map((response) => response.json());
     }
 
+    checkBroker() {
+            this.statusOK = false;
+            const url = "http://" + this.biotServerHost + ":" + this.biotServerPort + "/";
+            this.http.get(url)
+                .timeout(100)
+                .subscribe(
+                    data => {
+                        this.statusOK = true;
+                        console.log('GOT BROKER', this.biotServerHost, this.biotServerPort);
+                    },
+                    error => {
+                        console.log('no broker at', this.biotServerHost, this.biotServerPort);
+                    }
+                );
+    }
+
     detectNodes() {
         let biotData = this.getData();
         if (biotData !== null) {
@@ -41,7 +57,7 @@ export class BiotService {
                     let addresses = Object.keys(rawData);
                     for (let i = 0; i < addresses.length; i++) {
                         let address = addresses[i];
-                        if (address !== null) {
+                        if (address !== null && address !== undefined) {
                             let data = rawData[address];
                             this.detectedAddresses[address] = data;
                         }
@@ -169,7 +185,7 @@ export class BiotService {
         if (! this.statusOK) {
             if (! this.resetRunning) {
                 console.log('retry communication...');
-                this.getBiotRouter();
+                //this.getBiotRouter();
                 this.resetRunning = true;
                 setTimeout(e => {
                     this.resetService();
@@ -186,7 +202,7 @@ export class BiotService {
     }
 
     getRouterStatus() {
-        const path = '';
+        const path = "biotz/edgerouter";
         return this.makeBrokerRequest(path);
     }
 
@@ -327,6 +343,19 @@ export class BiotService {
         const path = 'biotz/addresses/' + addr + '/calibration';
         const url = "http://" + this.biotServerHost + ":" + this.biotServerPort + "/" + path ;
         return this.http.put(url, '0:0:0:0:0:0')
+            .map((response) => response.json());
+    }
+
+    setBiotBroker(address: string, port: string) {
+        this.biotServerHost = address;
+        this.biotServerPort = port;
+        this.checkBroker();
+    }
+
+    setEdgeRouter(address: string, port: string) {
+        const path = 'biotz/edgerouter';
+        const url = "http://" + this.biotServerHost + ":" + this.biotServerPort + "/" + path ;
+        return this.http.put(url, address + ":" + port)
             .map((response) => response.json());
     }
 

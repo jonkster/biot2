@@ -16,17 +16,20 @@
         <tr>
             <td class="alt">Biot Broker</td>
             <td [class]="getClass(getSystemStatus().biotbroker)">{{ getSystemStatus().biotbroker }}</td>
-            <td [hidden]="getSystemStatus().biotbroker === 'OK'" [class]="getClass(getSystemStatus().biotbroker)">check biot broker application is running - <a href="http://{biotBrokerIP:8889}}/">link</a></td>
+            <td [hidden]="getSystemStatus().biotbroker === 'OK'" [class]="getClass(getSystemStatus().biotbroker)">
+                check biot broker application is running - <a href="http://{biotBrokerIP:8889}}/">link</a> <br/>
+                <button (click)="autoDetectSettings()">Try Auto Detect</button>
+            </td>
         </tr>
         <tr>
-            <td class="alt">UDP/IP Link</td>
+            <td class="alt">Edge Router Link</td>
             <td [class]="getClass(getSystemStatus().udpip)">{{ getSystemStatus().udpip }}</td>
-            <td [hidden]="getSystemStatus().udpip === 'OK'" [class]="getClass(getSystemStatus().udpip)">check tunslip interface - from broker host ping6 affe::1</td>
+            <td [hidden]="getSystemStatus().udpip === 'OK'" [class]="getClass(getSystemStatus().udpip)">check network interface - from broker host ping {{ routerStatus.ip }}</td>
         </tr>
         <tr>
             <td class="alt">Edge Router</td>
             <td [class]="getClass(getSystemStatus().edgerouter)">{{ getSystemStatus().edgerouter }}</td>
-            <td [hidden]="getSystemStatus().edgerouter === 'OK'" [class]="getClass(getSystemStatus().edgerouter)">check edge router working - check router and from broker host ping6 affe::2</td>
+            <td [hidden]="getSystemStatus().edgerouter === 'OK'" [class]="getClass(getSystemStatus().edgerouter)">check edge router working - check router and from {{ biotBrokerIP }} host ping {{ routerStatus.ip }}</td>
         </tr>
         <tr>
             <td class="alt">Biot Nodes</td>
@@ -45,48 +48,73 @@
     <table>
         <tr>
             <th class="spec">Property</th>
-            <th>Value</th>
+            <th>Current Value</th>
+            <th>Adjust</th>
         </tr>
         <tr>
             <td class="spec">Biot Broker IP</td>
             <td>{{ biotBrokerIP }}</td>
+            <td><input type="text" name="brokerip" #brokerIPInput [ngModel]="biotBrokerIP"
+                (keyup.enter)="changeBroker(brokerIPInput.value, biotBrokerPort)"  (blur)="changeBroker(brokerIPInput.value, biotBrokerPort)" /></td>
         </tr>
         <tr>
             <td class="spec">Biot Broker Port</td>
             <td>{{ biotBrokerPort }}</td>
+            <td><input type="text" name="brokerport" #brokerPortInput [ngModel]="biotBrokerPort"
+                (keyup.enter)="changeBroker(biotBrokerIP, brokerPortInput.value)"  (blur)="changeBroker(biotBrokerIP, brokerPortInput.value)" /></td>
         </tr>
         <tr>
-            <td class="alt">Last Checked</td>
+            <td class="alt">Edge Router IP</td>
+            <td class="good">{{ routerStatus.ip }}</td>
+            <td><input type="text" name="routerip" #routerIPInput [ngModel]="routerStatus.ip"
+                (keyup.enter)="changeRouter(routerIPInput.value, routerStatus.port)"  (blur)="changeRouter(routerIPInput.value, routerStatus.port)" /></td>
+        </tr>
+        <tr>
+            <td class="alt">Edge Router Port</td>
+            <td class="good">{{ routerStatus.port }}</td>
+            <td><input type="text" name="routerport" #routerPortInput [ngModel]="routerStatus.port"
+                (keyup.enter)="changeRouter(routerStatus.ip, routerPortInput.value)"  (blur)="changeRouter(routerStatus.ip, routerPortInput.value)" /></td>
+        </tr>
+        <tr>
+            <td class="alt">Edge Router Last Checked</td>
             <td class="good">{{ routerStatus.time }}</td>
+            <td>&nbsp;</td>
         </tr>
         <tr>
             <td class="alt">BIOT Broker System</td>
             <td>{{ routerStatus.title }}</td>
+            <td>&nbsp;</td>
         </tr>
         <tr>
             <td class="alt">Status</td>
             <td>{{ routerStatus.status }}</td>
+            <td>&nbsp;</td>
         </tr>
         <tr>
             <td class="alt">Description</td>
             <td>{{ routerStatus.description }}</td>
+            <td>&nbsp;</td>
         </tr>
         <tr>
             <td class="alt">Version</td>
             <td>{{ routerStatus.version }}</td>
+            <td>&nbsp;</td>
         </tr>
         <tr *ngFor="let link of routerStatus.links; let i = index">
             <td class="alt">Resource #{{ i}}</td>
             <td>{{ link }}</td>
+            <td>&nbsp;</td>
         </tr>
         <tr>
             <td class="alt">Detected Biot Nodes</td>
             <td>{{ nodeStatus.count }}</td>
+            <td>&nbsp;</td>
         </tr>
 
         <tr *ngFor="let address of nodeStatus.addresses; let i = index">
             <td>#{{ i }} {{ address }}</td>
             <td class="special">{{ nodeStatus.nodeData[address] }} </td>
+            <td>&nbsp;</td>
         </tr>
     </table>
     <div class="debug" #debugHolder [scrollTop]="debugHolder.scrollHeight">

@@ -71,6 +71,8 @@ brokerListener.get('/biotz/count', getBiotCount);
 brokerListener.get('/biotz/status', getBiotzStatus);
 brokerListener.get('/biotz/synchronise', biotSync);
 brokerListener.get('/biotz/addresses', getBiotz);
+brokerListener.get('/biotz/edgerouter', getEdgeRouterStatus);
+brokerListener.put('/biotz/edgerouter', putEdgeRouterStatus);
 brokerListener.get('/biotz/all/data', getAllBiotzData);
 brokerListener.get('/biotz/all/nodes', getAllBiotzNodes);
 
@@ -643,6 +645,20 @@ function getData(req, res, next) {
     });
 }
 
+function getEdgeRouterStatus(req, res, next) {
+    let ip = BIOTZ_ROUTER_HOST;
+    if (ip === undefined) {
+        ip = "?";
+    }
+    res.send(200, {
+        'status': systemStatus.edgerouter,
+        'ip': ip,
+        'port': BIOTZ_UDP_PORT,
+        'time': edgeRouterTime[BIOTZ_ROUTER_HOST]
+        });
+    next();
+}
+
 function getCachedAssembly(req, res, next) {
     if (invalidRequest(req)) {
         res.send(400, 'bad request syntax - missing argument perhaps?');
@@ -848,8 +864,8 @@ function putBiotAuto(req, res, next) {
 	}
 }
 
-function putBiotCalibration(req, res, next) {
 
+function putBiotCalibration(req, res, next) {
 	if (BIOTZ_ROUTER_HOST !== undefined) {
 		var address = req.context['address'];
 		var data = req.body;
@@ -1014,6 +1030,13 @@ function putDataValue(req, res, next) {
 
 }
 
+function putEdgeRouterStatus(req, res, next) {
+    var ipport = req.body.split(":");
+    console.log(ipport[0], ipport[1]);
+    res.send(200, 'OK');
+    next();
+}
+
 
 function sendPoke(address) {
 
@@ -1086,8 +1109,10 @@ function updateFromDB() {
 			}
 			if (updateNode) {
 				dirty = true;
-				systemStatus.dodag = 'OK';
-				allNodes[address] = node;
+                                if (address !== 'undefined') {
+                                    systemStatus.dodag = 'OK';
+                                    allNodes[address] = node;
+                                }
 			}
 		}
 	});

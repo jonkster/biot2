@@ -170,6 +170,13 @@ db.once('open', function() {
                                     }
                                 }
 				if (dirty) {
+                                        if (BIOTZ_ROUTER_HOST  === undefined) {
+                                            BIOTZ_ROUTER_HOST = remote.address;
+                                            edgeRouter.findOneAndUpdate({name: remote.address}, {name: remote.address}, {upsert:true}, function(err, data) {
+                                                            if (err) { return console.error('ERR', err); }
+                                                            });
+                                            sendBroadcastResponse(remote, remote.port);
+                                        }
 					nodeCache[address] = node;
 					nodeData.findOneAndUpdate({address: address}, node, {upsert:true}, function(err, data) {
 						if (err) { return console.error('ERR', err); }

@@ -14,20 +14,48 @@ export class LimbmakerService {
     attachLimbToParent(limb: THREE.Object3D, parentLimb: THREE.Object3D) {
         let p = parentLimb.position;
         let l = parentLimb.userData.limbLength;
-        let newLimb = this.makeLimb(parentLimb,
-                      limb.userData.address,
-                      limb.userData.displayName,
-                      0, 0, 0,
-                      limb.userData.colour,
-                      limb.userData.limbLength);
-        newLimb.userData = limb.userData;
-        return newLimb;
+
+        limb.userData.parentLimbName = parentLimb.name;
+        parentLimb.add(limb);
+        console.log(limb);
+        limb.position.set(l, 0, 0);
+        return limb;
     }
 
     attachModelToLimb(limb: THREE.Object3D, modelName: string) {
         let model = this.makeLimbFromModel(modelName, 1);
-        console.log(limb);
+        model.userData.type = 'model';
+
+        let existing = undefined;
+        limb.traverse(function(parts) {
+            if (parts.userData.type === 'model') {
+                existing = parts;
+            }
+        });
+        if (existing !== undefined) {
+            limb.remove(existing);
+        }
         limb.add(model);
+    }
+
+    setLimbSize(limb: THREE.Object3D, l: number) {
+        let ratio = l / limb.userData.limbLength;
+        limb.scale.multiplyScalar(ratio);
+        let child = this.getChildLimb(limb);
+        if (child !== undefined) {
+            child.scale.divideScalar(ratio);
+        }
+    }
+
+    getChildLimb(limb: THREE.Object3D) {
+        let childLimb = undefined;
+        for (let i = 0; i < limb.children.length; i++) {
+            let child = limb.children[i];
+            if ((child.type === 'Group') && (child.userData.parentLimbName !== undefined)) {
+                childLimb = child;
+            }
+        }
+        return childLimb;
     }
 
     lookupKnownModels() {
@@ -113,7 +141,7 @@ export class LimbmakerService {
 
 
     makeLimbFromModel(limbModelName, scale) {
-        var factor = 10;  
+        var factor = 8;  
         var material = new THREE.MeshStandardMaterial( { color: '#7f7f7f'} );
         var box = new THREE.Group();
         var loader = new THREE.ObjectLoader();
@@ -129,8 +157,7 @@ export class LimbmakerService {
                 obj.geometry.center();
                 obj.position.set(0, 0, 0);
                 // make hinge at end
-                let matrix  = new THREE.Matrix4().makeTranslation(-obj.geometry.boundingSphere.radius, 0.5, 0 );
-                //let matrix  = new THREE.Matrix4().makeTranslation(-obj.geometry.boundingSphere.radius, 0, 0 );
+                let matrix  = new THREE.Matrix4().makeTranslation(-obj.geometry.boundingSphere.radius, 0, 0 );
                 obj.geometry.applyMatrix( matrix );
                 // size adjust
                 obj.geometry.scale(scale, scale, scale);
@@ -160,15 +187,14 @@ export class LimbmakerService {
         colour: string,
         limbLength: number) {
 
+        /* make 'limb' */
         var limb = new THREE.Group();
         limb.position.x = x;
         limb.position.y = y;
         limb.position.z = z;
 
 
-
-
-        /* JOINT */
+        /* make joint */
         var jointMaterial = new THREE.MeshPhongMaterial({
             'transparent': true,
             'color': 0xff7f7f,
@@ -180,8 +206,6 @@ export class LimbmakerService {
         var geometry = new THREE.BoxGeometry(2, limbLength/2, 2);
         var joint = new THREE.Mesh(geometry, jointMaterial);
         limb.add(joint);
-        /* end JOINT */
-
 
 
         /* Make an ENVELOPE for the Limb */
@@ -202,7 +226,8 @@ export class LimbmakerService {
         limbEnvelope.receiveShadow = true;
         limbEnvelope.name = 'envelope-' + name;
         limbEnvelope.userData['type'] = 'envelope';
-        joint.add(limbEnvelope);
+        limb.add(limbEnvelope);
+
 
         limb.name = name;
         let parentName = "";
@@ -218,13 +243,14 @@ export class LimbmakerService {
             'displayName': displayName,
             'limbLength': limbLength,
             'limbRadius': limbRadius,
+            'limbRotation': 0,
             'limbModelName': '',
             'defaultX' : x,
             'defaultY' : y,
             'defaultZ' : z
         };
-        console.log('made limb', limb.userData);
 
+        /* make an axis display */
         var localAxis = this.makeAxis(0, 0, 0, limbLength*1.2, 2, 0.35);
         localAxis.castShadow = true;
         limb.add(localAxis);

@@ -11,9 +11,12 @@ import * as THREE from 'three';
 export class SystemComponent implements AfterViewInit {
 
     private biotService: BiotService;
+    private nodesAlive: number = 0;
     private threedService: ThreedService;
     private routerStatus = {
         title: '',
+        ip: '?',
+        port: '?',
         time: '',
         description: '',
         version: '',
@@ -37,8 +40,9 @@ export class SystemComponent implements AfterViewInit {
         biots: 'unknown'
     }
 
-    private biotBrokerIP: string = '?';
-    private biotBrokerPort: string = '?';
+    //private biotBrokerIP: string = '127.0.0.1';
+    private biotBrokerIP: string = '10.1.1.61';
+    private biotBrokerPort: string = '8889';
     private debugHistory: string[] = [];
 
     @ViewChild('sysCanvas') canvasRef: ElementRef;
@@ -64,6 +68,36 @@ export class SystemComponent implements AfterViewInit {
 	this.setFaultStatus();
     	this.initCanvas();
 	this.drawImage();
+    }
+
+    autoDetectSettings() {
+        this.toggleStatus('biotbroker');
+        this.biotService.getBiotRouter();
+        setTimeout(e => {
+            this.biotService.getCommunicationStatus();
+            this.getRouterStatus();
+        }, 5000);
+    }
+
+    changeBroker(ip: string, port: string) {
+        this.biotBrokerIP = ip;
+        this.biotBrokerPort = port;
+        this.biotService.setBiotBroker(ip, port);
+        this.toggleStatus('biotbroker');
+	this.getRouterStatus();
+    }
+
+    changeRouter(ip: string, port: string) {
+        this.toggleStatus('biotrouter');
+        this.biotService.setEdgeRouter(ip, port).subscribe(
+                rawData => {
+                    console.log('set', rawData);
+                },
+                error => {
+                    console.log('err', error);
+                }
+            );
+	this.getRouterStatus();
     }
 
     debug(txt: string) {
@@ -142,12 +176,17 @@ export class SystemComponent implements AfterViewInit {
     getAllBiotData() {
         this.biotBrokerIP = this.biotService.getBrokerIP();
         this.biotBrokerPort = this.biotService.getBrokerPort();
+        let nodesAlive = 0;
         for (let i = 0; i < this.nodeStatus.count; i++) {
             let addr = this.nodeStatus.addresses[i];
             const status =  this.biotService.getStatus(addr);
             status.subscribe(
                 rawData => {
                     this.nodeStatus.nodeData[addr] = rawData.status + ':' + rawData.ts;
+                    if (rawData.status === 'alive') {
+                        nodesAlive++;
+                    }
+                    this.nodesAlive = nodesAlive;
                 },
                 error => {
                     this.nodeStatus.nodeData[addr] = 'error';
@@ -180,8 +219,12 @@ export class SystemComponent implements AfterViewInit {
         if (status !== null) {
             status.subscribe(
                 rawData => {
+                    console.log('got status', rawData);
                     this.routerStatus = rawData;
-                    this.routerStatus.status = 'Connected';
+                    this.routerStatus.status = rawData.status;
+                    this.routerStatus.ip = rawData.ip;
+                    this.routerStatus.port = rawData.port;
+                    this.routerStatus.time = rawData.time;
                     this.systemStatus.biotbroker = 'OK';
                     this.systemStatus.tcpip = 'OK';
                     this.systemStatus.udpip = this.routerStatus['UDP-IP-status'];
@@ -189,6 +232,7 @@ export class SystemComponent implements AfterViewInit {
                     this.systemStatus.biots = this.routerStatus['DODAG-status'];
                 },
                 error => {
+                    console.log('not got status', error);
                     this.routerStatus.status = 'ERROR';
                     this.systemStatus.biotbroker = 'fault';
                     this.debug("could not get router status from biot service");
@@ -201,10 +245,19 @@ export class SystemComponent implements AfterViewInit {
     }
 
     getSystemStatus() {
+        this.setFaultStatus();
         return this.systemStatus;
     }
 
     setFaultStatus() {
+        this.systemStatus.edgerouter = this.routerStatus.status;
+        this.systemStatus.biots = 'unknown';
+        if (this.nodesAlive > 0) {
+            this.systemStatus.biots = 'OK';
+        }
+        if (this.routerStatus.status === 'OK') {
+            this.systemStatus.udpip = 'OK';
+        }
         if (this.systemStatus.tcpip === 'fault') {
             this.systemStatus.biotbroker = 'unknown';
             this.systemStatus.udpip = 'unknown';
@@ -221,35 +274,9 @@ export class SystemComponent implements AfterViewInit {
             this.systemStatus.edgerouter = 'unknown';
             this.systemStatus.biots = 'unknown';
         } 
-        if (this.systemStatus.edgerouter === 'fault') {
+        if (this.systemStatus.edgerouter !== 'OK') {
             this.systemStatus.biots = 'unknown';
         } 
-        if (this.systemStatus.tcpip === 'OK') {
-            if (this.systemStatus.biotbroker === 'unknown') {
-                this.systemStatus.biotbroker = 'OK';
-                this.systemStatus.udpip = 'OK';
-                this.systemStatus.edgerouter = 'OK';
-                this.systemStatus.biots = 'OK';
-            }
-        } 
-        if (this.systemStatus.biotbroker === 'OK') {
-            if (this.systemStatus.udpip === 'unknown') {
-                this.systemStatus.udpip = 'OK';
-                this.systemStatus.edgerouter = 'OK';
-                this.systemStatus.biots = 'OK';
-            }
-        } 
-        if (this.systemStatus.udpip === 'OK') {
-            if (this.systemStatus.edgerouter === 'unknown') {
-                this.systemStatus.edgerouter = 'OK';
-                this.systemStatus.biots = 'OK';
-            }
-        }
-        if (this.systemStatus.edgerouter === 'OK') {
-            if (this.systemStatus.biots === 'unknown') {
-                this.systemStatus.biots = 'OK';
-            }
-        }
     }
 
     getClass(state: string) {

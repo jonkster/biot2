@@ -339,6 +339,7 @@ export class NodeholderService {
           } else {
               limb.setRotationFromQuaternion(quaternion);
           }
+          limb.rotateZ(limb.userData.limbRotation);
       }
   }
 

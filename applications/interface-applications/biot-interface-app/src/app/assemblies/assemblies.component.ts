@@ -29,6 +29,7 @@ export class AssembliesComponent implements OnInit {
         parentLimbName: '',
         limbModelName: '',
         limbLength: '',
+        limbRotation: 0,
         potentialParentLimbs: []
     };
     private worldSpace: THREE.Object3D = undefined;
@@ -105,10 +106,18 @@ export class AssembliesComponent implements OnInit {
   }
 
   adjustLimbLength(addr, value) {
-      this.knownLimbs[addr].limbLength = value;
+      let limb = this.knownLimbs[addr];
+      limb.userData.limbLength = value;
+      this.limbMakerService.setLimbSize(limb, value);
       if (this.selectedLimbAddress === addr) {
         this.selectedLimb.limbLength = value;
       }
+      this.knownLimbs[addr] = limb;
+  }
+
+  adjustLimbRotation(addr, value) {
+      let limb = this.knownLimbs[addr];
+      limb.userData['limbRotation'] = value;
   }
 
   debug(txt: string) {
@@ -123,10 +132,6 @@ export class AssembliesComponent implements OnInit {
       let parentLimb = this.getLimbByName(parentLimbName);
       if (parentLimb !== null) {
         let newLimb = this.limbMakerService.attachLimbToParent(limb, parentLimb);
-        let addr = limb.userData.address;
-        this.knownLimbs[addr] = newLimb;
-        this.nodeHolderService.registerLimb(newLimb);
-        this.threedService.remove(limb);
       }
   }
 
