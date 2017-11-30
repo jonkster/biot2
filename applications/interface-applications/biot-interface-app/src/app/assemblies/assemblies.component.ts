@@ -22,6 +22,9 @@ export class AssembliesComponent implements OnInit {
     private knownLimbs: { [key: string]: any} = {};
     private knownNodeAddresses: string[] = [];
     private knownModels: string[] = [];
+    private envelopesVisible: boolean = true;
+    private figureVisible: boolean = false;
+    private figure: any = undefined;
     private selectedLimbAddress: string = '';
     private selectedLimb: any = {
         address: '',
@@ -253,6 +256,31 @@ export class AssembliesComponent implements OnInit {
           rawData => { this.debug("saved my assembly stuff"); },
           error => { this.debug("error when saving assembly:" + error); }
       );
+  }
+
+  toggleEnvelopes() {
+      if (this.envelopesVisible) {
+          this.envelopesVisible = false;
+          this.nodeHolderService.setEnvelopeVisibility(false);
+      } else {
+          this.envelopesVisible = true;
+          this.nodeHolderService.setEnvelopeVisibility(true);
+      }
+  }
+
+
+  toggleFigure() {
+      if (this.figureVisible) {
+          this.figureVisible = false;
+          this.threedService.remove(this.figure);
+      } else {
+          if (this.figure === undefined) {
+              this.figure = this.limbMakerService.makeLimbFromModel('skeleton.json', 10); 
+              //this.figure = this.limbMakerService.makeLimbFromModel('skeleton-whole-2.json', 10); 
+          }
+          this.figureVisible = true;
+          this.threedService.add(this.figure);
+      }
   }
 
   updateLimb(addr: string) {

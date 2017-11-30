@@ -1,8 +1,18 @@
+<button (click)="saveAssembly();">Save This Assembly</button>
 <button (click)="loadAssembly();">Load Previous Assembly</button>
-<div appThreed [displaywidth]="1400" [displayheight]="400" class="centred"></div>
+<div appThreed [displaywidth]="1400" [displayheight]="800" class="centred"></div>
 <div appThreestats [statsstyle]="{position: 'inherit', float: 'left', display: 'flex'}"></div>
 <div>
-    <button (click)="saveAssembly();">Save This Assembly</button>
+    <button (click)="threedService.viewFrom(0, 0, 1);">Top</button>
+    <button (click)="threedService.viewFrom(0, 0, -1);">Bottom</button>
+    <button (click)="threedService.viewFrom(1, 0, 0);">Front</button>
+    <button (click)="threedService.viewFrom(-1, 0, 0);">Back</button>
+    <button (click)="threedService.viewFrom(0, 1, 0);">Left Side</button>
+    <button (click)="threedService.viewFrom(0, -1, 0);">Right Side</button>
+    <button (click)="toggleFigure();">Show/Hide Figure</button>
+    <button (click)="toggleEnvelopes();">Show/Hide Envelopes</button>
+</div>
+<div>
     <span><b>Limb Assembly</b>&nbsp;<span class="hint">(click row to edit)</span></span>
     <table>
         <tr>

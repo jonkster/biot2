@@ -150,6 +150,9 @@ export class LimbmakerService {
                 if (obj.type === "Scene") {
                     obj = obj.children[0];
                 }
+                if ((obj.geometry === undefined) && (obj.children[0].geometry !== undefined)) {
+                    obj = obj.children[0];
+                }
                 obj.geometry.computeBoundingSphere();
                 obj.userData['defaultBoundingSphereRadiusCm'] = obj.geometry.boundingSphere.radius * obj.scale.x * factor;
                 obj.userData['defaultBoundingSphereRadiusThree'] = obj.geometry.boundingSphere.radius;

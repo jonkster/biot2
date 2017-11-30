@@ -19,6 +19,11 @@ export class BiotService {
 
     constructor(private http: Http) {
         //this.getBiotRouter();
+        setTimeout(e => {
+            if (! this.statusOK) {
+                this.getBiotRouter();
+            }
+        }, 5000);
     }
 
     private extractWSData (res: Response) {

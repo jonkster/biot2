@@ -344,6 +344,19 @@ export class NodeholderService {
       }
   }
 
+  setEnvelopeVisibility(state: boolean) {
+      let addresses = Object.keys(this.knownLimbs);
+      for (let i = 0; i < addresses.length; i++) {
+          let addr = addresses[i];
+          let limb = this.knownLimbs[addr];
+          limb.traverse(function(obj) {
+              if (obj.name.match(/envelope-/)) {
+                  obj.visible = state;
+              }
+          });
+      }
+  }
+
   setPosition(node: any, x: number, y: number, z: number) {
       if  (node.model !== undefined) {
           node.position = [x, y, z];

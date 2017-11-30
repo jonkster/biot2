@@ -100,8 +100,6 @@ export class ThreedService {
         light.shadow.camera.bottom = -d;
 
         light.shadow.camera.far = 1000;
-        /*let shadowCHelper = new THREE.CameraHelper( light.shadow.camera );
-        this.scene.add( shadowCHelper );*/
 
         light.target = lightTarget;
         this.scene.add(light);
@@ -302,6 +300,20 @@ export class ThreedService {
         }
     }
 
+    removeTextSprite(text: string) {
+        let labels:any[] = [];
+        let regexp = new RegExp("^label-" + text);
+
+        this.scene.traverse(function(ob) {
+            if (ob.name.match(regexp)) {
+                labels.push(ob);
+            }
+        });
+        for (let i = 0; i < labels.length; i++) {
+            this.scene.remove(labels[i]);
+        }
+    }
+
     render() {
         this.renderer.render( this.scene, this.camera );
     }
@@ -324,6 +336,19 @@ export class ThreedService {
     setZoom(v: number) {
         this.camera.zoom = v;
         this.camera.updateProjectionMatrix();
+    }
+
+    viewFrom(x: number, y: number, z: number) {
+        //this.camera.up.set( 0, 0, 1 );
+        let d = this.camera.position.distanceTo(new THREE.Vector3(0, 0, 0));
+        this.camera.position.x = x * d;
+        this.camera.position.y = y * d;
+        this.camera.position.z = z * d;
+        this.camera.lookAt(new THREE.Vector3(0,0,0));
+        //this.removeTextSprite(".*");
+        //let text = this.makeTextSprite( x + "," + y + "," + z, undefined, 0, 0, 0 );
+        //this.scene.add(text);
+        this.render();
     }
 
     zoom(amt: number) {

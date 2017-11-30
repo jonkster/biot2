@@ -4,8 +4,9 @@
 //
 
 //var brokerAddress = '192.168.0.30';
-var brokerAddress = '10.1.1.61';
+//var brokerAddress = '10.1.1.61';
 //var brokerAddress = '0.0.0.0';
+var brokerAddress = '192.168.0.193';
 var brokerPort = 8888;
 
 var nodes = [
