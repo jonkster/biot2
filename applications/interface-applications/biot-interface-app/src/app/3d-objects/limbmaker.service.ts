@@ -15,7 +15,7 @@ export class LimbmakerService {
         let p = parentLimb.position;
         let l = parentLimb.userData.limbLength;
 
-        limb.userData.parentLimbName = parentLimb.name;
+        limb.userData.parentLimbName = parentLimb.userData.displayName;
         parentLimb.add(limb);
         console.log(limb);
         limb.position.set(l, 0, 0);
@@ -247,6 +247,7 @@ export class LimbmakerService {
             'limbLength': limbLength,
             'limbRadius': limbRadius,
             'limbRotationZ': 0,
+            'limbRotationY': 0,
             'limbRotationX': 0,
             'limbModelName': '',
             'defaultX' : x,

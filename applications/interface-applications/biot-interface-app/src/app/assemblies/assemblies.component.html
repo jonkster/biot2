@@ -1,5 +1,5 @@
-<button (click)="saveAssembly();">Save This Assembly</button>
-<button (click)="loadAssembly();">Load Previous Assembly</button>
+<button (click)="saveAssemblyDialog.show({});">Save This Assembly</button>
+<button (click)="loadAssemblyDialog.show({});">Load Previous Assembly</button>
 <div appThreed [displaywidth]="1400" [displayheight]="800" class="centred"></div>
 <div appThreestats [statsstyle]="{position: 'inherit', float: 'left', display: 'flex'}"></div>
 <div>
@@ -22,6 +22,9 @@
             <th>limb model</th>
             <th>biot address</th>
             <th>attached to</th>
+            <th>adjust rotation X</th>
+            <th>adjust rotation Y</th>
+            <th>adjust rotation Z</th>
             <th>&nbsp;</th>
         </tr>
         <ng-template ngFor let-address [ngForOf]="knownNodeAddresses" let-i="index">
@@ -32,6 +35,9 @@
             <td>{{ knownLimbs[address].userData.limbModelName }}</td>
             <td [style.color]="knownLimbs[address].userData.colour">{{ address }}</td>
             <td>{{ knownLimbs[address].userData.parentLimbName }}</td>
+            <td>{{ knownLimbs[address].userData.limbRotationX | rad2deg: true }}</td>
+            <td>{{ knownLimbs[address].userData.limbRotationY | rad2deg: true }}</td>
+            <td>{{ knownLimbs[address].userData.limbRotationZ | rad2deg: true }}</td>
             <td [style.background-color]="knownLimbs[address].userData.colour">&nbsp;</td>
         </tr>
         </ng-template>
@@ -52,9 +58,9 @@
         Parent Limb Name
         <select [(ngModel)]="selectedLimb.parentLimbName">
             <option [ngValue]="'none'">none</option>
-        <ng-template ngFor let-parent [ngForOf]="selectedLimb.potentialParentLimbs">
-            <option [ngValue]="parent">{{ parent }}</option>
-        </ng-template>
+            <ng-template ngFor let-parent [ngForOf]="selectedLimb.potentialParentLimbs">
+                <option [ngValue]="parent">{{ parent }}</option>
+            </ng-template>
         </select>
         </div><br/>
 
@@ -67,16 +73,49 @@
         <br/>
         length cm 
         <mat-slider min="1" max="50" step="0.5" value="30" tickInterval="5" thumbLabel (input)="adjustLimbLength(selectedLimbAddress, $event.value)"></mat-slider>
-        <input type="text" name="limbLength" [(ngModel)]="selectedLimb.limbLength" /><br/>
+        <div> {{ selectedLimb.limbLength }} </div><br/>
         rotation X
-        <mat-slider min="0" max="359" step="1" value="0" tickInterval="30" thumbLabel (input)="adjustLimbRotationZ(selectedLimbAddress, $event.value)"></mat-slider>
-        <input type="text" name="limbRotationZ" [(ngModel)]="selectedLimb.limbRotationZ" /><br/>
+        <mat-slider #xrot min="-180" max="180" step="1" value="0" tickInterval="30" thumbLabel (input)="adjustLimbRotationX(selectedLimbAddress, $event.value)"></mat-slider>
+        <div> {{ selectedLimb.limbRotationX | rad2deg: true  }} </div><br/>
+        rotation Y
+        <mat-slider #yrot min="-180" max="180" step="1" value="0" tickInterval="30" thumbLabel (input)="adjustLimbRotationY(selectedLimbAddress, $event.value)"></mat-slider>
+        <div> {{ selectedLimb.limbRotationY | rad2deg: true  }} </div><br/>
         rotation Z
-        <mat-slider min="0" max="359" step="1" value="0" tickInterval="30" thumbLabel (input)="adjustLimbRotationX(selectedLimbAddress, $event.value)"></mat-slider>
-        <input type="text" name="limbRotationX" [(ngModel)]="selectedLimb.limbRotationX" /><br/>
+        <mat-slider #zrot min="-180" max="180" step="1" value="0" tickInterval="30" thumbLabel (input)="adjustLimbRotationZ(selectedLimbAddress, $event.value)"></mat-slider>
+        <div> {{ selectedLimb.limbRotationZ | rad2deg: true  }} </div><br/>
     </div>
     <div class="app-modal-footer">
         <button type="button" class="btn btn-default" (click)="nodeLimbDialog.hide()">Cancel</button>
         <button type="button" class="btn btn-default" (click)="updateLimb(selectedLimbAddress); nodeLimbDialog.hide()">Save Values</button>
+    </div>
+</app-dialog>
+
+<app-dialog #saveAssemblyDialog>
+    <div class="app-modal-header">
+        <b>Save Assembly</b>
+    </div>
+    <div class="app-modal-body">
+        Assembly Name <input type="text" name="assemblyNameSave" [(ngModel)]="currentAssemblyName" /><br/>
+    </div>
+    <div class="app-modal-footer">
+        <button type="button" class="btn btn-default" (click)="saveAssemblyDialog.hide()">Cancel</button>
+        <button type="button" class="btn btn-default" (click)="saveAssembly(currentAssemblyName); saveAssemblyDialog.hide()">Save Assembly</button>
+    </div>
+</app-dialog>
+
+<app-dialog #loadAssemblyDialog>
+    <div class="app-modal-header">
+        <b>Load Assembly</b>
+    </div>
+    <div class="app-modal-body">
+        <select [(ngModel)]="currentAssemblyName">
+        <ng-template ngFor let-assembly [ngForOf]="knownAssemblies" let-i="index">
+            <option [ngValue]="assembly">{{ assembly }}</option>
+        </ng-template>
+        </select>
+    </div>
+    <div class="app-modal-footer">
+        <button type="button" class="btn btn-default" (click)="loadAssemblyDialog.hide()">Cancel</button>
+        <button type="button" class="btn btn-default" (click)="loadAssembly(currentAssemblyName); loadAssemblyDialog.hide()">Load Assembly</button>
     </div>
 </app-dialog>

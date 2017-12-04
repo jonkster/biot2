@@ -17,8 +17,12 @@ export class AssembliesComponent implements OnInit {
 
     @ViewChild('debugHolder') debugHolder: ElementRef;
     @ViewChild('nodeLimbDialog') nodeLimbDialog: DialogComponent;
+    @ViewChild('saveAssemblyDialog') saveAssemblyDialog: DialogComponent;
+    @ViewChild('loadAssemblyDialog') loadAssemblyDialog: DialogComponent;
 
+    private currentAssemblyName: string = '';
     private debugHistory: string[] = [];
+    private knownAssemblies: string[] = [];
     private knownLimbs: { [key: string]: any} = {};
     private knownNodeAddresses: string[] = [];
     private knownModels: string[] = [];
@@ -32,8 +36,9 @@ export class AssembliesComponent implements OnInit {
         parentLimbName: '',
         limbModelName: '',
         limbLength: '',
-        limbRotationZ: 0,
         limbRotationX: 0,
+        limbRotationY: 0,
+        limbRotationZ: 0,
         potentialParentLimbs: []
     };
     private worldSpace: THREE.Object3D = undefined;
@@ -85,6 +90,7 @@ export class AssembliesComponent implements OnInit {
 
         this.threedService.add(this.worldSpace);
 
+
     }
 
     
@@ -104,9 +110,12 @@ export class AssembliesComponent implements OnInit {
                   this.nodeHolderService.registerLimb(this.knownLimbs[addr]);
               }
           }
+          if (addresses.length > 0) {
+              this.getKnownAssemblies();
+          }
           this.knownNodeAddresses = Object.keys(this.knownLimbs);
           this.addActiveNodes();
-      }, 1000);
+      }, 5000);
   }
 
   adjustLimbLength(addr, value) {
@@ -122,11 +131,19 @@ export class AssembliesComponent implements OnInit {
   adjustLimbRotationX(addr, value) {
       let limb = this.knownLimbs[addr];
       limb.userData['limbRotationX'] = Math.PI * value / 180;
+      this.selectedLimb.limbRotationX = limb.userData['limbRotationX'];
+  }
+
+  adjustLimbRotationY(addr, value) {
+      let limb = this.knownLimbs[addr];
+      limb.userData['limbRotationY'] = Math.PI * value / 180;
+      this.selectedLimb.limbRotationY = limb.userData['limbRotationY'];
   }
 
   adjustLimbRotationZ(addr, value) {
       let limb = this.knownLimbs[addr];
       limb.userData['limbRotationZ'] = Math.PI * value / 180;
+      this.selectedLimb.limbRotationZ = limb.userData['limbRotationZ'];
   }
 
   debug(txt: string) {
@@ -166,6 +183,17 @@ export class AssembliesComponent implements OnInit {
       return JSON.stringify(assembly);
   }
 
+  getKnownAssemblies() {
+      this.biotService.getCachedAssemblies().subscribe(
+          rawData => {
+              this.debug("got assemblies:" + rawData);
+              console.log('d', rawData);
+              this.knownAssemblies = rawData;
+          },
+          error => { this.debug("error when getting assembly names:" + error); }
+      );
+  }
+
   getPotentialParents(addr: string): string[] {
       let parentNames: string[] = [];
       for (let i = 0; i < this.knownNodeAddresses.length; i++) {
@@ -178,9 +206,13 @@ export class AssembliesComponent implements OnInit {
       return parentNames;
   }
 
-  loadAssembly() {
-      this.biotService.getCachedAssembly('my-assembly').subscribe(
-          rawData => { this.debug("got assembly stuff:" + rawData);
+  loadAssembly(name: string) {
+      if (name === '') {
+          this.debug("Cannot Load! - blank name!");
+          return;
+      }
+      this.biotService.getCachedAssembly(name).subscribe(
+          rawData => { this.debug("got assembly data:" + rawData);
               let data = JSON.parse(rawData);
               let addresses = Object.keys(data);
               for (let i = 0; i < addresses.length; i++) {
@@ -191,6 +223,9 @@ export class AssembliesComponent implements OnInit {
                   this.selectedLimb.limbLength = limbData.limbLength;
                   this.selectedLimb.limbModelName = limbData.limbModelName;
                   this.selectedLimb.parentLimbName = limbData.parentLimbName;
+                  this.selectedLimb.limbRotationX = limbData.limbRotationX;
+                  this.selectedLimb.limbRotationY = limbData.limbRotationY;
+                  this.selectedLimb.limbRotationZ = limbData.limbRotationZ;
                   this.updateLimb(address);
               }
           },
@@ -210,7 +245,10 @@ export class AssembliesComponent implements OnInit {
               parentLimbName: limb.userData.parentLimbName,
               limbModelName: limb.userData.limbModelName, 
               limbLength: limb.userData.limbLength,
-              potentialParentLimbs: potentialParentLimbs
+              potentialParentLimbs: potentialParentLimbs,
+              limbRotationX: limb.userData.limbRotationX,
+              limbRotationY: limb.userData.limbRotationY,
+              limbRotationZ: limb.userData.limbRotationZ
           }
           this.nodeLimbDialog.show({});
       }
@@ -249,12 +287,16 @@ export class AssembliesComponent implements OnInit {
       return colours[idx % colours.length];
   }
 
-  saveAssembly()  {
+  saveAssembly(name: string)  {
+      if (name === '') {
+          this.debug("Not Saved! - blank name!");
+          return;
+      }
       let siht = this;
       let assembly = this.getAssembly();
-      this.biotService.postAssemblyToCache('my-assembly', assembly).subscribe(
-          rawData => { this.debug("saved my assembly stuff"); },
-          error => { this.debug("error when saving assembly:" + error); }
+      this.biotService.postAssemblyToCache(name, assembly).subscribe(
+          rawData => { this.debug("saved assembly as: " + name); },
+          error => { this.debug("error when saving assembly:" + name + " : " + error); }
       );
   }
 
@@ -291,13 +333,17 @@ export class AssembliesComponent implements OnInit {
           limb.userData.limbLength = this.selectedLimb.limbLength;
           limb.userData.parentLimbName = this.selectedLimb.parentLimbName;
           limb.userData.limbModelName = this.selectedLimb.limbModelName;
+          limb.userData.limbRotationX = this.selectedLimb.limbRotationX;
+          limb.userData.limbRotationY = this.selectedLimb.limbRotationY;
+          limb.userData.limbRotationZ = this.selectedLimb.limbRotationZ;
+          console.log(limb.userData);
           if (this.selectedLimb.limbModelName !== "") {
               this.limbMakerService.attachModelToLimb(limb, this.selectedLimb.limbModelName);
           }
           if ((this.selectedLimb.parentLimbName !== "") && (this.selectedLimb.parentLimbName !== "none")) {
               this.attachLimbToParent(limb, this.selectedLimb.parentLimbName);
           }
-
+          this.knownLimbs[addr] = limb;
       }
   }
 

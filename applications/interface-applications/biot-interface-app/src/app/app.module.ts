@@ -29,6 +29,7 @@ import { RecordingsComponent } from './recordings/recordings.component';
 import { MonitorComponent } from './monitor/monitor.component';
 import { ThreestatsDirective } from './threestats.directive';
 import { AssembliesComponent } from './assemblies/assemblies.component';
+import { Rad2degPipe } from './rad2deg.pipe';
 
 
 export const rootRouterConfig: Routes = [
@@ -54,7 +55,8 @@ export const rootRouterConfig: Routes = [
     RecordingsComponent,
     MonitorComponent,
     ThreestatsDirective,
-    AssembliesComponent
+    AssembliesComponent,
+    Rad2degPipe
   ],
   imports: [
     BrowserModule,
