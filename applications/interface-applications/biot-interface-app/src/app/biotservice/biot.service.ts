@@ -38,7 +38,7 @@ export class BiotService {
             .map((response) => response.json());
     }
 
-    checkBroker() {
+    private checkBroker() {
             this.statusOK = false;
             const url = "http://" + this.biotServerHost + ":" + this.biotServerPort + "/";
             this.http.get(url)

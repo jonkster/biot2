@@ -1,11 +1,13 @@
 import { TestBed, inject } from '@angular/core/testing';
+import { NodemodelService } from './nodemodel.service';
+import { HttpModule, Http } from '@angular/http';
 
 import { LimbmakerService } from './limbmaker.service';
 
 describe('LimbmakerService', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [LimbmakerService]
+        providers: [ {provide: LimbmakerService, nodemodel: NodemodelService, http: Http} ]
     });
   });
 

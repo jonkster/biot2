@@ -1,6 +1,7 @@
 import { Component, OnInit, AfterContentChecked, ViewChild, ElementRef } from '@angular/core';
 import {DialogComponent} from '../dialog/dialog.component';
-import {BiotService} from '../biotservice/biot.service';
+//import {BiotService} from '../biotservice/biot.service';
+import {BiotBrokerService} from '../biotbrokerservice/biot-broker.service';
 import {NodeholderService} from '../biotservice/nodeholder.service';
 import {PeriodicService} from '../periodic.service';
 import {ThreedService} from '../threed/threed.service';
@@ -43,10 +44,11 @@ export class AssembliesComponent implements OnInit {
     };
     private worldSpace: THREE.Object3D = undefined;
 
-    constructor(private biotService: BiotService,
+    constructor(//private biotService: BiotService,
         private threedService: ThreedService,
         private limbMakerService: LimbmakerService,
         private nodeHolderService: NodeholderService,
+        private biotBrokerService: BiotBrokerService,
         private router: Router,
         private periodicService: PeriodicService) {
     }
@@ -86,17 +88,14 @@ export class AssembliesComponent implements OnInit {
 
         // tilt slightly
         this.worldSpace.rotateY(0.2);
-
-
         this.threedService.add(this.worldSpace);
-
-
     }
 
     
   addActiveNodes() {
       setTimeout(e => {
-          var addresses = this.biotService.getDetectedAddresses();
+          //var addresses = this.biotService.getDetectedAddresses();
+          var addresses = this.biotBrokerService.getDetectedAddresses();
           for (let i = 0; i < addresses.length; i++) {
               let addr = addresses[i];
               if (this.knownLimbs[addr] === undefined) {
@@ -184,7 +183,8 @@ export class AssembliesComponent implements OnInit {
   }
 
   getKnownAssemblies() {
-      this.biotService.getCachedAssemblies().subscribe(
+      this.biotBrokerService.getCachedAssemblies().subscribe(
+      //this.biotService.getCachedAssemblies().subscribe(
           rawData => {
               this.debug("got assemblies:" + rawData);
               console.log('d', rawData);
@@ -211,7 +211,8 @@ export class AssembliesComponent implements OnInit {
           this.debug("Cannot Load! - blank name!");
           return;
       }
-      this.biotService.getCachedAssembly(name).subscribe(
+      this.biotBrokerService.getCachedAssembly(name).subscribe(
+      //this.biotService.getCachedAssembly(name).subscribe(
           rawData => { this.debug("got assembly data:" + rawData);
               let data = JSON.parse(rawData);
               let addresses = Object.keys(data);
@@ -294,7 +295,8 @@ export class AssembliesComponent implements OnInit {
       }
       let siht = this;
       let assembly = this.getAssembly();
-      this.biotService.postAssemblyToCache(name, assembly).subscribe(
+      this.biotBrokerService.postAssemblyToCache(name, assembly).subscribe(
+      //this.biotService.postAssemblyToCache(name, assembly).subscribe(
           rawData => { this.debug("saved assembly as: " + name); },
           error => { this.debug("error when saving assembly:" + name + " : " + error); }
       );

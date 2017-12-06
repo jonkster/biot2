@@ -26,10 +26,4 @@ describe('AppComponent', () => {
     expect(app.title).toEqual('Biotz User Interface');
   }));
 
-  it('should render title in a h2 tag', async(() => {
-    const fixture = TestBed.createComponent(AppComponent);
-    fixture.detectChanges();
-    const compiled = fixture.debugElement.nativeElement;
-    expect(compiled.querySelector('h2').textContent).toContain('Biotz User Interface');
-  }));
 });

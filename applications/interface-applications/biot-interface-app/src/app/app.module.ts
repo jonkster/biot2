@@ -21,6 +21,7 @@ import {LimbmakerService} from './3d-objects/limbmaker.service';
 import {LimbAssemblyService} from './limb-assembly/limbAssembly.service';
 import {NodemodelService} from './3d-objects/nodemodel.service';
 import {BiotService} from './biotservice/biot.service';
+import {BiotBrokerService} from './biotbrokerservice/biot-broker.service';
 import {NodeholderService} from './biotservice/nodeholder.service';
 import {PeriodicService} from './periodic.service';
 import {SystemComponent} from './system/system.component';
@@ -69,7 +70,7 @@ export const rootRouterConfig: Routes = [
     BrowserAnimationsModule,
     RouterModule.forRoot(rootRouterConfig)
   ],
-  providers: [ThreedService, LimbmakerService, LimbAssemblyService, NodemodelService, BiotService, NodeholderService, PeriodicService],
+  providers: [ThreedService, LimbmakerService, LimbAssemblyService, NodemodelService, BiotService, BiotBrokerService, NodeholderService, PeriodicService],
   bootstrap: [AppComponent]
 })
 export class AppModule { }
