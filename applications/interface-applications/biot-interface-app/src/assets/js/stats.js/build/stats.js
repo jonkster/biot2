@@ -177,3 +177,4 @@ Stats.Panel = function ( name, fg, bg ) {
 return Stats;
 
 })));
+

@@ -3,7 +3,7 @@ import * as THREE from 'three';
 //import { OrbitControls } from 'three-orbitcontrols-ts';
 declare const require: (moduleId: string) => any;
 var ExtraControls = require('three-orbitcontrols');
-declare var Stats: any;
+import * as Stats from "../../assets/js/stats.js/build/stats.js";
 
 import {PeriodicService} from '../periodic.service';
 
@@ -15,17 +15,21 @@ export class ThreedService {
     cameraControls = undefined;
     clearColour = '#d0d0d0';
     element = undefined;
+    objectQueue: THREE.Object3D[] = [];
     raycaster = undefined;
     renderer = undefined;
+    //scene = new THREE.Scene();
     scene = undefined;
     sizeX: number = undefined;
     sizeY: number = undefined;
     stats: any = undefined;
+    tasks: { [name: string]: { cb: Function, owner: string }} = {};
 
     constructor(private periodicService: PeriodicService) { }
 
     initialiseThree(sizeX: number, sizeY: number, element: ElementRef) {
-        this.stats = [new Stats(), new Stats(), new Stats()];
+        console.log(Stats);
+        this.stats = [Stats(), Stats(), Stats()];
         this.stats[0].showPanel(0);
         this.stats[1].showPanel(1);
         this.stats[2].showPanel(2);
@@ -37,7 +41,18 @@ export class ThreedService {
     }
 
     add(obj) {
-        this.scene.add(obj);
+        if (this.scene === undefined) {
+            this.objectQueue.push(obj)
+        } else {
+            this.scene.add(obj);
+        }
+    }
+
+    addAnimationTask(name: string, method: Function, owner) {
+        this.tasks[name] = {
+            cb: method,
+            owner: owner
+        }
     }
 
 
@@ -197,6 +212,85 @@ export class ThreedService {
         this.cameraControls.dampingFactor = 0.3;
         this.cameraControls.keys = [ 65, 83, 68 ];
         this.cameraControls.enabled = true;
+
+        for (let i = 0; i < this.objectQueue.length; i++) {
+            this.add(this.objectQueue[i]);
+        }
+    }
+
+    makeAxis(x: number, y: number, z: number, length: number, width: number, brightness: number) {
+        let group = new THREE.Object3D();
+
+        let r = new THREE.Color(0.5, 0.1, 0.1).offsetHSL(0, 0, brightness);
+        let g = new THREE.Color(0.1, 0.5, 0.1).offsetHSL(0, 0, brightness);
+        let b = new THREE.Color(0.1, 0.1, 0.5).offsetHSL(0, 0, brightness);
+
+        let tickSpacing = 10;
+        let tickWidth = 1;
+
+        // red X
+        let lmaterial = new THREE.LineBasicMaterial( {color: r.getHex(), linewidth: width});
+        let lgeometry = new THREE.Geometry();
+        lgeometry.vertices.push(new THREE.Vector3(0, 0, 0));
+        lgeometry.vertices.push(new THREE.Vector3(length, 0, 0));
+        let line = new THREE.Line(lgeometry, lmaterial);
+        line.castShadow = true;
+        line.receiveShadow = true;
+        group.add(line);
+        for (let i = 0; i < length; i += tickSpacing) {
+            let lgeometry = new THREE.Geometry();
+            lgeometry.vertices.push(new THREE.Vector3(i, -tickWidth, 0));
+            lgeometry.vertices.push(new THREE.Vector3(i, tickWidth, 0));
+            line = new THREE.Line(lgeometry, lmaterial);
+            line.castShadow = true;
+            line.receiveShadow = true;
+            group.add(line);
+        }
+        group.name = 'axis:' + x + '-' + y + '-' + z + ':' + length + 'x' + width;
+
+        // green Y
+        lmaterial = new THREE.LineBasicMaterial( {color: g.getHex(), linewidth: width} );
+        lgeometry = new THREE.Geometry();
+        lgeometry.vertices.push(new THREE.Vector3(0, 0, 0));
+        lgeometry.vertices.push(new THREE.Vector3(0, length, 0));
+        line = new THREE.Line(lgeometry, lmaterial);
+        line.castShadow = true;
+        line.receiveShadow = true;
+        group.add(line);
+        for (let i = 0; i < length; i += tickSpacing) {
+            let lgeometry = new THREE.Geometry();
+            lgeometry.vertices.push(new THREE.Vector3(0, i, -tickWidth));
+            lgeometry.vertices.push(new THREE.Vector3(0, i, tickWidth));
+            line = new THREE.Line(lgeometry, lmaterial);
+            line.castShadow = true;
+            line.receiveShadow = true;
+            group.add(line);
+        }
+
+        // blue Z
+        lmaterial = new THREE.LineBasicMaterial( {color: b.getHex(), linewidth: width} );
+        lgeometry = new THREE.Geometry();
+        lgeometry.vertices.push(new THREE.Vector3(0, 0, 0));
+        lgeometry.vertices.push(new THREE.Vector3(0, 0, length));
+        line = new THREE.Line(lgeometry, lmaterial);
+        line.castShadow = true;
+        line.receiveShadow = true;
+        group.add(line);
+        for (let i = 0; i < length; i += tickSpacing) {
+            let lgeometry = new THREE.Geometry();
+            lgeometry.vertices.push(new THREE.Vector3(0, -tickWidth, i));
+            lgeometry.vertices.push(new THREE.Vector3(0, tickWidth, i));
+            line = new THREE.Line(lgeometry, lmaterial);
+            line.castShadow = true;
+            line.receiveShadow = true;
+            group.add(line);
+        }
+
+        group.position.x = x;
+        group.position.y = y;
+        group.position.z = z;
+
+        return group;
     }
 
     makeTextSprite( message, parameters, x, y, z ) {
@@ -315,6 +409,11 @@ export class ThreedService {
     }
 
     render() {
+        let taskNames = Object.keys(this.tasks);
+        for (let i = 0; i < taskNames.length; i++) {
+            let task = this.tasks[taskNames[i]];
+            task.cb(task.owner);
+        }
         this.renderer.render( this.scene, this.camera );
     }
 

@@ -1,11 +1,11 @@
 import { Component, OnInit, AfterContentChecked, ViewChild, ElementRef } from '@angular/core';
 import {DialogComponent} from '../dialog/dialog.component';
-//import {BiotService} from '../biotservice/biot.service';
 import {BiotBrokerService} from '../biotbrokerservice/biot-broker.service';
-import {NodeholderService} from '../biotservice/nodeholder.service';
+import {NodeService} from '../nodeservice/node.service';
+import {ObjectDrawingService} from '../objectdrawing/object-drawing.service';
 import {PeriodicService} from '../periodic.service';
 import {ThreedService} from '../threed/threed.service';
-import {LimbmakerService} from '../3d-objects/limbmaker.service';
+import {LimbService} from '../limbservice/limb.service';
 import {Router} from '@angular/router';
 import * as THREE from 'three';
 
@@ -29,7 +29,6 @@ export class AssembliesComponent implements OnInit {
     private knownModels: string[] = [];
     private envelopesVisible: boolean = true;
     private figureVisible: boolean = false;
-    private figure: any = undefined;
     private selectedLimbAddress: string = '';
     private selectedLimb: any = {
         address: '',
@@ -42,12 +41,12 @@ export class AssembliesComponent implements OnInit {
         limbRotationZ: 0,
         potentialParentLimbs: []
     };
-    private worldSpace: THREE.Object3D = undefined;
+    //private worldSpace: THREE.Object3D = undefined;
 
-    constructor(//private biotService: BiotService,
-        private threedService: ThreedService,
-        private limbMakerService: LimbmakerService,
-        private nodeHolderService: NodeholderService,
+    constructor(
+        private limbService: LimbService,
+        private nodeService: NodeService,
+        private objectDrawingService: ObjectDrawingService,
         private biotBrokerService: BiotBrokerService,
         private router: Router,
         private periodicService: PeriodicService) {
@@ -55,58 +54,30 @@ export class AssembliesComponent implements OnInit {
 
     ngOnInit() {
         this.addActiveNodes();
-        this.limbMakerService.lookupKnownModels().subscribe(
-            rawData => {
-                this.knownModels = rawData;
-            }
-        );
     }
 
   ngAfterViewInit() {
-        this.threedService.addLighting(0, 0, 0);
-
-        this.threedService.setBackgroundColour('#e0ffff');
-        const texture = THREE.ImageUtils.loadTexture('./assets/mocap.png');
-        texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-        texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-        texture.repeat.set( 1, 1 );
-        const material = new THREE.MeshLambertMaterial({map: texture, opacity: 0.4, transparent: true});
-        material.side = THREE.DoubleSide;
-        const geometry = new THREE.PlaneGeometry(2000, 2000, 0);
-        geometry.translate(0, 0, -165);
-        let floor = new THREE.Mesh(geometry, material);
-        floor.receiveShadow = true;
-
-        // line up so can read logo
-        floor.rotateZ(Math.PI/2);
-
-        this.worldSpace = new THREE.Group();
-        this.worldSpace.add(floor);
-
-        let axis = this.limbMakerService.makeAxis(0, 0, 0, 420, 1, 0.1);
-        this.worldSpace.add(axis);
-
-        // tilt slightly
-        this.worldSpace.rotateY(0.2);
-        this.threedService.add(this.worldSpace);
+        this.objectDrawingService.startUpdating();
+        this.objectDrawingService.setStandardBackground();
     }
 
     
   addActiveNodes() {
       setTimeout(e => {
-          //var addresses = this.biotService.getDetectedAddresses();
-          var addresses = this.biotBrokerService.getDetectedAddresses();
+          let addresses = this.nodeService.getNodeAddresses();
           for (let i = 0; i < addresses.length; i++) {
               let addr = addresses[i];
               if (this.knownLimbs[addr] === undefined) {
-                  this.knownLimbs[addr] = this.limbMakerService.makeLimb(null,
+                  let node = this.nodeService.getNode(addr);
+                  this.nodeService.setPosition(addr, 0, i * 40, 0);
+
+                  this.knownLimbs[addr] = this.limbService.makeLimb(null,
                       addr,
                       'limb-' + i,
                       0, i * 40, 0,
                       this.pickAColour(i),
                       30);
-                  this.threedService.add(this.knownLimbs[addr]);
-                  this.nodeHolderService.registerLimb(this.knownLimbs[addr]);
+                  this.objectDrawingService.addNodeMonitoredObject(addr, this.knownLimbs[addr]);
               }
           }
           if (addresses.length > 0) {
@@ -120,7 +91,7 @@ export class AssembliesComponent implements OnInit {
   adjustLimbLength(addr, value) {
       let limb = this.knownLimbs[addr];
       limb.userData.limbLength = value;
-      this.limbMakerService.setLimbSize(limb, value);
+      this.limbService.setLimbSize(limb, value);
       if (this.selectedLimbAddress === addr) {
         this.selectedLimb.limbLength = value;
       }
@@ -156,7 +127,7 @@ export class AssembliesComponent implements OnInit {
   attachLimbToParent(limb, parentLimbName) {
       let parentLimb = this.getLimbByName(parentLimbName);
       if (parentLimb !== null) {
-        let newLimb = this.limbMakerService.attachLimbToParent(limb, parentLimb);
+        let newLimb = this.limbService.attachLimbToParent(limb, parentLimb);
       }
   }
 
@@ -184,11 +155,10 @@ export class AssembliesComponent implements OnInit {
 
   getKnownAssemblies() {
       this.biotBrokerService.getCachedAssemblies().subscribe(
-      //this.biotService.getCachedAssemblies().subscribe(
           rawData => {
               this.debug("got assemblies:" + rawData);
               console.log('d', rawData);
-              this.knownAssemblies = rawData;
+              this.knownAssemblies = rawData as string[];
           },
           error => { this.debug("error when getting assembly names:" + error); }
       );
@@ -212,9 +182,8 @@ export class AssembliesComponent implements OnInit {
           return;
       }
       this.biotBrokerService.getCachedAssembly(name).subscribe(
-      //this.biotService.getCachedAssembly(name).subscribe(
           rawData => { this.debug("got assembly data:" + rawData);
-              let data = JSON.parse(rawData);
+              let data = JSON.parse(rawData as string);
               let addresses = Object.keys(data);
               for (let i = 0; i < addresses.length; i++) {
                   let address = addresses[i];
@@ -235,6 +204,7 @@ export class AssembliesComponent implements OnInit {
   }
 
   openLimbControl(addr: string) {
+      this.knownModels = this.limbService.getKnownModelNames();
       this.selectedLimbAddress = addr;
       let limb = this.knownLimbs[addr];
       if (limb !== undefined) {
@@ -257,7 +227,7 @@ export class AssembliesComponent implements OnInit {
 
 
   pickAColour(idx: number) {
-      var colours = [
+      let colours = [
           '#FF0000',
           '#4385FF',
           '#AA6E28',
@@ -296,7 +266,6 @@ export class AssembliesComponent implements OnInit {
       let siht = this;
       let assembly = this.getAssembly();
       this.biotBrokerService.postAssemblyToCache(name, assembly).subscribe(
-      //this.biotService.postAssemblyToCache(name, assembly).subscribe(
           rawData => { this.debug("saved assembly as: " + name); },
           error => { this.debug("error when saving assembly:" + name + " : " + error); }
       );
@@ -305,10 +274,10 @@ export class AssembliesComponent implements OnInit {
   toggleEnvelopes() {
       if (this.envelopesVisible) {
           this.envelopesVisible = false;
-          this.nodeHolderService.setEnvelopeVisibility(false);
+          this.objectDrawingService.setAllEnvelopeVisibility(false);
       } else {
           this.envelopesVisible = true;
-          this.nodeHolderService.setEnvelopeVisibility(true);
+          this.objectDrawingService.setAllEnvelopeVisibility(true);
       }
   }
 
@@ -316,14 +285,14 @@ export class AssembliesComponent implements OnInit {
   toggleFigure() {
       if (this.figureVisible) {
           this.figureVisible = false;
-          this.threedService.remove(this.figure);
+          this.objectDrawingService.setStaticObjectVisibility('reference-figure', false);
       } else {
-          if (this.figure === undefined) {
-              this.figure = this.limbMakerService.makeLimbFromModel('skeleton.json', 10); 
-              //this.figure = this.limbMakerService.makeLimbFromModel('skeleton-whole-2.json', 10); 
+          if (this.objectDrawingService.getStaticObject('reference-figure') === undefined) {
+              let figure = this.limbService.makeLimbFromModel('skeleton.json', 10); 
+              this.objectDrawingService.addStaticObject('reference-figure', figure);
           }
+          this.objectDrawingService.setStaticObjectVisibility('reference-figure', true);
           this.figureVisible = true;
-          this.threedService.add(this.figure);
       }
   }
 
@@ -340,7 +309,7 @@ export class AssembliesComponent implements OnInit {
           limb.userData.limbRotationZ = this.selectedLimb.limbRotationZ;
           console.log(limb.userData);
           if (this.selectedLimb.limbModelName !== "") {
-              this.limbMakerService.attachModelToLimb(limb, this.selectedLimb.limbModelName);
+              this.limbService.attachModelToLimb(limb, this.selectedLimb.limbModelName);
           }
           if ((this.selectedLimb.parentLimbName !== "") && (this.selectedLimb.parentLimbName !== "none")) {
               this.attachLimbToParent(limb, this.selectedLimb.parentLimbName);

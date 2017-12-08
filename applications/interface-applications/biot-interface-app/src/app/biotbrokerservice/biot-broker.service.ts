@@ -157,7 +157,7 @@ export class BiotBrokerService {
         return this.http.get(url)
             .subscribe(
                 data => {
-                    this.biotServerHost = data["_body"].replace(/\n/g, '');
+                    this.biotServerHost = data["_body"].replace(/\s/g, '');
                 },
                 error => {
                     this.debug('could not find host ip, try running "npm run setup"', error);

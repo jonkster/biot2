@@ -2,8 +2,11 @@ import { Component, OnInit, AfterContentChecked, ViewChild, ElementRef } from '@
 import {DialogComponent} from '../dialog/dialog.component';
 import {BiotService} from '../biotservice/biot.service';
 import {NodeholderService} from '../biotservice/nodeholder.service';
+import {NodeService} from '../nodeservice/node.service';
+import {ObjectDrawingService} from '../objectdrawing/object-drawing.service';
 import {PeriodicService} from '../periodic.service';
 import {ThreedService} from '../threed/threed.service';
+import {LimbService} from '../limbservice/limb.service';
 import {LimbmakerService} from '../3d-objects/limbmaker.service';
 import {LimbAssemblyService} from '../limb-assembly/limbAssembly.service';
 import {Router} from '@angular/router';
@@ -21,6 +24,7 @@ export class NodesComponent implements OnInit, AfterContentChecked {
     private autoZoom: number = 1;
     private worldSpace: THREE.Object3D = undefined;
     private nodeData: any = {};
+    private knownNodes: { [key: string]: any} = {};
     private knownModels: string[];
     private chosenModel: string = "humerus.json"
     private nodeView: string = "limb";
@@ -59,9 +63,12 @@ export class NodesComponent implements OnInit, AfterContentChecked {
     constructor(
         private biotService: BiotService,
         private threedService: ThreedService,
+        private limbService: LimbService,
         private limbMakerService: LimbmakerService,
         private limbAssemblyService: LimbAssemblyService,
+        private objectDrawingService: ObjectDrawingService,
         private nodeHolderService: NodeholderService,
+        private nodeService: NodeService,
         private router: Router,
         private periodicService: PeriodicService) {
         //this.dropNodes();
@@ -100,44 +107,26 @@ export class NodesComponent implements OnInit, AfterContentChecked {
     }
 
     ngAfterViewInit() {
-        this.threedService.addLighting(0, 0, 0);
-
-        this.threedService.setBackgroundColour('#e0ffff');
-	let material = this.makeMaterialFromFile('./assets/mocap.png');
-
-
-        const geometry = new THREE.PlaneGeometry(2000, 2000, 0);
-        geometry.translate(0, 0, -165);
-        let floor = new THREE.Mesh(geometry, material);
-        floor.receiveShadow = true;
-
-        // line up so can read logo
-        floor.rotateZ(Math.PI/2);
-
-        this.worldSpace = new THREE.Group();
-        this.worldSpace.add(floor);
-
-        let axis = this.limbMakerService.makeAxis(0, 0, 0, 420, 1, 0.1);
-        this.worldSpace.add(axis);
-
-        // tilt slightly
-        this.worldSpace.rotateY(0.2);
-
-        this.threedService.add(this.worldSpace);
-
+        this.objectDrawingService.setStandardBackground();
+        this.objectDrawingService.startUpdating();
     }
 
     addActiveNodes() {
         setTimeout(e => {
-            var addresses = this.biotService.getDetectedAddresses();
+            let addresses = this.nodeService.getNodeAddresses();
             for (let i = 0; i < addresses.length; i++) {
                 let addr = addresses[i];
-                if (this.nodeHolderService.isActiveNode(addr)) {
-                    if (! this.nodeHolderService.isNodeManaged(addr)) {
-                        var q = { 'w': 0, 'x': 0, 'y': 1, 'z': 0 };
-                        this.addNode(addr, 'detected-biot-node', 'biot-'+addr, 0, 0, 0, q, this.pickAColour(i));
-                    }
-                    this.getRecordActive(addr);
+              if (this.knownNodes[addr] === undefined) {
+                  let node = this.nodeService.getNode(addr);
+                  this.nodeService.setPosition(addr, 0, i * 40, 0);
+
+                  this.knownNodes[addr] = this.limbService.makeNodeModel('node-' + i,
+                      addr,
+                      this.pickAColour(i),
+                      true
+                      );
+                  this.objectDrawingService.addNodeMonitoredObject(addr, this.knownNodes[addr]);
+
                 }
             }
             this.adjustNodePositions();
@@ -147,33 +136,8 @@ export class NodesComponent implements OnInit, AfterContentChecked {
     }
 
 
-    addNode(addr: string, type: string, name: string, x: number, y: number, z: number, q: any, colour: string) {
-        this.debug("adding node: " + addr);
-        let node = this.makeNode(addr, type, name, x, y, z, q, colour);
-        if (this.nodeHolderService.addNode(addr, type, name, x, y, z, q, colour)) {
-            this.nodeHolderService.add3DModel(addr, node);
-            this.worldSpace.add(node);
-            this.nodeHolderService.flashNode(addr);
-            this.debug("adding node success: " + addr);
-        } else {
-        this.debug("adding node failed!: " + addr);
-        }
-    }
 
     addTestNode() {
-        var colour = this.pickAColour(0);
-        var addr = "aaaa-1234-5678-aaaa";
-        var name = "TEST NODE";
-        var type = "DUMMY-IMU";
-        var q = { 'w': 0, 'x': 0.887, 'y': 0, 'z': -0.887 };
-        var time = 0;
-
-        var i = 0;
-        while (this.nodeHolderService.isNodeManaged(addr)) {
-            addr = '-' + i++;
-            colour = this.pickAColour(i);
-        }
-        this.addNode(addr, type, name, 0, 0, 0, q, colour);
     }
 
     adjustLimbLength(addr: string, len: number) {
@@ -217,7 +181,7 @@ export class NodesComponent implements OnInit, AfterContentChecked {
 
     dropNodes() {
             this.debug("drop all nodes");
-            var addresses = this.biotService.getDetectedAddresses();
+            let addresses = this.nodeService.getNodeAddresses();
             for (let i = 0; i < addresses.length; i++) {
                 this.dropNode(addresses[i]);
             }
@@ -436,7 +400,7 @@ export class NodesComponent implements OnInit, AfterContentChecked {
 
 
     resetService() {
-        this.biotService.resetService();
+    //    this.biotService.resetService();
     }
 
     getAllNodeData() {
