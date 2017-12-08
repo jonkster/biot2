@@ -245,6 +245,7 @@ export class LimbService {
             let box = new THREE.Group();
             box.name = 'g_' + name;
             box.userData = {
+                'colour': colour,
                 'displayName': name,
                 'ledMode': 2,
                 'alertState': 0

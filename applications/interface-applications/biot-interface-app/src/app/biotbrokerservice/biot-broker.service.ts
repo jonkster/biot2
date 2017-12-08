@@ -141,9 +141,9 @@ export class BiotBrokerService {
     }
 
     getCommunicationStatus() {
-        if (this.biotServerHost !== '') {
+        /*if (this.biotServerHost !== '') {
             this.callBrokerHost(this.biotServerHost, {});
-        }
+        }*/
         return this.foundBroker;
     }
 

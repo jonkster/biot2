@@ -29,17 +29,18 @@ var c = 0;
 setInterval(function() {
         calcQuats();
         for (var i = 0; i < nodes.length; i++) {
-                sendOrientation(nodes[i], c);
-        }
-        if (c++ % 100000 === 0) {
+            sendOrientation(nodes[i], c);
+            if (c % 100 === 0) {
                 sendAdvert();
-        }
-        if (c++ % 10000 === 0) {
+            }
+            if (c % 100 === 0) {
                 sendStatus(nodes[i]);
-        }
-        if (c % 5000 === 0) {
+            }
+            if (c % 50 === 0) {
                 sendCalibration(nodes[i]);
+            }
         }
+        c++;
 }, 150);
 
 function calcQuats() {

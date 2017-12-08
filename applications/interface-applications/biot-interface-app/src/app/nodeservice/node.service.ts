@@ -34,6 +34,7 @@ export class NodeService {
     private counter: number = 0;
     private knownNodes: { [addr: string]: biotNodeType } = {};
     private lostNodes: Subject<string> = new Subject();
+    private lastChange: { [addr: string]: { lastHeard: number, timesLastHeardSame: number } } = {};
 
     constructor(private biotBrokerService: BiotBrokerService, private loggingService: LoggingService, private periodicService: PeriodicService) {
         this.periodicService.registerTask('node update', this, this.updateLoop);
@@ -54,14 +55,33 @@ export class NodeService {
                     'lastHeardSame': undefined
                 };
             }
+            let node = this.knownNodes[addr];
             let nodeRaw = data[addr];
             // kludge - need to ensure correct form of data always passed to this method - fix callers
+            if (nodeRaw['dc'] !== undefined) {
+                let nodeCalibration = nodeRaw['dc'];
+                this.setNodeProperty(addr, 'calibration', nodeCalibration);
+                let nodeStatus = nodeRaw['ds'].split(/:/);;
+                this.setNodeProperty(addr, 'dof', nodeStatus[0]);
+                this.setNodeProperty(addr, 'auto', nodeStatus[2]);
+            }
             if (nodeRaw['do'] !== undefined) {
                 nodeRaw = nodeRaw['do'];
             }
             let bits = nodeRaw.split(/:/);
-            this.knownNodes[addr].timeStamp = bits[0];
-            this.knownNodes[addr].quaternion = new THREE.Quaternion(bits[2], bits[3], bits[4], bits[1]);
+            node.lasttime = node.timeStamp;
+            node.timeStamp = bits[0];
+            node.quaternion = new THREE.Quaternion(bits[2], bits[3], bits[4], bits[1]);
+            if (this.lastChange[addr] !== undefined) {
+                let lastHeard = this.lastChange[addr].lastHeard;
+                this.lastChange[addr].timesLastHeardSame++;
+                if (node.lasttime != lastHeard) {
+                    this.lastChange[addr].timesLastHeardSame = 0; this.lastChange[addr].lastHeard = node.lasttime;
+                }
+            } else {
+                this.lastChange[addr] = { lastHeard: node.lasttime, timesLastHeardSame: 0 };
+            }
+            node.lastHeardSame = this.lastChange[addr].timesLastHeardSame;
         }
     }
 
@@ -95,6 +115,10 @@ export class NodeService {
         return this.knownNodes[addr];
     }
 
+    getNodes() : { [addr: string]: biotNodeType } {
+        return this.knownNodes;
+    }
+
     getNodeAddresses(): string[] {
         return Object.keys(this.knownNodes);
     }
@@ -106,7 +130,7 @@ export class NodeService {
             },
             error =>{}
         );
-        return this.knownNodes;
+        return this.getNodes();
     }
 
     identifyNode(addr: string): boolean  {
@@ -128,6 +152,28 @@ export class NodeService {
 
     lostNodeSubscription(): Observable<string> {
         return this.lostNodes.asObservable();
+    }
+
+    setNodeProperty(addr: string, property: string, value: string): boolean {
+        if (this.knownNodes[addr] === undefined) {
+            return false;
+        }
+        if (this.knownNodes[addr].configuration === undefined) {
+            this.knownNodes[addr].configuration = {
+                'name': null,
+                'type': null,
+                'calibration': null,
+                'interval': null,
+                'auto': null,
+                'dof': null,
+                'led': null,
+                'colour': null,
+                'model': null
+            };
+        }
+        this.knownNodes[addr].configuration[property] = value;
+        return true;
+
     }
 
 
