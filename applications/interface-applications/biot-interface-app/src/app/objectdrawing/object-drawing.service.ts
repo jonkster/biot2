@@ -42,6 +42,13 @@ export class ObjectDrawingService {
         return this.staticObjects[name];
     }
 
+    removeNodeMonitoredObject(addr: string) {
+        if (this.knownNodeMonitoredObjects[addr] !== undefined) {
+            this.threedService.remove(this.knownNodeMonitoredObjects[addr]);
+            delete this.knownNodeMonitoredObjects[addr];
+        }
+    }
+
     removeStaticObject(name: string) {
         if (this.staticObjects[name] !== undefined) {
             this.threedService.remove(this.staticObjects[name]);
@@ -121,10 +128,22 @@ export class ObjectDrawingService {
                 if (obj !== undefined) {
                     let node = self.nodeService.getNode(addr);
                     if (node !== undefined) {
+                        obj.position.set(node.position[0], node.position[1], node.position[2]);
                         obj.setRotationFromQuaternion(node.quaternion.normalize());
                     }
                 }
             }
+        }
+    }
+
+    updateStaticObject(name: string, position: number[], quat: THREE.Quaternion) {
+        let model = this.getStaticObject(name);
+        if (model != undefined) {
+            model.position.set(position[0], position[1], position[2]);
+            model.setRotationFromQuaternion(quat);
+            console.log(quat);
+        } else {
+            console.log('no such model?', name);
         }
     }
 

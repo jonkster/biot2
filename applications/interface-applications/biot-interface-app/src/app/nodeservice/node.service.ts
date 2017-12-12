@@ -85,7 +85,7 @@ export class NodeService {
         }
     }
 
-    private dropNode(addr): boolean {
+    dropNode(addr): boolean {
         if (this.knownNodes[addr] !== undefined) {
             delete this.knownNodes[addr];
             return true;

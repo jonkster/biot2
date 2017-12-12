@@ -70,8 +70,7 @@
             </td>
             <td>
                 <button class="btn btn-primary" [disabled]="recordingActive[address]" (click)="recordNode(address)">Record Node</button>
-                <button class="btn btn-success" [disabled]="recordingActive[address] || (! hasRecording(address))" (click)="getNodeRecording(address)">Analyse Recording</button>
-                <button class="btn btn-success" [disabled]="recordingActive[address] || (! hasRecording(address))" (click)="replayNodeRecording(address)">Replay Recording</button>
+                <button class="btn btn-success" [disabled]="recordingActive[address] || (! hasRecording(address))" (click)="getNodeRecording(address)">Replay/Analyse Recording</button>
                 <span *ngIf="recordingActive[address]" class="btn btn-danger">Recording...</span>
             </td>
             <td colspan="8">&nbsp;</td>
@@ -117,6 +116,3 @@
         <button type="button" class="btn btn-default" (click)="startRecordingNode(selectedNodeAddress); nodeRecordDialog.hide()">Record Data</button>
     </div>
 </app-dialog>
-
-
-

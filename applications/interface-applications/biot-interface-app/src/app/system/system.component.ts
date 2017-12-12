@@ -1,5 +1,5 @@
 import { Component, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
-import {BiotService} from '../biotservice/biot.service';
+import {BiotBrokerService} from '../biotbrokerservice/biot-broker.service';
 import {ThreedService} from '../threed/threed.service';
 import * as THREE from 'three';
 
@@ -10,9 +10,7 @@ import * as THREE from 'three';
 })
 export class SystemComponent implements AfterViewInit {
 
-    private biotService: BiotService;
     private nodesAlive: number = 0;
-    private threedService: ThreedService;
     private routerStatus = {
         title: '',
         ip: '?',
@@ -58,9 +56,7 @@ export class SystemComponent implements AfterViewInit {
     flashCount = 0;
 
 
-    constructor(biotService: BiotService, threedService: ThreedService) {
-        this.biotService = biotService;
-        this.threedService = threedService;
+    constructor(private biotBrokerService: BiotBrokerService, private threedService: ThreedService) {
     }
 
     ngAfterViewInit() {
@@ -72,9 +68,9 @@ export class SystemComponent implements AfterViewInit {
 
     autoDetectSettings() {
         this.toggleStatus('biotbroker');
-        this.biotService.getBiotRouter();
+        this.biotBrokerService.getBiotRouter();
         setTimeout(e => {
-            this.biotService.getCommunicationStatus();
+            this.biotBrokerService.getCommunicationStatus();
             this.getRouterStatus();
         }, 5000);
     }
@@ -82,14 +78,14 @@ export class SystemComponent implements AfterViewInit {
     changeBroker(ip: string, port: string) {
         this.biotBrokerIP = ip;
         this.biotBrokerPort = port;
-        this.biotService.setBiotBroker(ip, port);
+        this.biotBrokerService.setBiotBroker(ip, port);
         this.toggleStatus('biotbroker');
 	this.getRouterStatus();
     }
 
     changeRouter(ip: string, port: string) {
         this.toggleStatus('biotrouter');
-        this.biotService.setEdgeRouter(ip, port).subscribe(
+        this.biotBrokerService.setEdgeRouter(ip, port).subscribe(
                 rawData => {
                     console.log('set', rawData);
                 },
@@ -174,16 +170,16 @@ export class SystemComponent implements AfterViewInit {
     }
 
     getAllBiotData() {
-        this.biotBrokerIP = this.biotService.getBrokerIP();
-        this.biotBrokerPort = this.biotService.getBrokerPort();
+        this.biotBrokerIP = this.biotBrokerService.getBrokerIP();
+        this.biotBrokerPort = this.biotBrokerService.getBrokerPort();
         let nodesAlive = 0;
         for (let i = 0; i < this.nodeStatus.count; i++) {
             let addr = this.nodeStatus.addresses[i];
-            const status =  this.biotService.getStatus(addr);
+            const status =  this.biotBrokerService.getStatus(addr);
             status.subscribe(
                 rawData => {
-                    this.nodeStatus.nodeData[addr] = rawData.status + ':' + rawData.ts;
-                    if (rawData.status === 'alive') {
+                    this.nodeStatus.nodeData[addr] = rawData['status'] + ':' + rawData['ts'];
+                    if (rawData['status'] === 'alive') {
                         nodesAlive++;
                     }
                     this.nodesAlive = nodesAlive;
@@ -197,12 +193,12 @@ export class SystemComponent implements AfterViewInit {
 
 
     getBiotAddresses() {
-        const status =  this.biotService.getAddresses();
+        const status =  this.biotBrokerService.getAddresses();
         if (status !== null) {
             status.subscribe(
                 rawData => {
-                    this.nodeStatus.addresses = rawData;
-                    this.nodeStatus.count = rawData.length;
+                    this.nodeStatus.addresses = rawData as any;
+                    this.nodeStatus.count = rawData['length'];
                     this.getAllBiotData();
                 },
                 error => {
@@ -215,16 +211,16 @@ export class SystemComponent implements AfterViewInit {
     }
 
     getRouterStatus() {
-        const status =  this.biotService.getRouterStatus();
+        const status =  this.biotBrokerService.getRouterStatus();
         if (status !== null) {
             status.subscribe(
                 rawData => {
                     console.log('got status', rawData);
-                    this.routerStatus = rawData;
-                    this.routerStatus.status = rawData.status;
-                    this.routerStatus.ip = rawData.ip;
-                    this.routerStatus.port = rawData.port;
-                    this.routerStatus.time = rawData.time;
+                    //this.routerStatus = rawData;
+                    this.routerStatus.status = rawData['status'];
+                    this.routerStatus.ip = rawData['ip'];
+                    this.routerStatus.port = rawData['port'];
+                    this.routerStatus.time = rawData['time'];
                     this.systemStatus.biotbroker = 'OK';
                     this.systemStatus.tcpip = 'OK';
                     this.systemStatus.udpip = this.routerStatus['UDP-IP-status'];

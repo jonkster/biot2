@@ -2,9 +2,12 @@ import { Component, OnInit, AfterViewInit, ElementRef, ViewChild, ViewChildren, 
 import { Router, ActivatedRoute } from '@angular/router';
 import { ChartsModule } from 'ng2-charts';
 import { BaseChartDirective } from 'ng2-charts/ng2-charts';
-import {BiotService} from '../biotservice/biot.service';
+import {DialogComponent} from '../dialog/dialog.component';
+import {BiotBrokerService} from '../biotbrokerservice/biot-broker.service';
 import {ThreedService} from '../threed/threed.service';
 import {LimbmakerService} from '../3d-objects/limbmaker.service';
+import {ObjectDrawingService} from '../objectdrawing/object-drawing.service';
+import {LimbService} from '../limbservice/limb.service';
 import * as THREE from 'three';
 import * as SPEC from 'fourier-transform';
 
@@ -19,13 +22,10 @@ export class RecordingsComponent implements OnInit {
 
     @ViewChild('xyzplot') elementView;
     @ViewChildren(BaseChartDirective) public charts: BaseChartDirective;
+    @ViewChild('loadRecordingDialog') loadRecordingDialog: DialogComponent;
 
-    private biotService: BiotService;
-    private threedService: ThreedService;
-    private limbMakerService: LimbmakerService;
-    private image: THREE.Object3D;
-    private limb: THREE.Object3D;
     private i: number = 0;
+    private nodeAddress: string = '';
     private replayStart: number = 0;
     private cursorPosition: number = 50;
 
@@ -50,6 +50,7 @@ export class RecordingsComponent implements OnInit {
 
     public spectrumChartLegend:boolean = true;
     public spectrumChartType:string = 'line';
+
 
     public lineChartData:Array<any> = [
         {data: [], label: 'x'},
@@ -176,33 +177,39 @@ export class RecordingsComponent implements OnInit {
             pointHoverBorderColor: 'rgba(148,159,255,0.8)'
         }
     ];
-    constructor(private route: ActivatedRoute, biotService: BiotService, threedService: ThreedService, limbMakerService: LimbmakerService) { 
-        this.biotService = biotService;
-        this.threedService = threedService;
-        this.limbMakerService = limbMakerService;
+
+    constructor(private route: ActivatedRoute,
+        private biotBrokerService: BiotBrokerService,
+        private limbService: LimbService,
+        private objectDrawingService: ObjectDrawingService,
+        private threedService: ThreedService) { 
     }
 
     getRecordingsAndDisplay() {
-        this.biotService.getRecordings().subscribe(
-            rawData => {
-                this.knownRecordings = rawData;
-                if (this.knownRecordings.length > 0) {
-                    let addr = this.knownRecordings[0];
-                    this.biotService.getRecordedData(addr).subscribe(
-                        rawData => { this.displayRecording({'title': 'recording', 'data': JSON.stringify(rawData)}); },
-                        error => { alert('error:' + error)},
-                    );
-                } else {
-                    console.log('Woah!');
-                }
-            },
-            error => { alert('error:' + error)},
-        );
+        if (! this.biotBrokerService.getCommunicationStatus()) {
+            setTimeout(e => {
+                this.getRecordingsAndDisplay();
+            }, 1000);
+        } else {
+            this.biotBrokerService.getRecordings().subscribe(
+                rawData => {
+                    this.knownRecordings = rawData;
+                    if (this.knownRecordings.length > 0) {
+                        this.loadRecordingDialog.show({});
+                    } else {
+                            console.log('Woah!');
+                    }
+                },
+                error => { alert('error:' + error)},
+            );
+        }
     }
 
     displayRecording(recordingData) {
-        this.lineChartOptions.title.text = 'rotation of: ' + recordingData.title;
-        let recording = JSON.parse(recordingData.data);
+        let recording = recordingData;
+        this.nodeAddress = recording.address;
+        this.setModel(this.nodeAddress);
+        this.lineChartOptions.title.text = 'rotation of: ' + this.nodeAddress;
         this.currentRecording.address = recording.address;
         this.currentRecording.sampleRate = recording.sampleRate;
         this.currentRecording.interval = recording.interval;
@@ -215,7 +222,10 @@ export class RecordingsComponent implements OnInit {
         let start = 0;
         let now = 0;
         console.log('points count', points.length);
-        for (let i = 0; i < points.length; i++) {
+        let usePoints = this.nearestPower2(points.length);
+        console.log('using ', usePoints);
+        for (let i = 0; i < usePoints; i++) {
+        //for (let i = 0; i < points.length; i++) {
             var st = points[i];
             var parts = st.split(':');
             now = parts[0];
@@ -238,19 +248,22 @@ export class RecordingsComponent implements OnInit {
         }
         this.setPlottingData();
         // force chart update
-        this.charts['_results'][0].ngOnChanges({} as SimpleChanges);
-        this.charts['_results'][1].ngOnChanges({} as SimpleChanges);
+        if (this.charts !== undefined) {
+            this.charts['_results'][0].ngOnChanges({} as SimpleChanges);
+            this.charts['_results'][1].ngOnChanges({} as SimpleChanges);
+        } else {
+            console.log("WHAT?", this.charts);
+        }
     }
 
     ngOnInit() {
         this.sub = this.route.params.subscribe(params => {
-            if (! params.data) {
-                // no recording asked for
+            if (! params.address) {
+                // no recording specified
                 this.getRecordingsAndDisplay();
                 return;
             } else {
-                console.log('pp', params);
-                this.displayRecording(params);
+                this.readAndShowRecording(params.address);
             }
         });
     }
@@ -258,27 +271,7 @@ export class RecordingsComponent implements OnInit {
     ngAfterViewInit() {
 
         // set up some test objects
-
         this.threedService.setBackgroundColour('#ffffff');
-        const texture = THREE.ImageUtils.loadTexture('./assets/mocap.png');
-        texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-        texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-        texture.repeat.set( 2, 2 );
-        const material = new THREE.MeshBasicMaterial({map: texture, opacity: 0.2, transparent: true});
-        material.side = THREE.DoubleSide;
-        const geometry = new THREE.PlaneGeometry(800, 600, 0);
-        this.image = new THREE.Mesh(geometry, material);
-        this.image.rotateX(-Math.PI/2);
-
-        let axis = this.limbMakerService.makeAxis(0, 0, 0, 420, 1, 0.1);
-
-        //this.limb = this.limbMakerService.makeLimbWithNode();
-        //this.limb.add(this.image);
-        this.limb = this.limbMakerService.makeNodeModel('fred', 'RECORDED-IMU', 'recorded node', 0, 0, 0, '#ff7f7f');
-        this.limb.add(axis);
-        //this.limb.rotateX(0.9);
-        //this.limb.rotateZ(0.9);
-        this.threedService.add(this.limb);
 
         this.threedService.addLighting(0, 0, 0);
 
@@ -291,6 +284,36 @@ export class RecordingsComponent implements OnInit {
         if (this.sub !== undefined) {
             this.sub.unsubscribe();
         }
+    }
+
+    nearestPower2(n: number): number {
+        let p = Math.floor(Math.log(n)/Math.log(2));
+        console.log(n, '->', p);
+        return Math.pow(2, p);
+    }
+
+    readAndShowRecording(addr: string) {
+        if (! this.biotBrokerService.getCommunicationStatus()) {
+            setTimeout(e => {
+                this.readAndShowRecording(addr);
+            }, 1000);
+        } else {
+            this.biotBrokerService.getRecordedData(addr).subscribe(
+                rawData => {
+                    this.displayRecording(rawData);
+                },
+                error => { console.log("error getting recording", addr, error); }
+            );
+        }
+    }
+
+    setModel(addr: string) {
+        let model = this.limbService.makeNodeModel('node-' + this.nodeAddress,
+                        this.nodeAddress,
+                        '#ff7f7f',
+                        true
+                    );
+        this.objectDrawingService.addStaticObject('recorded-node-' + this.nodeAddress, model);
     }
 
     setPlottingData() {
@@ -393,7 +416,7 @@ export class RecordingsComponent implements OnInit {
                 let delay = t - this.replayStart;
                 this.replayStart = t;
                 let quaternion = new THREE.Quaternion(point.x, point.y, point.z, point.w).normalize();
-                this.limb.setRotationFromQuaternion(quaternion);
+                this.objectDrawingService.updateStaticObject('recorded-node-' + this.nodeAddress, [0, 0, 0], quaternion);
                 this.setCursor(t);
                 if (this.isPlaying) {
                     setTimeout(e => {

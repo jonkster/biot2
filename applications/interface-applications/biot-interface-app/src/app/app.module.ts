@@ -17,21 +17,20 @@ import { AboutComponent } from './about/about.component';
 import { NotfoundComponent } from './notfound/notfound.component';
 
 import {ThreedService} from './threed/threed.service';
-import {LimbmakerService} from './3d-objects/limbmaker.service';
-import {LimbAssemblyService} from './limb-assembly/limbAssembly.service';
+//import {LimbmakerService} from './3d-objects/limbmaker.service';
+//import {LimbAssemblyService} from './limb-assembly/limbAssembly.service';
 import {LimbService} from './limbservice/limb.service';
 import {LoggingService} from './logging.service';
-import {NodemodelService} from './3d-objects/nodemodel.service';
+//import {NodemodelService} from './3d-objects/nodemodel.service';
 import {ObjectDrawingService} from './objectdrawing/object-drawing.service';
-import {BiotService} from './biotservice/biot.service';
+//import {BiotService} from './biotservice/biot.service';
 import {BiotBrokerService} from './biotbrokerservice/biot-broker.service';
-import {NodeholderService} from './biotservice/nodeholder.service';
+//import {NodeholderService} from './biotservice/nodeholder.service';
 import {NodeService} from './nodeservice/node.service';
 import {PeriodicService} from './periodic.service';
 import {SystemComponent} from './system/system.component';
 import { DialogComponent } from './dialog/dialog.component';
 import { RecordingsComponent } from './recordings/recordings.component';
-import { MonitorComponent } from './monitor/monitor.component';
 import { ThreestatsDirective } from './threestats.directive';
 import { AssembliesComponent } from './assemblies/assemblies.component';
 import { Rad2degPipe } from './rad2deg.pipe';
@@ -42,7 +41,6 @@ export const rootRouterConfig: Routes = [
     {path: 'about', component: AboutComponent},
     {path: 'nodes', component: NodesComponent},
     {path: 'recordings', component: RecordingsComponent},
-    {path: 'monitor', component: MonitorComponent},
     {path: 'system', component: SystemComponent},
     {path: 'assemblies', component: AssembliesComponent},
     {path: '**', component: NotfoundComponent }
@@ -58,7 +56,6 @@ export const rootRouterConfig: Routes = [
     SystemComponent,
     DialogComponent,
     RecordingsComponent,
-    MonitorComponent,
     ThreestatsDirective,
     AssembliesComponent,
     Rad2degPipe
@@ -74,7 +71,7 @@ export const rootRouterConfig: Routes = [
     BrowserAnimationsModule,
     RouterModule.forRoot(rootRouterConfig)
   ],
-  providers: [ThreedService, LimbmakerService, LimbAssemblyService, LimbService, LoggingService, NodemodelService, ObjectDrawingService, BiotService, BiotBrokerService, NodeholderService, NodeService, PeriodicService],
+  providers: [ThreedService, LimbService, LoggingService, ObjectDrawingService, BiotBrokerService, NodeService, PeriodicService],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

@@ -62,6 +62,22 @@
     </tr>
 </table>
 
+<app-dialog #loadRecordingDialog>
+    <div class="app-modal-header">
+        <b>Load Recording</b>
+    </div>
+    <div class="app-modal-body">
+        <select [(ngModel)]="nodeAddress">
+        <ng-template ngFor let-recording [ngForOf]="knownRecordings" let-i="index">
+            <option [ngValue]="recording">{{ recording }}</option>
+        </ng-template>
+        </select>
+    </div>
+    <div class="app-modal-footer">
+        <button type="button" class="btn btn-default" (click)="loadRecordingDialog.hide()">Cancel</button>
+        <button type="button" class="btn btn-default" (click)="loadRecordingDialog.hide(); readAndShowRecording(nodeAddress) ">Load Recording</button>
+    </div>
+</app-dialog>
 <table *ngIf="! isCollapsed">
     <tr>
         <td>seconds</td>

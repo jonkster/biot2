@@ -1,8 +1,6 @@
 import { Component, OnInit, AfterContentChecked, ViewChild, ElementRef } from '@angular/core';
 import {DialogComponent} from '../dialog/dialog.component';
-//import {BiotService} from '../biotservice/biot.service';
 import {BiotBrokerService} from '../biotbrokerservice/biot-broker.service';
-//import {NodeholderService} from '../biotservice/nodeholder.service';
 import {NodeService} from '../nodeservice/node.service';
 import {ObjectDrawingService} from '../objectdrawing/object-drawing.service';
 import {PeriodicService} from '../periodic.service';
@@ -25,6 +23,7 @@ export class NodesComponent implements OnInit, AfterContentChecked {
     private nodeData: any = {};
     private nodeModels: { [key: string]: any} = {};
     private knownModels: string[];
+    //private knownRecordings: string[] = [];
     private chosenModel: string = "humerus.json"
     private nodeAddresses: string[] = [];
     private recordingActive: any = {};
@@ -58,12 +57,10 @@ export class NodesComponent implements OnInit, AfterContentChecked {
     @ViewChild('nodeRecordDialog') nodeRecordDialog: DialogComponent;
 
     constructor(
-        //private biotService: BiotService,
         private biotBrokerService: BiotBrokerService,
         private threedService: ThreedService,
         private limbService: LimbService,
         private objectDrawingService: ObjectDrawingService,
-        //private nodeHolderService: NodeholderService,
         private nodeService: NodeService,
         private router: Router,
         private periodicService: PeriodicService) {
@@ -104,30 +101,32 @@ export class NodesComponent implements OnInit, AfterContentChecked {
                     this.objectDrawingService.addNodeMonitoredObject(addr, model);
                 }
             }
-      //      this.adjustNodePositions();
+            this.adjustNodePositions();
+            for (let i = 0; i < addresses.length; i++) {
+                this.getRecordActive(addresses[i]);
+            }
             this.addActiveNodes();
         }, 1000);
     }
 
 
 
-    /*adjustNodePositions() {
-        let addresses = this.nodeHolderService.getNodeAddresses();
+    adjustNodePositions() {
+        let addresses = this.nodeService.getNodeAddresses();
         let count = addresses.length;
         let offset = count - 1;
         let width = 25;
         let x = -(width * offset)/2
         for (let i = 0; i < count; i++) {
             let addr = addresses[i];
-            let node = this.nodeHolderService.getManagedNode(addr);
-            this.nodeHolderService.setPosition(node, 0, x, 0);
+            this.nodeService.setPosition(addr, 0, x, 0);
             x += width;
         }
         // zoom out to show all nodes
         if ((this.autoZoom === 1) && count !== 0) {
-            this.threedService.setZoom(4/count);
+            this.threedService.setZoom(8/count);
         }
-    }*/
+    }
 
     alertNode(addr) {
         this.biotBrokerService.identify(addr).subscribe(
@@ -153,22 +152,23 @@ export class NodesComponent implements OnInit, AfterContentChecked {
     }
 
     dropNode(addr) {
-        /*if (this.nodeAddresses[addr] !== undefined) {
+        if (this.nodeAddresses[addr] !== undefined) {
             delete this.nodeAddresses[addr];
             this.nodeAddresses.splice(this.nodeAddresses.indexOf(addr), 1);
         }
         if (this.nodeData[addr] !== undefined) {
+            this.nodeService.dropNode(addr);
+            this.objectDrawingService.removeNodeMonitoredObject(addr);
             delete this.nodeData[addr];
-            this.nodeHolderService.dropNode(addr);
-            this.threedService.dropNode(addr);
-            this.biotService.dropNode(addr);
+            delete this.nodeAddresses[addr];
+            delete this.nodeModels[addr];
             this.debug("dropped node:" + addr);
-        }*/
+        }
     }
 
     flashNodeLed(addr: string, mode: number) {
         this.debug("flashing node:" + addr);
-        //this.nodeHolderService.setLedMode(addr, mode);
+        this.nodeService.setNodeProperty(addr, 'led', mode.toString());
     }
 
     getCommunicationStatus() {
@@ -179,21 +179,17 @@ export class NodesComponent implements OnInit, AfterContentChecked {
         if (this.recordingActive[addr] === undefined) {
             this.recordingActive[addr] = false;
         } else {
-            /*this.biotBrokerService.getRecordStatus(addr)
+            this.biotBrokerService.getRecordStatus(addr)
                 .subscribe(
                     rawData => {
-                        console.log(rawData);
-                        this.recordingActive[addr] = rawData.recordingActive;
-                        this.recordingExists[addr] = rawData.recordingExists;
+                        this.recordingActive[addr] = rawData['recordingActive'];
+                        this.recordingExists[addr] = rawData['recordingExists'];
                     },
                     error => { this.debug("error getting node status node:'" + addr + "' : " + error); },
                     
-                );*/
-                console.log('need to implement');
+                );
         }
     }
-
-
 
     openNodeControl(addr: string) {
         this.alertNode(addr);
@@ -230,8 +226,8 @@ export class NodesComponent implements OnInit, AfterContentChecked {
         return 0;
     }
 
-    displayRecordedData(jsonData: string) {
-        this.router.navigate(['recordings', {'title': this.selectedNodeName, 'data': jsonData}]);
+    displayRecordedData(addr: string) {
+        this.router.navigate(['recordings', {'address': addr}]);
     }
 
     getStats() {
@@ -240,17 +236,13 @@ export class NodesComponent implements OnInit, AfterContentChecked {
 
     getNodeRecording(addr: string) {
         this.biotBrokerService.getRecordedData(addr).subscribe(
-            rawData => { this.displayRecordedData(JSON.stringify(rawData))},
+            rawData => { this.displayRecordedData(addr); },
             error => { alert('error:' + error)},
         );
     }
 
     hasRecording(addr: string) {
         return this.recordingExists[addr];
-    }
-
-    replayNodeRecording(addr) {
-        alert("sorry cannot do that yet");
     }
 
     startRecordingNode(addr: string) {
