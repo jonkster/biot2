@@ -43,6 +43,7 @@ export const rootRouterConfig: Routes = [
     {path: 'recordings', component: RecordingsComponent},
     {path: 'system', component: SystemComponent},
     {path: 'assemblies', component: AssembliesComponent},
+    {path: 'notfound', component: NotfoundComponent },
     {path: '**', component: NotfoundComponent }
 ];
 

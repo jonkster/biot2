@@ -5,7 +5,7 @@ import { BaseChartDirective } from 'ng2-charts/ng2-charts';
 import {DialogComponent} from '../dialog/dialog.component';
 import {BiotBrokerService} from '../biotbrokerservice/biot-broker.service';
 import {ThreedService} from '../threed/threed.service';
-import {LimbmakerService} from '../3d-objects/limbmaker.service';
+//import {LimbmakerService} from '../3d-objects/limbmaker.service';
 import {ObjectDrawingService} from '../objectdrawing/object-drawing.service';
 import {LimbService} from '../limbservice/limb.service';
 import * as THREE from 'three';

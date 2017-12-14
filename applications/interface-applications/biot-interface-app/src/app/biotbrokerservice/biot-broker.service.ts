@@ -72,6 +72,9 @@ export class BiotBrokerService {
     }
 
     private extractWSData (res: Response) {
+        if (res.status == 200) {
+            this.foundBroker = true;
+        }
         const body = res.json();
         return body || {};
     }
@@ -223,7 +226,7 @@ export class BiotBrokerService {
     }
 
 
-    private makeBrokerRequest(path: string) {
+    private makeBrokerRequest(path: string): Observable<any> {
         if (this.biotServerHost !== '') {
             const url = "http://" + this.biotServerHost + ":" + this.biotServerPort + "/" + path ;
             let src = this.http.get(url)
