@@ -62,7 +62,7 @@ export class NodeService {
                 let nodeCalibration = nodeRaw['dc'];
                 this.setNodeProperty(addr, 'calibration', nodeCalibration);
             }
-            if (nodeRaw['ds'] !== undefined) {
+            if ((nodeRaw['ds'] !== undefined) && (nodeRaw['ds'] !== null)) {
                 let nodeStatus = nodeRaw['ds'].split(/:/);;
                 this.setNodeProperty(addr, 'dof', nodeStatus[0]);
                 this.setNodeProperty(addr, 'auto', nodeStatus[2]);

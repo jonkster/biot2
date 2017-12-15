@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpModule, Http, Response, URLSearchParams } from '@angular/http';
-import {ThreedService} from '../threed/threed.service';
+import { ThreedService } from '../threed/threed.service';
 import { Observable } from 'rxjs/Observable';
 
 import * as THREE from 'three';
@@ -53,6 +53,13 @@ export class LimbService {
 
     getKnownModelNames(): string[] {
         return this.knownModels;
+    }
+
+    getLimbLength(limb: THREE.Object3D): number {
+        if (limb) {
+            return limb.userData.limbLength;
+        }
+        return 0;
     }
 
     lookupKnownModelNames() {

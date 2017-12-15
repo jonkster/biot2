@@ -128,6 +128,7 @@ export class AssembliesComponent implements OnInit {
       let parentLimb = this.getLimbByName(parentLimbName);
       if (parentLimb !== null) {
         let newLimb = this.limbService.attachLimbToParent(limb, parentLimb);
+        this.moveNodeToEndOfParent(limb, parentLimb);
       }
   }
 
@@ -201,6 +202,16 @@ export class AssembliesComponent implements OnInit {
           },
           error => { this.debug("error when getting assembly:" + error); }
       );
+  }
+
+  moveNodeToEndOfParent(limb: THREE.Object3D, parentLimb: THREE.Object3D) {
+      let addr = limb.userData.address;
+      let parentNode = this.nodeService.getNode(parentLimb.userData.address);
+      let parentPos = parentNode.position;
+      let node = this.nodeService.getNode(addr);
+      let nodePos = node.position;
+      let x = this.limbService.getLimbLength(parentLimb);
+      this.nodeService.setPosition(addr, x, 0, 0);
   }
 
   openLimbControl(addr: string) {
