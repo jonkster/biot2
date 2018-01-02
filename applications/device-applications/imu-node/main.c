@@ -152,6 +152,7 @@ int findRoot(void)
     puts("finding root...");
     batch(shell_commands, "rpl init 6");
     if (gnrc_rpl_instances[0].state == 0) {
+        puts("fail");
         return 1;
     }
 
@@ -163,6 +164,7 @@ int findRoot(void)
     return 0;
 }
 
+uint8_t c = 0;
 uint32_t lastSecs = 0;
 void idleTask(void)
 {
@@ -173,8 +175,11 @@ void idleTask(void)
     {
         if (! knowsRoot())
         {
-            findRoot();
-            udp_serverListen(true);
+            if (c++ % 10 == 0)
+            {
+                findRoot();
+                udp_serverListen(true);
+            }
         }
 
         if (! imuReady)

@@ -130,6 +130,12 @@ export class ObjectDrawingService {
                     if (node !== undefined) {
                         obj.position.set(node.position[0], node.position[1], node.position[2]);
                         obj.setRotationFromQuaternion(node.quaternion.normalize());
+                        if (obj.userData.limbRotationX !== undefined) {
+                            obj.rotateX(obj.userData.limbRotationX);
+                            obj.rotateY(obj.userData.limbRotationY);
+                            obj.rotateZ(obj.userData.limbRotationZ);
+                        }
+
                     }
                 }
             }
@@ -141,7 +147,11 @@ export class ObjectDrawingService {
         if (model != undefined) {
             model.position.set(position[0], position[1], position[2]);
             model.setRotationFromQuaternion(quat);
-            console.log(quat);
+            if (model.userData.limbRotationX !== undefined) {
+                model.rotateX(model.userData.limbRotationX);
+                model.rotateY(model.userData.limbRotationY);
+                model.rotateZ(model.userData.limbRotationZ);
+            }
         } else {
             console.log('no such model?', name);
         }

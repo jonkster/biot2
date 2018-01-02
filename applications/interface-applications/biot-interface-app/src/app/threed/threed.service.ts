@@ -444,9 +444,9 @@ export class ThreedService {
         this.camera.position.y = y * d;
         this.camera.position.z = z * d;
         this.camera.lookAt(new THREE.Vector3(0,0,0));
-        //this.removeTextSprite(".*");
-        //let text = this.makeTextSprite( x + "," + y + "," + z, undefined, 0, 0, 0 );
-        //this.scene.add(text);
+        /*this.removeTextSprite(".*");
+        let text = this.makeTextSprite( x + "," + y + "," + z, undefined, 0, 0, 0 );
+        this.scene.add(text);*/
         this.render();
     }
 

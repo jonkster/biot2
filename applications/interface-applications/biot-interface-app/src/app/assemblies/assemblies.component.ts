@@ -49,7 +49,9 @@ export class AssembliesComponent implements OnInit {
         private objectDrawingService: ObjectDrawingService,
         private biotBrokerService: BiotBrokerService,
         private router: Router,
-        private periodicService: PeriodicService) {
+        private periodicService: PeriodicService,
+        private threedService: ThreedService,
+    ) {
     }
 
     ngOnInit() {
