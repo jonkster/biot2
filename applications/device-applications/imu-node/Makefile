@@ -37,6 +37,7 @@ USEMODULE += gnrc_ndp
 #
 # Add a routing protocol
 USEMODULE += gnrc_rpl
+USEMODULE += netstats_rpl
 # Add forwarding table
 USEMODULE += fib
 
@@ -81,5 +82,6 @@ QUIET ?= 1
 # which is not needed in a production environment but helps in the
 # development process:
 CFLAGS += -DDEVELHELP #-DCDEBUG 
+CFLAGS += -DGNRC_RPL_DODAG_CONF_OPTIONAL_ON_JOIN
 
 include $(RIOTBASE)/Makefile.include

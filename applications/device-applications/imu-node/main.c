@@ -151,6 +151,9 @@ int findRoot(void)
 {
     puts("finding root...");
     batch(shell_commands, "rpl init 6");
+    batch(shell_commands, "rpl send dis");
+    batch(shell_commands, "ifconfig");
+
     if (gnrc_rpl_instances[0].state == 0) {
         puts("fail");
         return 1;
@@ -166,6 +169,7 @@ int findRoot(void)
 
 uint8_t c = 0;
 uint32_t lastSecs = 0;
+bool fail = false;
 void idleTask(void)
 {
     uint32_t microSecs = getCurrentTime();
@@ -177,8 +181,10 @@ void idleTask(void)
         {
             if (c++ % 10 == 0)
             {
-                findRoot();
-                udp_serverListen(true);
+                if (! fail) {
+                    findRoot();
+                    udp_serverListen(true);
+                }
             }
         }
 
@@ -219,7 +225,11 @@ int main(void)
     /* we need a message queue for the thread running the shell in order to
      * receive potentially fast incoming networking packets */
     msg_init_queue(_main_msg_queue, MAIN_QUEUE_SIZE);
-    batch(shell_commands, "rpl init 6");
+    if (! fail)
+    {
+        batch(shell_commands, "rpl init 6");
+        batch(shell_commands, "rpl send dis");
+    }
 
     LED0_OFF;
 
