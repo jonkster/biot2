@@ -10,6 +10,9 @@
 
 #define MAX_MESSAGE_LENGTH 84
 
+extern void adjustScheduleTime(uint32_t delta);
+extern void setUpdateInterval(uint32_t interval);
+
 bool pokeRequested = false;
 
 void actOnLedCommandMessage(char *data)
@@ -39,6 +42,8 @@ void actOnLedCommandMessage(char *data)
 void actOnTimCommandMessage(char *data)
 {
     uint32_t t = strtoul(data, NULL, 0);
+    uint32_t ct = getCurrentTime();
+    adjustScheduleTime(t - ct);
     setCurrentTime(t);
 }
 
@@ -110,7 +115,14 @@ void actOnMcmCommandMessage(char *data)
 void actOnDupCommandMessage(char* data)
 {
     uint32_t t = atoi(data);
-    dupInterval = t;
+    printf("changing update to: %lu\n", t * 1000);
+    setUpdateInterval(t * 1000);
+}
+
+void actOnInhibitCommandMessage(char *data)
+{
+    char *rest;
+    inhibitDelay = strtol(data, &rest, 10);
 }
 
 void actOnPokeCommandMessage(char* data)
@@ -139,15 +151,15 @@ void actOnCommand(char *cmdSt, char *src_addr)
     char *cmd = NULL;
     char *data = NULL;
     char *p = strtok(cmdSt, "#");
-    if (p > 0)
+    if (p != NULL)
     {
         cmd = strdup(p);
         p = strtok(NULL, "#");
-        if (p)
+        if (p != NULL)
         {
             data = strdup(p);
             p = strtok(NULL, "#");
-            if (p)
+            if (p != NULL)
             {
                 char *address = NULL;
                 address = strdup(p);
@@ -195,6 +207,10 @@ void actOnCommand(char *cmdSt, char *src_addr)
     else if (strcmp(cmd, "cpok") == 0)
     {
         actOnPokeCommandMessage(data);
+    }
+    else if (strcmp(cmd, "cinh") == 0)
+    {
+        actOnInhibitCommandMessage(data);
     }
     else
     {

@@ -63,6 +63,15 @@ void *housekeeping_handler(void *arg)
     }
 }
 
+void adjustScheduleTime(uint32_t delta)
+{
+    for ( uint8_t i = 0; i < MAX_PERIODIC_TASKS; i++)
+    {
+        lastTime[i] += delta;
+    }
+}
+
+
 
 bool schedule(uint32_t microSecs, uint32_t interval, uint8_t taskNumber)
 {

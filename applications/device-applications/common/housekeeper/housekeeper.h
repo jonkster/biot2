@@ -25,6 +25,8 @@ void *housekeeping_handler(void *arg);
 
 void rapidHeartbeat(bool state);
 
+void adjustScheduleTime(uint32_t);
+
 /**
  * returns true if the msec value indicates that interval time has passed
  * since the last time schedule was called.
