@@ -25,7 +25,7 @@ static GHashTable *addressTable;
 static long long *lastT;
 static char *lastA;
 
-#define DEBUG (0)
+//#define DEBUG (0)
 
 long long strToLL(char * st)
 {
