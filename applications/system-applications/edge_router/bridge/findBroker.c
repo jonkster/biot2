@@ -16,9 +16,7 @@
 #include <net/if.h>
 
 #define BROKER_BROADCAST_PORT     8890
-#define BROKER_BROADCAST_ADDRESS  "10.1.1.255" // send messages to here
-//#define BROKER_BROADCAST_ADDRESS  "255.255.255.255" // send messages to here
-//#define BROKER_BROADCAST_ADDRESS  "10.1.1.55" // send messages to here
+#define LOCAL_NETWORK_SEGMENT  "10.1.1"
 
 #include "erbridge.h"
 
@@ -88,7 +86,7 @@ long listenToSocket(int sock, char *buffer, long maxLen)
 	}
 	else if (count >= maxLen)
 	{
-		printf("datagram too large for buffer: truncated (%ld >= %i)", count, (int) maxLen);
+		printf("datagram too large for buffer: truncated (%zd >= %i)", count, (int) maxLen);
 		return 0;
 	}
 
@@ -133,7 +131,7 @@ int listenForResponse(char **address, int *port)
         printf("error binding to socket: %s\n", strerror(errno));
         exit(0);
     }
-    sleep(1);
+    usleep(1000);
     if (isDataReady(sock))
     {
         char buffer[180];
@@ -159,13 +157,22 @@ int listenForResponse(char **address, int *port)
     return(0);
 }
 
-
-void sendBroadcast(char *buf)
+char* makeAddress(uint8_t i)
 {
-	int sock = makeBroadcastSendInterface(BROKER_BROADCAST_ADDRESS, BROKER_PORT);
+        int l = snprintf(NULL, 0, "%s.%d", LOCAL_NETWORK_SEGMENT, i);
+        char *address = malloc(l + 1);
+	snprintf(address, l + 1, "%s.%d", LOCAL_NETWORK_SEGMENT, i);
+	return address;
+}
+
+
+void sendBroadcast(char *buf, uint8_t i)
+{
+	char* address = makeAddress(i);
+	int sock = makeBroadcastSendInterface(address, BROKER_PORT);
 	if (sock > 0)
 	{
-		printf("sending %li bytes to %s:%i -> %s\n", strlen(buf), BROKER_BROADCAST_ADDRESS, BROKER_PORT, buf); 
+		printf("sending %zu bytes to %s:%i -> %s\n", strlen(buf), address, BROKER_PORT, buf); 
 		send(sock, buf, strlen(buf), 0);
 	}
 	else
@@ -173,6 +180,7 @@ void sendBroadcast(char *buf)
 		perror("could not send to broker");
 	}
 	close(sock);
+	free(address);
 	return;
 }
 
@@ -181,15 +189,18 @@ int findBroker(char **address, int *port, bool slow)
 	printf("find broker...\n");
         int l = snprintf(NULL, 0, "biot er on port %d", BROKER_PORT);
         char *broadcastMessage = malloc(l + 1);
-        snprintf(broadcastMessage, l + 1, "biot er on port %d", BROKER_PORT);
-        sendBroadcast(broadcastMessage);
-        if (listenForResponse(address, port))
-        {
-            printf("got it...\n");
-            return 1;
-        }
-	if (slow)
-        	sleep(3);   /* Avoids flooding the network */
+	for (uint8_t i = 1; i < 255; i++) {
+
+		snprintf(broadcastMessage, l + 1, "biot er on port %d", BROKER_PORT);
+		sendBroadcast(broadcastMessage, i);
+		if (listenForResponse(address, port))
+		{
+			printf("got it...\n");
+			return 1;
+		}
+		if (slow)
+			sleep(3);   /* Avoids flooding the network */
+	}
         return 0;
 }
 

@@ -25,7 +25,7 @@ static GHashTable *addressTable;
 static long long *lastT;
 static char *lastA;
 
-//#define DEBUG (1)
+#define DEBUG (0)
 
 long long strToLL(char * st)
 {
@@ -278,7 +278,7 @@ long listenToSock(int sock, char *buffer, long maxLen)
 	}
 	else if (count >= maxLen)
 	{
-		printf("datagram too large for buffer: truncated (%ld >= %i)", count, (int) maxLen);
+		printf("datagram too large for buffer: truncated (%zd >= %i)", count, (int) maxLen);
 		return 0;
 	}
 
@@ -465,7 +465,7 @@ int main()
         printf("main\n");
 	int brokerFound = 0;
 	while (! brokerFound) {
-		brokerFound = findBroker(&brokerAddress, &brokerPort, true);
+		brokerFound = findBroker(&brokerAddress, &brokerPort, false);
 		if (brokerFound)
 		{
 			printf("broker at %s:%d\n", brokerAddress, brokerPort);
