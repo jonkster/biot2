@@ -6,6 +6,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+long inhibitDelay = 0;
 void actOnCommand(char *cmdSt, char *src_addr);
 void relayMessage(char *cmd, char *data, char *address);
 #ifdef __cplusplus

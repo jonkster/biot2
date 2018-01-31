@@ -61,6 +61,8 @@ export class NodeService {
             if (nodeRaw['dc'] !== undefined) {
                 let nodeCalibration = nodeRaw['dc'];
                 this.setNodeProperty(addr, 'calibration', nodeCalibration);
+            }
+            if ((nodeRaw['ds'] !== undefined) && (nodeRaw['ds'] !== null)) {
                 let nodeStatus = nodeRaw['ds'].split(/:/);;
                 this.setNodeProperty(addr, 'dof', nodeStatus[0]);
                 this.setNodeProperty(addr, 'auto', nodeStatus[2]);
@@ -82,6 +84,9 @@ export class NodeService {
                 this.lastChange[addr] = { lastHeard: node.lasttime, timesLastHeardSame: 0 };
             }
             node.lastHeardSame = this.lastChange[addr].timesLastHeardSame;
+            if (node.configuration === undefined) {
+                node.configuration = this.newNodeConfiguration();
+            }
         }
     }
 
@@ -152,6 +157,20 @@ export class NodeService {
 
     lostNodeSubscription(): Observable<string> {
         return this.lostNodes.asObservable();
+    }
+
+    newNodeConfiguration(): biotNodeConfigurationType {
+        return {
+            'name': '',
+            'type': '',
+            'calibration': '',
+            'interval': '',
+            'auto': '',
+            'dof': '',
+            'led': '',
+            'colour': '',
+            'model': null
+        };
     }
 
     setNodeProperty(addr: string, property: string, value: string): boolean {

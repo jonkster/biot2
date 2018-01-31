@@ -22,6 +22,8 @@ void sendNodeCalibration(char *);
 
 void sendNodeStatus(char *);
 
+void setUpdateInterval(uint32_t);
+
 uint32_t usDataUpdateInterval(void);
 
 uint32_t usCalibrationInterval(void);

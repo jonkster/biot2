@@ -85,10 +85,10 @@ export class NodesComponent implements OnInit, AfterContentChecked {
     addActiveNodes() {
         setTimeout(e => {
             let addresses = this.nodeService.getNodeAddresses();
-            this.nodeAddresses = addresses;
             for (let i = 0; i < addresses.length; i++) {
                 let addr = addresses[i];
                 if (this.nodeModels[addr] === undefined) {
+console.log('addresses', this.nodeAddresses);
                     let node = this.nodeService.getNode(addr);
                     this.nodeService.setPosition(addr, 0, i * 40, 0);
                     let colour = this.pickAColour(i);
@@ -99,6 +99,7 @@ export class NodesComponent implements OnInit, AfterContentChecked {
                     );
                     this.nodeModels[addr] = model;
                     this.objectDrawingService.addNodeMonitoredObject(addr, model);
+                    this.nodeAddresses.push(addr);
                 }
             }
             this.adjustNodePositions();
@@ -152,15 +153,14 @@ export class NodesComponent implements OnInit, AfterContentChecked {
     }
 
     dropNode(addr) {
-        if (this.nodeAddresses[addr] !== undefined) {
-            delete this.nodeAddresses[addr];
+        if (this.nodeAddresses.indexOf(addr) !== -1) {
+            //delete this.nodeAddresses[addr];
             this.nodeAddresses.splice(this.nodeAddresses.indexOf(addr), 1);
         }
         if (this.nodeData[addr] !== undefined) {
             this.nodeService.dropNode(addr);
             this.objectDrawingService.removeNodeMonitoredObject(addr);
             delete this.nodeData[addr];
-            delete this.nodeAddresses[addr];
             delete this.nodeModels[addr];
             this.debug("dropped node:" + addr);
         }

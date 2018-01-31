@@ -17,9 +17,9 @@
 #include "udp_common.h"
 
 #define UDP_PORT               (8888)
-#define SERVER_MSG_QUEUE_SIZE  4
+#define SERVER_MSG_QUEUE_SIZE  2
 
-#define UDP_VERBOSE            0  // set == 1 for debugging
+#define UDP_VERBOSE            1  // set == 1 for debugging
 
 static msg_t msg_q[SERVER_MSG_QUEUE_SIZE];
 
@@ -96,16 +96,16 @@ void *udp_server_loop(void *arg)
             if (serverSocket == -1)
             {
                 if (! udpInit()) {
-                    puts("turning of udp listen");
+                    puts("turning off udp listen");
                     serverListen = false;
                     continue;
                 }
             }
-            //memset(serverBuffer, 0, SERVER_BUFFER_SIZE);
 
             struct sockaddr_in6 src;
             socklen_t srcLen = sizeof (src);
             bzero(&src, srcLen);
+            memset(serverBuffer, 0, SERVER_BUFFER_SIZE);
 
             // this blocks :( no non blocking recvfrom in RIOT OS yet
             int res = recvfrom(serverSocket,
@@ -127,7 +127,6 @@ void *udp_server_loop(void *arg)
             else if (res < 0)
             {
                 printf("Error on RX %d:%s rx from: %s (%s)\n", errno, strerror(errno), srcAdd, serverBuffer);
-                //xtimer_usleep(100);
             }
             else if (res == 0)
             {
@@ -156,18 +155,57 @@ int udp_send(char *addr_str, char *data)
         return 1;
     }
     size_t data_len = strlen(data);
-    //uint16_t port;
     int s;
     src.sin6_family = AF_INET6;
     dst.sin6_family = AF_INET6;
     memset(&src.sin6_addr, 0, sizeof(src.sin6_addr));
     /* parse destination address */
     if (inet_pton(AF_INET6, addr_str, &dst.sin6_addr) != 1) {
-        puts("Error: unable to parse destination address");
+        printf("Error: unable to parse destination address: %s", addr_str);
         return 1;
     }
     /* parse port */
-    //port = (uint16_t)atoi(port_str);
+    dst.sin6_port = htons(UDP_PORT);
+    src.sin6_port = htons(UDP_PORT);
+    s = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
+    if (s < 0) {
+        puts("error initializing socket");
+        return 1;
+    }
+    if (data == NULL) {
+        puts("!!!!");
+        return 1;
+    }
+    if (sendto(s, data, data_len, 0, (struct sockaddr *)&dst, sizeof(dst)) < 0) {
+        puts("could not send");
+    }
+    else {
+        if (UDP_VERBOSE > 0) {
+            printf("Success: send %u byte to %s:%u data:%s\n", (unsigned)data_len, addr_str, UDP_PORT, data);
+        }
+    }
+
+    close(s);
+    return 0;
+}
+
+int udp_send_raw(char *addr_str, char *data, size_t data_len)
+{
+    struct sockaddr_in6 src, dst;
+    if (data == NULL) {
+        puts("!!!!XX");
+        return 1;
+    }
+    int s;
+    src.sin6_family = AF_INET6;
+    dst.sin6_family = AF_INET6;
+    memset(&src.sin6_addr, 0, sizeof(src.sin6_addr));
+    /* parse destination address */
+    if (inet_pton(AF_INET6, addr_str, &dst.sin6_addr) != 1) {
+        printf("Error: unable to parse destination address: %s", addr_str);
+        return 1;
+    }
+    /* parse port */
     dst.sin6_port = htons(UDP_PORT);
     src.sin6_port = htons(UDP_PORT);
     s = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
@@ -193,6 +231,8 @@ int udp_send(char *addr_str, char *data)
 }
 
 
+
+
 int udp_cmd(int argc, char **argv)
 {
     if (argc == 3) {
@@ -205,5 +245,9 @@ int udp_cmd(int argc, char **argv)
 
 void udp_serverListen(bool state) {
     serverListen = state;
+    if (state)
+        puts("udp server on");
+    else
+        puts("udp server off");
 }
 

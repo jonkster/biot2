@@ -20,9 +20,11 @@
 #include "../common/time/biotTime.h"
 #include "../common/udp/udp_common.h"
 
-#define PRIO    (THREAD_PRIORITY_MAIN + 1)
+#define PRIO    (THREAD_PRIORITY_MAIN)
 #define MAIN_QUEUE_SIZE     (2)
+#define SHELL false
 static msg_t _main_msg_queue[MAIN_QUEUE_SIZE];
+
 
 extern void batch(const shell_command_t *command_list, char *line);
 extern void print_help(const shell_command_t *command_list);
@@ -30,16 +32,19 @@ extern uint32_t getCurrentTime(void);
 extern int udp_cmd(int argc, char **argv);
 extern void *udp_server_loop(void *);
 extern bool imuReady;
+extern long inhibitDelay;
 extern void udpRunIdleTask(bool state);
 extern void udp_serverListen(bool);
 
 bool led_status = false;
-static char housekeeping_stack[THREAD_STACKSIZE_DEFAULT+128]; // may get stack overflow if this too low...
-static char udp_stack[THREAD_STACKSIZE_DEFAULT];
+static uint32_t lastT = 0;
+bool rplinit = false;
+static char housekeeping_stack[THREAD_STACKSIZE_DEFAULT+64]; // may get stack overflow if this too low...
+static char udp_stack[THREAD_STACKSIZE_DEFAULT+64];
 
 char dodagRoot[IPV6_ADDR_MAX_STR_LEN];
 char dodagParent[IPV6_ADDR_MAX_STR_LEN];
-char me[IPV6_ADDR_MAX_STR_LEN];
+char myIpAddress[IPV6_ADDR_MAX_STR_LEN];
 
 
 int about_cmd(int argc, char **argv)
@@ -61,8 +66,8 @@ void getAddress(void)
             ipv6_addr_to_str(ipv6_addr, &entry->addrs[i].addr, IPV6_ADDR_MAX_STR_LEN);
             if (strstr(ipv6_addr, "affe::") == ipv6_addr)
             {
-                strncpy(me, ipv6_addr, IPV6_ADDR_MAX_STR_LEN);
-                printf("My address is '%s'\n", me);
+                strncpy(myIpAddress, ipv6_addr, IPV6_ADDR_MAX_STR_LEN);
+                printf("My address is '%s'\n", myIpAddress);
             }
         }
     }
@@ -149,17 +154,28 @@ static const shell_command_t shell_commands[] = {
 
 int findRoot(void)
 {
-    puts("finding root...");
-    batch(shell_commands, "rpl init 6");
+    puts("find root...");
+    if (! rplinit)
+    {
+        batch(shell_commands, "rpl init 6");
+        batch(shell_commands, "rpl send dis");
+        batch(shell_commands, "ifconfig");
+        rplinit = true;
+    }
+
     if (gnrc_rpl_instances[0].state == 0) {
+        puts("failed to find root");
         return 1;
     }
 
-    gnrc_rpl_dodag_t *dodag = &gnrc_rpl_instances[0].dodag; // disable while debugging
-    ipv6_addr_to_str(dodagRoot, &dodag->dodag_id, sizeof(dodagRoot)); // disable while debugging
+    puts("found root...");
+    gnrc_rpl_dodag_t *dodag = &gnrc_rpl_instances[0].dodag;
+    ipv6_addr_to_str(dodagRoot, &dodag->dodag_id, sizeof(dodagRoot));
+
     printf("dodag: %s\n", dodagRoot);
     findParent();
     getAddress();
+    batch(shell_commands, "ncache add 6 affe::5");
     return 0;
 }
 
@@ -169,12 +185,16 @@ void idleTask(void)
     uint32_t microSecs = getCurrentTime();
 
     // every second...
-    if (schedule(microSecs, ONE_SECOND_US, SCHEDULED_TASK_1))
+    if (schedule(microSecs, 10*ONE_SECOND_US, SCHEDULED_TASK_1))
     {
         if (! knowsRoot())
         {
-            findRoot();
-            udp_serverListen(true);
+            if (! findRoot())
+            {
+                puts("have root... turn udp server on");
+                udp_serverListen(true);
+            }
+
         }
 
         if (! imuReady)
@@ -194,17 +214,30 @@ void idleTask(void)
     {
         if (schedule(microSecs, usDataUpdateInterval(), SCHEDULED_TASK_2))
         {
-            sendNodeOrientation(me);
+            getCurrentPosition();
+            uint32_t ts = getCurrentTime();
+            uint32_t delay = (ts - lastT)/1000;
+            if (delay > 40)
+                printf("%lu mS\n", delay);
+            lastT = ts;
+            if (inhibitDelay <= 0)
+            {
+                sendNodeOrientation(myIpAddress);
+            }
+            else
+            {
+                inhibitDelay--;
+            }
         }
 
         if (schedule(microSecs, usCalibrationInterval(), SCHEDULED_TASK_3))
         {
-            sendNodeCalibration(me);
+            sendNodeCalibration(myIpAddress);
         }
 
         if (schedule(microSecs, usStatusInterval(), SCHEDULED_TASK_4))
         {
-            sendNodeStatus(me);
+            sendNodeStatus(myIpAddress);
         }
     }
 }
@@ -213,31 +246,38 @@ int main(void)
 {
     /* we need a message queue for the thread running the shell in order to
      * receive potentially fast incoming networking packets */
-    msg_init_queue(_main_msg_queue, MAIN_QUEUE_SIZE);
-    batch(shell_commands, "rpl init 6");
+    if (MAIN_QUEUE_SIZE > 0)
+    {
+        msg_init_queue(_main_msg_queue, MAIN_QUEUE_SIZE);
+    }
 
     LED0_OFF;
 
     //random_init(getCurrentTime());
 
     print_help(shell_commands);
-
     puts("starting housekeeper thread");
-    thread_create(housekeeping_stack, sizeof(housekeeping_stack), PRIO, THREAD_CREATE_STACKTEST, housekeeping_handler, NULL, "housekeeper");
+    if (SHELL)
+    {
+        thread_create(housekeeping_stack, sizeof(housekeeping_stack), PRIO+1, THREAD_CREATE_STACKTEST, housekeeping_handler, NULL, "housekeeper");
+        puts("starting udpserver thread");
+        udpRunIdleTask(false);
+        thread_create(udp_stack, sizeof(udp_stack), PRIO+1, THREAD_CREATE_STACKTEST, udp_server_loop, NULL, "udp");
 
-    puts("starting udpserver thread");
-    udpRunIdleTask(false);
-    thread_create(udp_stack, sizeof(udp_stack), PRIO+1, THREAD_CREATE_STACKTEST, udp_server_loop, NULL, "udp");
+        puts("Biotz IMU Node");
+        about_cmd(0, NULL);
+        puts("Type 'help' for a list of available commands");
+        identify_cmd(0, NULL);
 
-    puts("Biotz IMU Node");
-    about_cmd(0, NULL);
-    puts("Type 'help' for a list of available commands");
-
-    identify_cmd(0, NULL);
-
-
-    char line_buf[SHELL_DEFAULT_BUFSIZE];
-    shell_run(shell_commands, line_buf, SHELL_DEFAULT_BUFSIZE);
+        char line_buf[SHELL_DEFAULT_BUFSIZE];
+        shell_run(shell_commands, line_buf, SHELL_DEFAULT_BUFSIZE);
+    }
+    else
+    {
+        thread_create(housekeeping_stack, sizeof(housekeeping_stack), PRIO-1, THREAD_CREATE_STACKTEST, housekeeping_handler, NULL, "housekeeper");
+        puts("starting udpserver loop");
+        udp_server_loop(NULL);
+    }
 
     /* never reached */
     return 0;
