@@ -3,3 +3,9 @@ Biotz2
 This is a new implementation of Biotz stuff - based on lessons learnt from
 first Biotz project (see ../biotz)
 
+
+NB when commiting changes to RIOT do:
+git push originNew
+('git push' will try and push to the real RIOT repository and you will be
+refused).
+
