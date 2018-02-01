@@ -17,4 +17,5 @@ board on the device.  Wondering if it is sensitive to electrical interference?
 changing thread stack size allocation to try and increase it (NB may be hard to
 know which thread needs adjusting - a bit of trial and error).
 
+3. now experimenting with using MPU9255 device instead of MPU9250
 

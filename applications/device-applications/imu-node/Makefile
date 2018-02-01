@@ -21,7 +21,8 @@ USEMODULE += gnrc_sock_ip
 
 
 
-USEMODULE += mpu9250
+USEMODULE += mpu9255
+#USEMODULE += mpu9250
 
 # Include packages that pull up and auto-init the link layer.
 # NOTE: 6LoWPAN will be included if IEEE802.15.4 devices are present
@@ -61,8 +62,10 @@ DIRS += ../common/biotmaths/
 USEMODULE += biot_maths
 
 
-DIRS += ../common/imu/
-USEMODULE += biot_imu
+#DIRS += ../common/imu/
+#USEMODULE += biot_imu
+DIRS += ../common/imu/9255
+USEMODULE += biot_imu9255
 
 DIRS += ../common/identify/
 USEMODULE += biot_identify
