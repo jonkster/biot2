@@ -19,7 +19,7 @@
 #define UDP_PORT               (8888)
 #define SERVER_MSG_QUEUE_SIZE  2
 
-#define UDP_VERBOSE            1  // set == 1 for debugging
+#define UDP_VERBOSE            0  // set == 1 for debugging
 
 static msg_t msg_q[SERVER_MSG_QUEUE_SIZE];
 
