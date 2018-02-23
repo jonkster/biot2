@@ -1,7 +1,10 @@
 #include <stdio.h>
 #include "node.h"
-//#include "../common/imu/imu.h"
+#ifdef IMU9250
+#include "../common/imu/imu.h"
+#else
 #include "../common/imu/9255/imu.h"
+#endif
 #include "../common/udp/udp_common.h"
 #include "huffman.h"
 
@@ -24,8 +27,11 @@ bool imuOK = false;
 
 uint8_t retries = 0;
 
-//mpu9250_t imuDev;
+#ifdef IMU9250
+mpu9250_t imuDev;
+#else
 mpu9255_t imuDev;
+#endif
 
 void dumpAllIMU(void)
 {

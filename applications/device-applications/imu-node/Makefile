@@ -1,6 +1,8 @@
 APPLICATION = biot-imu-6lowpan-node
 BOARD ?= samr21b18-mz210pa
 RIOTBASE ?= $(CURDIR)/../../../RIOT
+IMU=9250
+#IMU=9255
 
 CFLAGS += -DPI=3.14159265
 
@@ -21,8 +23,11 @@ USEMODULE += gnrc_sock_ip
 
 
 
-USEMODULE += mpu9255
-#USEMODULE += mpu9250
+ifeq ($(IMU),9250)
+ USEMODULE += mpu9250
+else
+ USEMODULE += mpu9255
+endif
 
 # Include packages that pull up and auto-init the link layer.
 # NOTE: 6LoWPAN will be included if IEEE802.15.4 devices are present
@@ -62,10 +67,15 @@ DIRS += ../common/biotmaths/
 USEMODULE += biot_maths
 
 
-#DIRS += ../common/imu/
-#USEMODULE += biot_imu
-DIRS += ../common/imu/9255
-USEMODULE += biot_imu9255
+ifeq ($(IMU),9250)
+  DIRS += ../common/imu/
+  USEMODULE += biot_imu
+  CFLAGS += -DIMU9250
+else
+  DIRS += ../common/imu/9255
+  USEMODULE += biot_imu9255
+  CFLAGS += -DIMU9255
+endif
 
 DIRS += ../common/identify/
 USEMODULE += biot_identify

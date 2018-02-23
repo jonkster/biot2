@@ -2,6 +2,8 @@ when designing board in KiCad
 
 1. set origin at suitable point near bottom left of board
 
+2. Plot KiCad board (in Gerber Format)
+
 
 pcb2gcode
 ---------
