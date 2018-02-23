@@ -1,0 +1,22 @@
+Source,/home/jonk/KELLY/Projects/biotz2/hardware/experimental/biot-node.sch
+Kicad Rev,Eeschema 4.0.7-e2-6376~60~ubuntu17.10.1
+Generated Date,Tue 06 Feb 2018 09:14:44 AEDT
+
+Title,Biot IMU Node
+Company,Motion Capture Systems
+Revision,0
+Date Issue,2018-02-06
+Comment,SMD mount of controller module
+
+Reference,Value,Library,Library Ref
+P1,FTDI/Serial,conn,Conn_01x06
+D2,PWR,device,LED_Small
+D1,SIGNAL,device,LED_Small
+R1,39,device,R
+R2,39,device,R
+J2,MPU9250 connection,conn,Conn_01x04
+J3,3.3V DC,conn,Conn_01x02
+SW1,SW_Reset,switches,SW_Push
+U1,ATSAMR21B18-MZ210PA,atmelSAM,ATSAMR21B18-MZ210PA
+J4,ATMEL-CORTEX,conn,Conn_02x05_Odd_Even
+J1,Test Points,conn,Conn_01x02
