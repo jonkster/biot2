@@ -162,12 +162,12 @@ void relayToBiots(char *buffer, int size)
 							ssize_t res = sendto (sock, buffer, strlen(buffer), 0, (struct sockaddr*) &srv_addr, len);
 							if (res < 0)
 							{
-								puts("send to fail");
+								fprintf(stderr, "send-to fail\n");
 							}
 						}
 						else
 						{
-							puts("inet_pton fail");
+							fprintf(stderr, "inet_pton fail\n");
 						}
 #ifdef DEBUG
 						puts("sent");
@@ -269,16 +269,16 @@ long listenToSock(int sock, char *buffer, long maxLen)
 	ssize_t count = recvfrom(sock, buffer, maxLen, 0, (struct sockaddr*)&src_addr, &src_addr_len);
 	if (count < 0)
 	{
-		printf("%s", strerror(errno));
+		fprintf(stderr, "%s", strerror(errno));
 		return 0;
 	}
 	else if (count == 0)
 	{
-		puts("??");
+		fprintf(stderr, "socket receive count of 0?");
 	}
 	else if (count >= maxLen)
 	{
-		printf("datagram too large for buffer: truncated (%zd >= %i)", count, (int) maxLen);
+		fprintf(stderr, "datagram too large for buffer: truncated (%zd >= %i)", count, (int) maxLen);
 		return 0;
 	}
 
@@ -309,7 +309,7 @@ long listenToSock(int sock, char *buffer, long maxLen)
 		}
 		else
 		{
-			printf("WOAH! problem with uncompression? nulling message %i bytes from %s:%i\n", (int)count, ipstr, port);
+			fprintf(stderr, "WOAH! problem with uncompression? nulling message %i bytes from %s:%i\n", (int)count, ipstr, port);
 			count = 0;
 			strcpy(buffer, "");
 		}
@@ -347,7 +347,7 @@ int makeBiotListener(void)
     sock = socket(AF_INET6, SOCK_DGRAM, 0);
     if (sock < 0)
     {
-        printf("error opening socket: %s\n", strerror(errno));
+        fprintf(stderr, "error opening socket: %s\n", strerror(errno));
         exit(0);
 
     }
@@ -359,7 +359,7 @@ int makeBiotListener(void)
 
     if (bind(sock, (struct sockaddr *)&addr, sizeof(addr)) < 0)
     {
-            printf("error binding to socket: %s\n", strerror(errno));
+            fprintf(stderr, "error binding to socket: %s\n", strerror(errno));
             exit(0);
     }
     return sock;
@@ -374,7 +374,7 @@ int makeBrokerListener(void)
     sock = socket(AF_INET, SOCK_DGRAM, 0);
     if (sock < 0)
     {
-        printf("error opening socket: %s\n", strerror(errno));
+        fprintf(stderr, "error opening socket: %s\n", strerror(errno));
         exit(0);
 
     }
@@ -386,7 +386,7 @@ int makeBrokerListener(void)
 
     if (bind(sock, (struct sockaddr *)&addr, sizeof(addr)) < 0)
     {
-            printf("error binding to socket: %s\n", strerror(errno));
+            fprintf(stderr, "error binding to socket: %s\n", strerror(errno));
             exit(0);
     }
     return sock;
@@ -425,7 +425,7 @@ void mainLoop(int biotSock, int brokerSock)
 			{
 				if ((delay > 50))
 				{
-					printf("slow %s  = %lld mS    (%lld - %lld)\n", lastA, delay, *lastT, ts);
+					fprintf(stderr, "slow %s  = %lld mS    (%lld - %lld)\n", lastA, delay, *lastT, ts);
 				}
 				relayToBroker(buffer, count);
 			}
@@ -462,7 +462,6 @@ void mainLoop(int biotSock, int brokerSock)
 
 int main()
 {
-        printf("main\n");
 	int brokerFound = 0;
 	while (! brokerFound) {
 		brokerFound = findBroker(&brokerAddress, &brokerPort, false);
@@ -494,7 +493,7 @@ int main()
 	}
 	else
 	{
-		printf("could not parse broker details: '%s' '%d'\n", brokerAddress, brokerPort);
+		fprintf(stderr, "could not parse broker details: '%s' '%d'\n", brokerAddress, brokerPort);
 	}
 
 	free(brokerAddress);
