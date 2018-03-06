@@ -14,9 +14,12 @@
 #include <sys/mman.h>
 #include <assert.h>
 #include <net/if.h>
+#include <ifaddrs.h>
+#include <netdb.h>
 
 #define BROKER_BROADCAST_PORT     8890
 #define LOCAL_NETWORK_SEGMENT  "10.1.1"
+//#define LOCAL_NETWORK_SEGMENT  "192.168.0"
 
 #include "erbridge.h"
 
@@ -157,18 +160,73 @@ int listenForResponse(char **address, int *port)
     return(0);
 }
 
-char* makeAddress(uint8_t i)
+char* localNetworkPrefix()
 {
-        int l = snprintf(NULL, 0, "%s.%d", LOCAL_NETWORK_SEGMENT, i);
+	struct ifaddrs *ifaddr;
+	if (getifaddrs(&ifaddr) == -1)
+	{
+		perror("getifaddrs failed - what is my IP address?");
+		exit(EXIT_FAILURE);
+	}
+	char* prefix = malloc(NI_MAXHOST * sizeof(char*));
+	memset(prefix, '\0', NI_MAXHOST);
+
+	struct ifaddrs *ifa;
+	int n;
+	for (ifa = ifaddr, n = 0; ifa != NULL; ifa = ifa->ifa_next, n++)
+	{
+		if (ifa->ifa_addr == NULL)
+		{
+			continue;
+		}
+
+		int family = ifa->ifa_addr->sa_family;
+
+		/*printf("%-8s %s (%d)\n",
+				ifa->ifa_name,
+				(family == AF_PACKET) ? "AF_PACKET" :
+				(family == AF_INET) ? "AF_INET" :
+				(family == AF_INET6) ? "AF_INET6" : "???",
+				family);*/
+
+		if (family == AF_INET) {
+			char host[NI_MAXHOST];
+			int s = getnameinfo(ifa->ifa_addr,
+					(family == AF_INET) ? sizeof(struct sockaddr_in) :
+					sizeof(struct sockaddr_in6),
+					host, NI_MAXHOST,
+					NULL, 0, NI_NUMERICHOST);
+			if (s != 0) {
+				printf("getnameinfo() failed: %s\n", gai_strerror(s));
+				exit(EXIT_FAILURE);
+			}
+			if (strcmp(host, "127.0.0.1") != 0)
+			{
+				printf("my address: %s\n", host);
+				char* endP = strrchr(host, '.');
+				*endP = '\0';
+				printf("network prefix: %s\n", host);
+				strncpy(prefix, host, strlen(host));
+			}
+
+		}
+	}
+	freeifaddrs(ifaddr);
+	return prefix;
+}
+
+char* makeAddress(char* prefix, uint8_t i)
+{
+        int l = snprintf(NULL, 0, "%s.%d", prefix, i);
         char *address = malloc(l + 1);
-	snprintf(address, l + 1, "%s.%d", LOCAL_NETWORK_SEGMENT, i);
+	snprintf(address, l + 1, "%s.%d", prefix, i);
 	return address;
 }
 
 
-void sendBroadcast(char *buf, uint8_t i)
+void sendBroadcast(char *buf, char* prefix, uint8_t i)
 {
-	char* address = makeAddress(i);
+	char* address = makeAddress(prefix, i);
 	int sock = makeBroadcastSendInterface(address, BROKER_PORT);
 	if (sock > 0)
 	{
@@ -188,19 +246,25 @@ int findBroker(char **address, int *port, bool slow)
 {
 	printf("find broker...\n");
         int l = snprintf(NULL, 0, "biot er on port %d", BROKER_PORT);
-        char *broadcastMessage = malloc(l + 1);
-	for (uint8_t i = 1; i < 255; i++) {
+	char* prefix = localNetworkPrefix();
+	if (strlen(prefix) > 0)
+	{
+		char *broadcastMessage = malloc(l + 1);
+		for (uint8_t i = 1; i < 255; i++) {
 
-		snprintf(broadcastMessage, l + 1, "biot er on port %d", BROKER_PORT);
-		sendBroadcast(broadcastMessage, i);
-		if (listenForResponse(address, port))
-		{
-			printf("got it...\n");
-			return 1;
+			snprintf(broadcastMessage, l + 1, "biot er on port %d", BROKER_PORT);
+			sendBroadcast(broadcastMessage, prefix, i);
+			if (listenForResponse(address, port))
+			{
+				printf("got it...\n");
+				free(prefix);
+				return 1;
+			}
+			if (slow)
+				sleep(3);   /* Avoids flooding the network */
 		}
-		if (slow)
-			sleep(3);   /* Avoids flooding the network */
 	}
+	free(prefix);
         return 0;
 }
 
