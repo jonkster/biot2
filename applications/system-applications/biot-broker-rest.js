@@ -75,6 +75,7 @@ brokerListener.get('/biotz/edgerouter', getEdgeRouterStatus);
 brokerListener.put('/biotz/edgerouter', putEdgeRouterStatus);
 brokerListener.get('/biotz/all/data', getAllBiotzData);
 brokerListener.get('/biotz/all/nodes', getAllBiotzNodes);
+brokerListener.del('/biotz/all/nodes', deleteAllBiotzNodes);
 
 //brokerListener.put('/biotz/addnode/:address', addDummyNode);
 //brokerListener.put('/biotz/dropnodes', dropDummyNodes);
@@ -218,6 +219,17 @@ function biotSync(req, res, next) {
 		res.send(202, 'awaiting connection to biotz router');
 	}
 	next();
+}
+
+function deleteAllBiotzNodes(req, res, next) {
+    console.log('removing nodes...');
+    nodeData.remove({}, function(data) { console.log('initialise node data...', data)} );
+    let addresses = Object.keys(allNodes);
+    for (let i = 0; i < addresses.length; i++) {
+        delete allNodes[addresses[i]];
+    }
+    res.send(200, "OK");
+    next();
 }
 
 function dropDummyNodes(req, res, next) {
@@ -1019,6 +1031,7 @@ function putDataValue(req, res, next) {
     }
     path += '/' + name;
     fs.writeFile(path, JSON.stringify(data), function(err) {
+        fs.close();
         if (err) {
             res.send(500, 'OK');
             console.log(fErr, 'writing file:', path);
