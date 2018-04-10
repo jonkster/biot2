@@ -124,10 +124,9 @@ then
 		killall erbridge
 	fi
 	echo "removing erbridge log..."
-	rm erbridge.log
+	rm erbridge.log erbridge.errs
 	echo "starting erbridge..."
-	#./erbridge > erbridge.log 2>&1 &
-	./erbridge &
+	./erbridge 1> erbridge.log 2>erbridge.errs &
 	echo "checking erbridge..."
 	if [ `pgrep erbridge` ]
 	then
