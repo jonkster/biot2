@@ -1,4 +1,4 @@
-(module varta3v200h (layer F.Cu) (tedit 5AA9A740)
+(module varta3v200h (layer F.Cu) (tedit 5AA9AB17)
   (fp_text reference REF** (at 20.7 -3.8) (layer F.SilkS)
     (effects (font (size 1 1) (thickness 0.15)))
   )
@@ -83,5 +83,5 @@
   (fp_line (start 0 0) (end 0 -23) (layer F.SilkS) (width 0.15))
   (pad 1 thru_hole circle (at 8.25 -23) (size 2 2) (drill 1) (layers *.Cu *.Mask))
   (pad 1 thru_hole circle (at 18.25 -23) (size 2 2) (drill 1) (layers *.Cu *.Mask))
-  (pad 4 thru_hole circle (at 13.25 0) (size 2 2) (drill 1) (layers *.Cu *.Mask))
+  (pad 2 thru_hole circle (at 13.25 0) (size 2 2) (drill 1) (layers *.Cu *.Mask))
 )
