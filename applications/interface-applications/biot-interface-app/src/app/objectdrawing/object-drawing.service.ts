@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import {ThreedService} from '../threed/threed.service';
+import {LimbService} from '../limbservice/limb.service';
 import {NodeService} from '../nodeservice/node.service';
 import * as THREE from 'three';
 
@@ -12,6 +13,7 @@ export class ObjectDrawingService {
     private worldSpace: THREE.Object3D = undefined;
 
     constructor(
+        private limbService: LimbService,
         private nodeService: NodeService,
         private threedService: ThreedService
     ) { } 
@@ -102,7 +104,7 @@ export class ObjectDrawingService {
         // tilt slightly
         this.worldSpace.rotateY(0.2);
         this.threedService.add(this.worldSpace);
-        //this.objectDrawingService.startUpdating();
+        //this.startUpdating();
     }
 
     setStaticObjectVisibility(name: string, visible: boolean) {
@@ -117,6 +119,29 @@ export class ObjectDrawingService {
         }
         this.threedService.addAnimationTask('update-objects', this.updateObjects, this);
         this.isUpdating = true;
+    }
+
+
+    // an attached limb will be rotated by its parent - remove the parent
+    // rotation of a limb.
+    unrotateByParent(obj: THREE.Object3D) {
+        let parentL = this.limbService.getParentLimb(obj);
+        if (parentL !== undefined) {
+            let addr = parentL.userData.address;
+            let node = this.nodeService.getNode(addr);
+            if (node !== undefined) {
+                obj.position.set(node.position[0], node.position[1], node.position[2]);
+                if (obj.userData.limbRotationX !== undefined) {
+                    obj.rotateX(obj.userData.limbRotationX);
+                    obj.rotateY(obj.userData.limbRotationY);
+                    obj.rotateZ(obj.userData.limbRotationZ);
+                }
+                let q = obj.quaternion.normalize();
+                let pQ = node.quaternion.clone();
+                q.multiply(pQ.conjugate());
+                obj.setRotationFromQuaternion(q);
+            }
+        }
     }
 
     updateObjects(self) {
@@ -135,7 +160,7 @@ export class ObjectDrawingService {
                             obj.rotateY(obj.userData.limbRotationY);
                             obj.rotateZ(obj.userData.limbRotationZ);
                         }
-
+                        self.unrotateByParent(obj);
                     }
                 }
             }

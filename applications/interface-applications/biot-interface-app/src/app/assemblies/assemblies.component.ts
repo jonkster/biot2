@@ -21,6 +21,7 @@ export class AssembliesComponent implements OnInit {
     @ViewChild('saveAssemblyDialog') saveAssemblyDialog: DialogComponent;
     @ViewChild('loadAssemblyDialog') loadAssemblyDialog: DialogComponent;
 
+    private autoZoom: number = 0;
     private currentAssemblyName: string = '';
     private debugHistory: string[] = [];
     private knownAssemblies: string[] = [];
@@ -80,6 +81,7 @@ export class AssembliesComponent implements OnInit {
                       this.pickAColour(i),
                       30);
                   this.objectDrawingService.addNodeMonitoredObject(addr, this.knownLimbs[addr]);
+                  //console.log("adding limb");
               }
           }
           if (addresses.length > 0) {
@@ -159,8 +161,8 @@ export class AssembliesComponent implements OnInit {
   getKnownAssemblies() {
       this.biotBrokerService.getCachedAssemblies().subscribe(
           rawData => {
-              this.debug("got assemblies:" + rawData);
-              console.log('d', rawData);
+              //this.debug("got assemblies:" + rawData);
+              //console.log('know assemblies', rawData);
               this.knownAssemblies = rawData as string[];
           },
           error => { this.debug("error when getting assembly names:" + error); }
@@ -271,6 +273,22 @@ export class AssembliesComponent implements OnInit {
       return colours[idx % colours.length];
   }
 
+  rereadNodes() {
+      this.biotBrokerService.rereadNodes().subscribe(
+          rawData => {
+              let addresses = this.nodeService.getNodeAddresses();
+              this.knownNodeAddresses = [];
+              for (let i = 0; i < addresses.length; i++) {
+                  let addr = addresses[i];
+                  delete this.knownLimbs[addr];
+                  this.objectDrawingService.removeNodeMonitoredObject(addr);
+              }
+              this.nodeService.dropNodes();
+          },
+          error => { this.debug("error when resetting broker:" + error); }
+      );
+  }
+
   saveAssembly(name: string)  {
       if (name === '') {
           this.debug("Not Saved! - blank name!");
@@ -320,7 +338,7 @@ export class AssembliesComponent implements OnInit {
           limb.userData.limbRotationX = this.selectedLimb.limbRotationX;
           limb.userData.limbRotationY = this.selectedLimb.limbRotationY;
           limb.userData.limbRotationZ = this.selectedLimb.limbRotationZ;
-          console.log(limb.userData);
+          //console.log('updating', limb.userData);
           if (this.selectedLimb.limbModelName !== "") {
               this.limbService.attachModelToLimb(limb, this.selectedLimb.limbModelName);
           }

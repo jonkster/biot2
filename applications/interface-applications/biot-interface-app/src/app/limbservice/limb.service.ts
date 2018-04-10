@@ -9,6 +9,7 @@ import * as THREE from 'three';
 export class LimbService {
 
     private knownModels: string[] = [];
+    private assemblies: any[] = [];
 
     constructor(private http: Http, private threedService: ThreedService) {
         this.lookupKnownModelNames();
@@ -19,6 +20,8 @@ export class LimbService {
         let l = parentLimb.userData.limbLength;
 
         limb.userData.parentLimbName = parentLimb.userData.displayName;
+        parentLimb.userData.childLimbName = limb.userData.displayName;
+        // use THREE JS to control object links?
         parentLimb.add(limb);
         limb.position.set(l, 0, 0);
         return limb;
@@ -60,6 +63,13 @@ export class LimbService {
             return limb.userData.limbLength;
         }
         return 0;
+    }
+
+    getParentLimb(limb: THREE.Object3D): THREE.Object3D {
+        if (limb.userData.parentLimbName !== "") {
+            return limb.parent;
+        }
+        return undefined;
     }
 
     lookupKnownModelNames() {
@@ -129,11 +139,13 @@ export class LimbService {
             let parentName = "";
             if (parentLimb !== null) {
                 parentName = parentLimb.name;
+                parentLimb.userData.childLimbName = limb.name;
             }
             limb.castShadow = true;
             limb.receiveShadow = true;
             limb.userData = {
                 'parentLimbName': parentName,
+                'childLimbName': '',
                 'address': name,
                 'colour': colour,
                 'displayName': displayName,
@@ -153,10 +165,11 @@ export class LimbService {
             localAxis.castShadow = true;
             limb.add(localAxis);
 
-            if (parentLimb !== null) {
+            // do not use THREE JS to control assemblies!
+            /*if (parentLimb !== null) {
                 parentLimb.add(limb);
                 limb.position.x = parentLimb.userData.limbLength;
-            }
+            }*/
             return limb;
         }
 

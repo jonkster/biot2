@@ -98,6 +98,13 @@ export class NodeService {
         return false;
     }
 
+    dropNodes() {
+        let addresses = Object.keys(this.knownNodes);
+        for (let i = 0; i < addresses.length; i++) {
+            delete this.knownNodes[addresses[i]];
+        }
+    }
+
     getAllNodesRotationData(): { [addr: string]: THREE.Quaternion } {
         this.biotBrokerService.getAllNodesOrientation().subscribe(
             rawData => {

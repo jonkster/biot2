@@ -104,6 +104,8 @@ export class ThreedDirective implements OnInit {
     }
 
     mouseWheelHandler(event) {
+        event.preventDefault();
+        event.stopPropagation();
         var amount = event.wheelDelta;
         var delta = 0.1;
         if (amount < 0)
