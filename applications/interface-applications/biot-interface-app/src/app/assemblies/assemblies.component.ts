@@ -40,6 +40,10 @@ export class AssembliesComponent implements OnInit {
         limbRotationX: 0,
         limbRotationY: 0,
         limbRotationZ: 0,
+
+        limbRotationXdeg: 0,
+        limbRotationYdeg: 0,
+        limbRotationZdeg: 0,
         potentialParentLimbs: []
     };
     //private worldSpace: THREE.Object3D = undefined;
@@ -106,18 +110,22 @@ export class AssembliesComponent implements OnInit {
       let limb = this.knownLimbs[addr];
       limb.userData['limbRotationX'] = Math.PI * value / 180;
       this.selectedLimb.limbRotationX = limb.userData['limbRotationX'];
+      this.selectedLimb.limbRotationXdeg = value;
+      console.log(addr, value, this.selectedLimb)
   }
 
   adjustLimbRotationY(addr, value) {
       let limb = this.knownLimbs[addr];
       limb.userData['limbRotationY'] = Math.PI * value / 180;
       this.selectedLimb.limbRotationY = limb.userData['limbRotationY'];
+      this.selectedLimb.limbRotationYdeg = value;
   }
 
   adjustLimbRotationZ(addr, value) {
       let limb = this.knownLimbs[addr];
       limb.userData['limbRotationZ'] = Math.PI * value / 180;
       this.selectedLimb.limbRotationZ = limb.userData['limbRotationZ'];
+      this.selectedLimb.limbRotationZdeg = value;
   }
 
   debug(txt: string) {
@@ -201,6 +209,9 @@ export class AssembliesComponent implements OnInit {
                   this.selectedLimb.limbRotationX = limbData.limbRotationX;
                   this.selectedLimb.limbRotationY = limbData.limbRotationY;
                   this.selectedLimb.limbRotationZ = limbData.limbRotationZ;
+                  this.selectedLimb.limbRotationXdeg = limbData.limbRotationX * 180 / Math.PI;
+                  this.selectedLimb.limbRotationYdeg = limbData.limbRotationY * 180 / Math.PI;
+                  this.selectedLimb.limbRotationZdeg = limbData.limbRotationZ * 180 / Math.PI;
                   this.updateLimb(address);
               }
           },
@@ -234,7 +245,10 @@ export class AssembliesComponent implements OnInit {
               potentialParentLimbs: potentialParentLimbs,
               limbRotationX: limb.userData.limbRotationX,
               limbRotationY: limb.userData.limbRotationY,
-              limbRotationZ: limb.userData.limbRotationZ
+              limbRotationZ: limb.userData.limbRotationZ,
+              limbRotationXdeg: limb.userData.limbRotationX * 180 / Math.PI,
+              limbRotationYdeg: limb.userData.limbRotationY * 180 / Math.PI,
+              limbRotationZdeg: limb.userData.limbRotationZ * 180 / Math.PI
           }
           this.nodeLimbDialog.show({});
       }
@@ -338,6 +352,9 @@ export class AssembliesComponent implements OnInit {
           limb.userData.limbRotationX = this.selectedLimb.limbRotationX;
           limb.userData.limbRotationY = this.selectedLimb.limbRotationY;
           limb.userData.limbRotationZ = this.selectedLimb.limbRotationZ;
+          limb.userData.limbRotationXdeg = this.selectedLimb.limbRotationX * 180 / Math.PI;
+          limb.userData.limbRotationYdeg = this.selectedLimb.limbRotationY * 180 / Math.PI;
+          limb.userData.limbRotationZdeg = this.selectedLimb.limbRotationZ * 180 / Math.PI;
           //console.log('updating', limb.userData);
           if (this.selectedLimb.limbModelName !== "") {
               this.limbService.attachModelToLimb(limb, this.selectedLimb.limbModelName);

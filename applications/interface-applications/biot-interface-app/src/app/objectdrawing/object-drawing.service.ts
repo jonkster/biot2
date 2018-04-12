@@ -11,6 +11,8 @@ export class ObjectDrawingService {
     private knownNodeMonitoredObjects: { [addr: string]: THREE.Object3D } = {};
     private staticObjects: { [name: string]: THREE.Object3D } = {};
     private worldSpace: THREE.Object3D = undefined;
+    private trails: { [addr: string]: number[][] } = {};
+    private trailLength = 30;
 
     constructor(
         private limbService: LimbService,
@@ -25,6 +27,7 @@ export class ObjectDrawingService {
             obj.position.set(node.position[0], node.position[1], node.position[2]);
             obj.setRotationFromQuaternion(node.quaternion.normalize());
             this.threedService.add(obj);
+            this.addTrail(obj, node.position[0], node.position[1], node.position[2]);
             return true;
         } else {
             return false;
@@ -34,6 +37,33 @@ export class ObjectDrawingService {
     addStaticObject(name: string, obj: THREE.Object3D) {
         this.staticObjects[name] = obj;
         this.threedService.add(obj);
+    }
+
+    addTrail(obj: THREE.Object3D, x: number, y: number, z: number) {
+        let addr = obj.userData.address;
+        if (addr !== undefined) {
+            if (this.trails[addr] === undefined) {
+                this.trails[addr] = [];
+                let trailGroup = new THREE.Group();
+                trailGroup.name = 'trail_' + addr;
+                this.threedService.add(trailGroup);
+            }
+            
+            if (obj !== undefined) {
+                let pos = new THREE.Vector3( obj.userData.limbLength * 1.1, 0, 0 ).applyQuaternion(obj.quaternion);
+                this.trails[addr].push([pos.x, pos.y, pos.z]);
+                if (this.trails[addr].length > this.trailLength) {
+                    this.trails[addr].shift();
+                }
+            }
+        }
+    }
+
+    addTrailDots(groupName: string, coords: number[][]) {
+        let dots = this.threedService.makePixieDots(coords);
+        dots.name = name;
+        dots.userData['group'] = groupName;
+        this.threedService.addToGroup('trail_' + groupName, dots);
     }
 
     getNodeMonitoredObject(addr: string): THREE.Object3D {
@@ -130,7 +160,7 @@ export class ObjectDrawingService {
             let addr = parentL.userData.address;
             let node = this.nodeService.getNode(addr);
             if (node !== undefined) {
-                obj.position.set(node.position[0], node.position[1], node.position[2]);
+                //obj.position.set(node.position[0], node.position[1], node.position[2]);
                 if (obj.userData.limbRotationX !== undefined) {
                     obj.rotateX(obj.userData.limbRotationX);
                     obj.rotateY(obj.userData.limbRotationY);
@@ -145,6 +175,8 @@ export class ObjectDrawingService {
     }
 
     updateObjects(self) {
+        // note this is called from animation task so 'this' not in context -
+        // use 'self'
         if (self.knownNodeMonitoredObjects !==  {}) {
             let addresses = Object.keys(self.knownNodeMonitoredObjects);
             for (let i = 0; i < addresses.length; i++) {
@@ -153,7 +185,7 @@ export class ObjectDrawingService {
                 if (obj !== undefined) {
                     let node = self.nodeService.getNode(addr);
                     if (node !== undefined) {
-                        obj.position.set(node.position[0], node.position[1], node.position[2]);
+                        //obj.position.set(node.position[0], node.position[1], node.position[2]);
                         obj.setRotationFromQuaternion(node.quaternion.normalize());
                         if (obj.userData.limbRotationX !== undefined) {
                             obj.rotateX(obj.userData.limbRotationX);
@@ -161,6 +193,8 @@ export class ObjectDrawingService {
                             obj.rotateZ(obj.userData.limbRotationZ);
                         }
                         self.unrotateByParent(obj);
+                        self.addTrail(obj, node.position[0], node.position[1], node.position[2]);
+                        self.updateTrails();
                     }
                 }
             }
@@ -179,6 +213,17 @@ export class ObjectDrawingService {
             }
         } else {
             console.log('no such model?', name);
+        }
+    }
+
+    updateTrails() {
+        let addresses = Object.keys(this.trails);
+        for (let i = 0; i < addresses.length; i++) {
+            let addr = addresses[i];
+            this.threedService.removeGroupChildren('trail_' + addr);
+            let trail = this.trails[addr];
+            this.addTrailDots(addr, trail);
+
         }
     }
 

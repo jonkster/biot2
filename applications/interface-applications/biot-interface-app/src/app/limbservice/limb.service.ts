@@ -58,6 +58,16 @@ export class LimbService {
         return this.knownModels;
     }
 
+    getLimbEnvelope(limb: THREE.Object3D): THREE.Object3D {
+        for (let i = 0; i < limb.children.length; i++) {
+            let part = limb.children[i];
+            if (part.userData.type === 'envelope') {
+                return part;
+            }
+        }
+        return undefined;
+    }
+
     getLimbLength(limb: THREE.Object3D): number {
         if (limb) {
             return limb.userData.limbLength;
