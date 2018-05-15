@@ -25,7 +25,7 @@ static GHashTable *addressTable;
 static long long *lastT;
 static char *lastA;
 
-//#define DEBUG (0)
+//#define DEBUG (1)
 
 long long strToLL(char * st)
 {
@@ -193,6 +193,9 @@ void relayToBiots(char *buffer, int size)
 
 void expand(char *msg)
 {
+#ifdef DEBUG
+	fprintf(stderr, "EXPAND %s\n", msg);
+#endif
 	char tmp[(strlen(msg)+3)];
 	if (msg[0] == 'a')
 	{
@@ -208,10 +211,13 @@ void expand(char *msg)
 	}
 	else
 	{
+#ifdef DEBUG
+		fprintf(stderr, "GOT %s ??\n", msg);
+#endif
 		return;
 	}
 	strcat(tmp, msg+1);
-		strcpy(msg, tmp);
+	strcpy(msg, tmp);
 }
 
 bool splitCmdDataAddress(char *msg, char *cmd, char *data, char *address)

@@ -4,13 +4,13 @@
 
 #define MAXBITS (8)
 
-//#define DEBUG (0)
+//#define DEBUG (1)
 
 
 void intAsBinary(char *bin, unsigned int ch, unsigned int bits)
 {
 #ifdef DEBUG
-    printf("expanding %d ->", ch);
+    printf("expanding %dh ->", ch);
 #endif
     size_t j = 0;
     for (int i = (bits-1); i >= 0; i--)
@@ -28,7 +28,7 @@ void intAsBinary(char *bin, unsigned int ch, unsigned int bits)
         j++;
     }
 #ifdef DEBUG
-    printf("%s\n", bin);
+    printf("%sB\n", bin);
 #endif
 }
 
@@ -135,34 +135,34 @@ size_t compress(const char *text, unsigned char *compressed, size_t compressedSi
         {
                 char c = text[i];
                 switch(c)
-                {
-                        		case ':': strcat(buffer, "101"); break; // 5 (3bits)
-		case '0': strcat(buffer, "011"); break; // 3 (3bits)
-		case '7': strcat(buffer, "1101"); break; // 13 (4bits)
-		case '6': strcat(buffer, "1100"); break; // 12 (4bits)
-		case 'a': strcat(buffer, "0010"); break; // 2 (4bits)
-		case '9': strcat(buffer, "0001"); break; // 1 (4bits)
-		case '2': strcat(buffer, "0000"); break; // 0 (4bits)
-		case '3': strcat(buffer, "1001"); break; // 9 (4bits)
-		case '1': strcat(buffer, "0100"); break; // 4 (4bits)
-		case '.': strcat(buffer, "0101"); break; // 5 (4bits)
-		case '4': strcat(buffer, "0011"); break; // 3 (4bits)
-		case '-': strcat(buffer, "10000"); break; // 16 (5bits)
-		case '5': strcat(buffer, "11110"); break; // 30 (5bits)
-		case 'f': strcat(buffer, "11101"); break; // 29 (5bits)
-		case '8': strcat(buffer, "11100"); break; // 28 (5bits)
-		case 'e': strcat(buffer, "111110"); break; // 62 (6bits)
-		case 'b': strcat(buffer, "111111"); break; // 63 (6bits)
-		case '#': strcat(buffer, "100010"); break; // 34 (6bits)
-		case 'd': strcat(buffer, "1000111"); break; // 71 (7bits)
-		case 'c': strcat(buffer, "10001101"); break; // 141 (8bits)
-		case '\3': strcat(buffer, "10001100"); break; // 140 (8bits)
+		{
+			case ':': strcat(buffer, "101"); break; // 5 (3bits)
+			case '0': strcat(buffer, "011"); break; // 3 (3bits)
+			case '7': strcat(buffer, "1101"); break; // 13 (4bits)
+			case '6': strcat(buffer, "1100"); break; // 12 (4bits)
+			case 'a': strcat(buffer, "0010"); break; // 2 (4bits)
+			case '9': strcat(buffer, "0001"); break; // 1 (4bits)
+			case '2': strcat(buffer, "0000"); break; // 0 (4bits)
+			case '3': strcat(buffer, "1001"); break; // 9 (4bits)
+			case '1': strcat(buffer, "0100"); break; // 4 (4bits)
+			case '.': strcat(buffer, "0101"); break; // 5 (4bits)
+			case '4': strcat(buffer, "0011"); break; // 3 (4bits)
+			case '-': strcat(buffer, "10000"); break; // 16 (5bits)
+			case '5': strcat(buffer, "11110"); break; // 30 (5bits)
+			case 'f': strcat(buffer, "11101"); break; // 29 (5bits)
+			case '8': strcat(buffer, "11100"); break; // 28 (5bits)
+			case 'e': strcat(buffer, "111110"); break; // 62 (6bits)
+			case 'b': strcat(buffer, "111111"); break; // 63 (6bits)
+			case '#': strcat(buffer, "100010"); break; // 34 (6bits)
+			case 'd': strcat(buffer, "1000111"); break; // 71 (7bits)
+			case 'c': strcat(buffer, "10001101"); break; // 141 (8bits)
+			case '\3': strcat(buffer, "10001100"); break; // 140 (8bits)
 
-                        default:
-                                printf("uncompressible character: %c\n", c);
-                                fallback = 1;
-                                break;
-                }
+			default:
+				   printf("uncompressible character: %c\n", c);
+				   fallback = 1;
+				   break;
+		}
                 if (strlen(buffer) >= bufferLen )
                 {
                         printf("too big!!\n");
@@ -200,7 +200,7 @@ size_t compress(const char *text, unsigned char *compressed, size_t compressedSi
 size_t uncompress(const unsigned char *compressed, const size_t compressedSize, char *text)
 {
 #ifdef DEBUG
-    printf("unc: '%s'\n", compressed);
+    printf("uncompress: '%s'\n", compressed);
 #endif
     if (strncmp("3", (char*)compressed, 1) == 0)
     {
@@ -261,6 +261,9 @@ size_t uncompress(const unsigned char *compressed, const size_t compressedSize, 
 	else if (strcmp("10001101", testBuf) == 0) { text[i++] = 'c'; start += len; len = 0; memset(testBuf, 0, sizeof(testBuf)); }
 	else if (strcmp("10001100", testBuf) == 0) {  break; }        
     }
+#ifdef DEBUG
+        printf("uncompressed ->%s\n", text);
+#endif
     return strlen(text);
 }
 

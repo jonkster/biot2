@@ -64,6 +64,7 @@ dialog  --backtitle "Biotz Edge Router" \
 	getPassword
 	echo "stopping previous DODAG interface"
 	echo $password | sudo killall sunshine
+	DODAGON=0
    else
 	echo "OK leaving DODAG"
    fi
@@ -77,6 +78,7 @@ dialog  --backtitle "Biotz Edge Router" \
    then
 	    echo "stopping previous bridge"
 	    killall erbridge
+	    ERBRIDGEON=0
    else
 		echo "OK leaving Bridge"
    fi
@@ -88,18 +90,18 @@ if [ $WANTDODAG -eq 1 ]
 then
 	echo "Want Dodag..."
 
-	getPassword
 
 	if [ $DODAGON -eq 1 ]
 	then
 	    echo "stopping previous DODAG interface"
+	    getPassword
 	    echo $password | sudo killall sunshine
 	fi
 
 	echo "removing dodag log..."
 	rm dodag.log
 	echo "starting dodag interface"
-	echo $password | sudo -b ./sunshine  -I32 -ilowpan0 -r 1 --dagid 0xaffe0000000000000000000000000005 -m -p affe::5/64 > dodag.log 2>&1  &
+	./sunshine  -I32 -ilowpan0 -r 1 --dagid 0xaffe0000000000000000000000000005 -m -p affe::5/64 > dodag.log 2>&1  &
 	echo "checking dodag..."
 
 	ping6 -c1 -q -W1 affe::5 > /dev/null

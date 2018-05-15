@@ -18,12 +18,12 @@
 #include <netdb.h>
 
 #define BROKER_BROADCAST_PORT     8890
-#define LOCAL_NETWORK_SEGMENT  "10.1.1"
+//#define LOCAL_NETWORK_SEGMENT  "10.1.1"
 //#define LOCAL_NETWORK_SEGMENT  "192.168.0"
 
 #include "erbridge.h"
 
-#define DEBUG (1)
+//#define DEBUG (1)
 
 int makeBroadcastSendInterface(const char *address, const int port)
 {
@@ -230,7 +230,9 @@ void sendBroadcast(char *buf, char* prefix, uint8_t i)
 	int sock = makeBroadcastSendInterface(address, BROKER_PORT);
 	if (sock > 0)
 	{
+#ifdef DEBUG
 		printf("sending %zu bytes to %s:%i -> %s\n", strlen(buf), address, BROKER_PORT, buf); 
+#endif
 		send(sock, buf, strlen(buf), 0);
 	}
 	else
