@@ -1,5 +1,6 @@
 <button (click)="saveAssemblyDialog.show({});">Save This Assembly</button>
 <button (click)="loadAssemblyDialog.show({});">Load Previous Assembly</button>
+<button (click)="rereadNodes();">Re-read All Nodes</button>
 <div appThreed [displaywidth]="1400" [displayheight]="800" class="centred"></div>
 <div appThreestats [statsstyle]="{position: 'inherit', float: 'left', display: 'flex'}"></div>
 <div>
@@ -72,17 +73,24 @@
         </select>
         <br/>
         length cm 
-        <mat-slider min="1" max="50" step="0.5" value="30" tickInterval="5" thumbLabel (input)="adjustLimbLength(selectedLimbAddress, $event.value)"></mat-slider>
-        <div> {{ selectedLimb.limbLength }} </div><br/>
+        <mat-slider min="1" max="50" step="0.5" value="30" tickInterval="5" thumbLabel (change)="adjustLimbLength(selectedLimbAddress, selectedLimb.limbLength)" [(ngModel)]="selectedLimb.limbLength">
+        </mat-slider>
+        <div><input [(ngModel)]="selectedLimb.limbLength"/> </div><br/>
+
         rotation X
-        <mat-slider #xrot min="-180" max="180" step="1" value="0" tickInterval="30" thumbLabel (input)="adjustLimbRotationX(selectedLimbAddress, $event.value)"></mat-slider>
-        <div> {{ selectedLimb.limbRotationX | rad2deg: true  }} </div><br/>
+        <mat-slider #xrot min="-180" max="180" step="1" value="0" tickInterval="30" thumbLabel [(ngModel)]="selectedLimb.limbRotationXdeg" (input)="adjustLimbRotationX(selectedLimbAddress, $event.value)">
+        </mat-slider>
+        <div><input [(ngModel)]="selectedLimb.limbRotationXdeg" (change)="adjustLimbRotationX(selectedLimbAddress, selectedLimb.limbRotationXdeg)"/> </div><br/>
+
         rotation Y
-        <mat-slider #yrot min="-180" max="180" step="1" value="0" tickInterval="30" thumbLabel (input)="adjustLimbRotationY(selectedLimbAddress, $event.value)"></mat-slider>
-        <div> {{ selectedLimb.limbRotationY | rad2deg: true  }} </div><br/>
+        <mat-slider #yrot min="-180" max="180" step="1" value="0" tickInterval="30" thumbLabel [(ngModel)]="selectedLimb.limbRotationYdeg" (input)="adjustLimbRotationY(selectedLimbAddress, $event.value)">
+        </mat-slider>
+        <div><input [(ngModel)]="selectedLimb.limbRotationYdeg" (change)="adjustLimbRotationY(selectedLimbAddress, selectedLimb.limbRotationYdeg)"/> </div><br/>
+
         rotation Z
-        <mat-slider #zrot min="-180" max="180" step="1" value="0" tickInterval="30" thumbLabel (input)="adjustLimbRotationZ(selectedLimbAddress, $event.value)"></mat-slider>
-        <div> {{ selectedLimb.limbRotationZ | rad2deg: true  }} </div><br/>
+        <mat-slider #zrot min="-180" max="180" step="1" value="0" tickInterval="30" thumbLabel [(ngModel)]="selectedLimb.limbRotationZdeg" (input)="adjustLimbRotationZ(selectedLimbAddress, $event.value)">
+        </mat-slider>
+        <div><input [(ngModel)]="selectedLimb.limbRotationZdeg" (change)="adjustLimbRotationZ(selectedLimbAddress, selectedLimb.limbRotationZdeg)"/> </div><br/>
     </div>
     <div class="app-modal-footer">
         <button type="button" class="btn btn-default" (click)="nodeLimbDialog.hide()">Cancel</button>

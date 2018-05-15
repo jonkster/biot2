@@ -304,6 +304,13 @@ export class BiotBrokerService {
             .map((response) => response.json());
     }
 
+    rereadNodes() {
+        const path = 'biotz/all/nodes';
+        const url = "http://" + this.biotServerHost + ":" + this.biotServerPort + "/" + path ;
+        return this.http.delete(url, '')
+            .map((response) => response.json());
+    }
+
     resetCalibrationOnNode(addr) {
         const path = 'biotz/addresses/' + addr + '/calibration';
         const url = "http://" + this.biotServerHost + ":" + this.biotServerPort + "/" + path ;

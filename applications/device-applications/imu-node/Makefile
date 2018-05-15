@@ -1,8 +1,8 @@
 APPLICATION = biot-imu-6lowpan-node
 BOARD ?= samr21b18-mz210pa
 RIOTBASE ?= $(CURDIR)/../../../RIOT
-IMU=9250
-#IMU=9255
+#IMU=9250
+IMU=9255
 
 CFLAGS += -DPI=3.14159265
 

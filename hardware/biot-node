@@ -1,22 +1,26 @@
-Source,/home/jonk/KELLY/Projects/biotz2/hardware/experimental/biot-node.sch
+Source,/home/jonk/KELLY/Projects/biotz2/hardware/biot-node.sch
 Kicad Rev,Eeschema 4.0.7-e2-6376~60~ubuntu17.10.1
-Generated Date,Tue 06 Feb 2018 09:14:44 AEDT
+Generated Date,Fri 23 Mar 2018 11:54:48 AEDT
 
 Title,Biot IMU Node
 Company,Motion Capture Systems
 Revision,0
-Date Issue,2018-02-06
-Comment,SMD mount of controller module
+Date Issue,2018-02-13
+Comment,SMD mount of controller module with regulator
 
 Reference,Value,Library,Library Ref
 P1,FTDI/Serial,conn,Conn_01x06
-D2,PWR,device,LED_Small
-D1,SIGNAL,device,LED_Small
-R1,39,device,R
-R2,39,device,R
+D2,20mA,device,LED_Small
+D1,20mA,device,LED_Small
+R1,68,device,R
+R2,68,device,R
 J2,MPU9250 connection,conn,Conn_01x04
-J3,3.3V DC,conn,Conn_01x02
 SW1,SW_Reset,switches,SW_Push
 U1,ATSAMR21B18-MZ210PA,atmelSAM,ATSAMR21B18-MZ210PA
 J4,ATMEL-CORTEX,conn,Conn_02x05_Odd_Even
-J1,Test Points,conn,Conn_01x02
+U2,LP2985-3.3,regul,LP2985-3.3
+C1,1uF,device,C_Small
+C2,4.7uF,device,C_Small
+3.6VNiMH1,Battery,device,Battery
+J3,on/off,conn,Conn_01x03
+J1,test points,conn,Conn_01x03

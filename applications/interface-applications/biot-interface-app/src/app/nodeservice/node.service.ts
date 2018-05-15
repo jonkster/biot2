@@ -58,7 +58,7 @@ export class NodeService {
             let node = this.knownNodes[addr];
             let nodeRaw = data[addr];
             // kludge - need to ensure correct form of data always passed to this method - fix callers
-            if (nodeRaw['dc'] !== undefined) {
+            if ((nodeRaw['dc'] !== undefined) && (nodeRaw['dc'] !== null)) {
                 let nodeCalibration = nodeRaw['dc'];
                 this.setNodeProperty(addr, 'calibration', nodeCalibration);
             }
@@ -67,7 +67,7 @@ export class NodeService {
                 this.setNodeProperty(addr, 'dof', nodeStatus[0]);
                 this.setNodeProperty(addr, 'auto', nodeStatus[2]);
             }
-            if (nodeRaw['do'] !== undefined) {
+            if ((nodeRaw['do'] !== undefined) && (nodeRaw['do'] !== null)) {
                 nodeRaw = nodeRaw['do'];
             }
             let bits = nodeRaw.split(/:/);
@@ -96,6 +96,13 @@ export class NodeService {
             return true;
         }
         return false;
+    }
+
+    dropNodes() {
+        let addresses = Object.keys(this.knownNodes);
+        for (let i = 0; i < addresses.length; i++) {
+            delete this.knownNodes[addresses[i]];
+        }
     }
 
     getAllNodesRotationData(): { [addr: string]: THREE.Quaternion } {

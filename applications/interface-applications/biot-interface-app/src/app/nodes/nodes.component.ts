@@ -18,7 +18,7 @@ export class NodesComponent implements OnInit, AfterContentChecked {
 
     @ViewChild('debugHolder') debugHolder: ElementRef;
 
-    private autoZoom: number = 1;
+    private autoZoom: number = 0;
     private worldSpace: THREE.Object3D = undefined;
     private nodeData: any = {};
     private nodeModels: { [key: string]: any} = {};
@@ -88,7 +88,7 @@ export class NodesComponent implements OnInit, AfterContentChecked {
             for (let i = 0; i < addresses.length; i++) {
                 let addr = addresses[i];
                 if (this.nodeModels[addr] === undefined) {
-console.log('addresses', this.nodeAddresses);
+//console.log('addresses', this.nodeAddresses);
                     let node = this.nodeService.getNode(addr);
                     this.nodeService.setPosition(addr, 0, i * 40, 0);
                     let colour = this.pickAColour(i);

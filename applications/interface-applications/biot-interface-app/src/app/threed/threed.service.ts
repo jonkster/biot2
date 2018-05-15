@@ -120,6 +120,13 @@ export class ThreedService {
         this.scene.add(light);
     }
 
+    addToGroup(name: string, obj: THREE.Object3D) {
+        let group = this.scene.getObjectByName(name);
+        if (group !== undefined) {
+            group.add(obj);
+        }
+    }
+
     animate(owner: any) {
         owner.stats[0].begin();
         owner.stats[1].begin();
@@ -293,6 +300,21 @@ export class ThreedService {
         return group;
     }
 
+    makePixieDots(coords : number[][]) {
+        let geometry = new THREE.Geometry();
+        for (let j = 0; j < coords.length; j++) {
+            let coord = coords[j];
+            geometry.vertices.push(new THREE.Vector3(coord[0], coord[1], coord[2]));
+        }
+        let dotMaterial = new THREE.LineBasicMaterial({
+            'color': 0xaf7faf,
+            'linewidth': 3
+        });
+        let dots = new THREE.Line(geometry, dotMaterial);
+        dots.userData['type'] = 'trail';
+        return dots;
+    }
+
     makeTextSprite( message, parameters, x, y, z ) {
 
         if (parameters === undefined) { parameters = {}; };
@@ -394,6 +416,16 @@ export class ThreedService {
         }
     }
 
+    removeGroupChildren(name: string) {
+        let group = this.scene.getObjectByName(name);
+        if (group !== undefined) {
+            while (group.children.length)
+            {
+                    group.remove(group.children[0]);
+            }
+        }
+    }
+
     removeTextSprite(text: string) {
         let labels:any[] = [];
         let regexp = new RegExp("^label-" + text);
@@ -437,17 +469,31 @@ export class ThreedService {
         this.camera.updateProjectionMatrix();
     }
 
-    viewFrom(x: number, y: number, z: number) {
-        //this.camera.up.set( 0, 0, 1 );
+    slideView(x: number, y: number, z: number) {
         let d = this.camera.position.distanceTo(new THREE.Vector3(0, 0, 0));
-        this.camera.position.x = x * d;
-        this.camera.position.y = y * d;
-        this.camera.position.z = z * d;
-        this.camera.lookAt(new THREE.Vector3(0,0,0));
-        /*this.removeTextSprite(".*");
-        let text = this.makeTextSprite( x + "," + y + "," + z, undefined, 0, 0, 0 );
-        this.scene.add(text);*/
-        this.render();
+        let dx = x*d - this.camera.position.x;
+        let dy = y*d - this.camera.position.y;
+        let dz = z*d - this.camera.position.z;
+        let steps = 30;
+
+        let siht = this;
+        let count = 0;
+        let iv = setInterval(function() {
+                siht.camera.position.x += dx/steps;
+                siht.camera.position.y += dy/steps;
+                siht.camera.position.z += dz/steps;
+                siht.camera.lookAt(new THREE.Vector3(0,0,0));
+                siht.render();
+                if (++count === steps) {
+                    clearInterval(iv);
+                }
+
+            }, 50);
+    }
+
+    viewFrom(x: number, y: number, z: number) {
+        this.slideView(x, y, z);
+        return;
     }
 
     zoom(amt: number) {

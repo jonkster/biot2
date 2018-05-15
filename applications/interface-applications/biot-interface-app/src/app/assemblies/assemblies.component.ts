@@ -21,6 +21,7 @@ export class AssembliesComponent implements OnInit {
     @ViewChild('saveAssemblyDialog') saveAssemblyDialog: DialogComponent;
     @ViewChild('loadAssemblyDialog') loadAssemblyDialog: DialogComponent;
 
+    private autoZoom: number = 0;
     private currentAssemblyName: string = '';
     private debugHistory: string[] = [];
     private knownAssemblies: string[] = [];
@@ -39,6 +40,10 @@ export class AssembliesComponent implements OnInit {
         limbRotationX: 0,
         limbRotationY: 0,
         limbRotationZ: 0,
+
+        limbRotationXdeg: 0,
+        limbRotationYdeg: 0,
+        limbRotationZdeg: 0,
         potentialParentLimbs: []
     };
     //private worldSpace: THREE.Object3D = undefined;
@@ -80,6 +85,7 @@ export class AssembliesComponent implements OnInit {
                       this.pickAColour(i),
                       30);
                   this.objectDrawingService.addNodeMonitoredObject(addr, this.knownLimbs[addr]);
+                  //console.log("adding limb");
               }
           }
           if (addresses.length > 0) {
@@ -104,18 +110,22 @@ export class AssembliesComponent implements OnInit {
       let limb = this.knownLimbs[addr];
       limb.userData['limbRotationX'] = Math.PI * value / 180;
       this.selectedLimb.limbRotationX = limb.userData['limbRotationX'];
+      this.selectedLimb.limbRotationXdeg = value;
+      console.log(addr, value, this.selectedLimb)
   }
 
   adjustLimbRotationY(addr, value) {
       let limb = this.knownLimbs[addr];
       limb.userData['limbRotationY'] = Math.PI * value / 180;
       this.selectedLimb.limbRotationY = limb.userData['limbRotationY'];
+      this.selectedLimb.limbRotationYdeg = value;
   }
 
   adjustLimbRotationZ(addr, value) {
       let limb = this.knownLimbs[addr];
       limb.userData['limbRotationZ'] = Math.PI * value / 180;
       this.selectedLimb.limbRotationZ = limb.userData['limbRotationZ'];
+      this.selectedLimb.limbRotationZdeg = value;
   }
 
   debug(txt: string) {
@@ -159,8 +169,8 @@ export class AssembliesComponent implements OnInit {
   getKnownAssemblies() {
       this.biotBrokerService.getCachedAssemblies().subscribe(
           rawData => {
-              this.debug("got assemblies:" + rawData);
-              console.log('d', rawData);
+              //this.debug("got assemblies:" + rawData);
+              //console.log('know assemblies', rawData);
               this.knownAssemblies = rawData as string[];
           },
           error => { this.debug("error when getting assembly names:" + error); }
@@ -199,6 +209,9 @@ export class AssembliesComponent implements OnInit {
                   this.selectedLimb.limbRotationX = limbData.limbRotationX;
                   this.selectedLimb.limbRotationY = limbData.limbRotationY;
                   this.selectedLimb.limbRotationZ = limbData.limbRotationZ;
+                  this.selectedLimb.limbRotationXdeg = limbData.limbRotationX * 180 / Math.PI;
+                  this.selectedLimb.limbRotationYdeg = limbData.limbRotationY * 180 / Math.PI;
+                  this.selectedLimb.limbRotationZdeg = limbData.limbRotationZ * 180 / Math.PI;
                   this.updateLimb(address);
               }
           },
@@ -232,7 +245,10 @@ export class AssembliesComponent implements OnInit {
               potentialParentLimbs: potentialParentLimbs,
               limbRotationX: limb.userData.limbRotationX,
               limbRotationY: limb.userData.limbRotationY,
-              limbRotationZ: limb.userData.limbRotationZ
+              limbRotationZ: limb.userData.limbRotationZ,
+              limbRotationXdeg: limb.userData.limbRotationX * 180 / Math.PI,
+              limbRotationYdeg: limb.userData.limbRotationY * 180 / Math.PI,
+              limbRotationZdeg: limb.userData.limbRotationZ * 180 / Math.PI
           }
           this.nodeLimbDialog.show({});
       }
@@ -269,6 +285,22 @@ export class AssembliesComponent implements OnInit {
           '#448822',
           '#404040'];
       return colours[idx % colours.length];
+  }
+
+  rereadNodes() {
+      this.biotBrokerService.rereadNodes().subscribe(
+          rawData => {
+              let addresses = this.nodeService.getNodeAddresses();
+              this.knownNodeAddresses = [];
+              for (let i = 0; i < addresses.length; i++) {
+                  let addr = addresses[i];
+                  delete this.knownLimbs[addr];
+                  this.objectDrawingService.removeNodeMonitoredObject(addr);
+              }
+              this.nodeService.dropNodes();
+          },
+          error => { this.debug("error when resetting broker:" + error); }
+      );
   }
 
   saveAssembly(name: string)  {
@@ -320,7 +352,10 @@ export class AssembliesComponent implements OnInit {
           limb.userData.limbRotationX = this.selectedLimb.limbRotationX;
           limb.userData.limbRotationY = this.selectedLimb.limbRotationY;
           limb.userData.limbRotationZ = this.selectedLimb.limbRotationZ;
-          console.log(limb.userData);
+          limb.userData.limbRotationXdeg = this.selectedLimb.limbRotationX * 180 / Math.PI;
+          limb.userData.limbRotationYdeg = this.selectedLimb.limbRotationY * 180 / Math.PI;
+          limb.userData.limbRotationZdeg = this.selectedLimb.limbRotationZ * 180 / Math.PI;
+          //console.log('updating', limb.userData);
           if (this.selectedLimb.limbModelName !== "") {
               this.limbService.attachModelToLimb(limb, this.selectedLimb.limbModelName);
           }
