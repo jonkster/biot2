@@ -22,6 +22,12 @@ void sendNodeCalibration(char *);
 
 void sendNodeStatus(char *);
 
+void setAccel(bool);
+
+void setCompass(bool);
+
+void setGyro(bool);
+
 void setUpdateInterval(uint32_t);
 
 uint32_t usDataUpdateInterval(void);

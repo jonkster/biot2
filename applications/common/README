@@ -1,0 +1,141 @@
+Simple Huffman compression system.
+----------------------------------
+
+A quick and dirty, simple library to compress and uncompress text data -
+written to increase network bandwith by compression of text messages sent by
+nodes in the biotz 6lowpan setup with lots of nodes chattering away with UDP
+messages to the edge router.  There were big performance issues due to the
+amount of data being sent so I needed a way to compress the data messages prior
+to sending.
+
+examples of the messages to compress in the biotz system:
+
+dc#0:0:-335:477:240:163#affe::7a69:3776:dc31:dad2
+do#100108437:0.006076:-0.833519:-0.545498:0.087408#affe::7a6f:3b4b:4bab:3902
+ds#111:25:1#affe::7a69:3776:dc31:dad2
+
+On the example text data from the biotz system, typical messages could be
+compressed by between 35% to 50% using this code.  The generated code is not
+elegant and potentially effort should be made to refactor it to make it run
+faster.  The current bottleneck in the biotz system though is network bandwidth
+not processing speed.
+
+NB You will need ts-node (typescript run under node) to run the analyse.ts code
+generator program.
+
+Once this has run, use the generated C files where required.
+
+How it works:
+-------------
+
+The typescript program "analyse.ts" reads examples of the text messages
+encountered (saved in the file data.txt) and creates C library code that can
+be used elesewhere to efficiently compress and decompress the data using
+Huffman encoding.
+
+The generated C file needs to be hand edited into a header and program file by
+opening it in an editor and splitting it at the marked comments.
+
+The header part should be called huffman.h and the program huffman.c
+
+The library exports 2 functions:
+
+  size_t compress(const char *text, unsigned char *compressed, size_t compressedSize);
+
+  void uncompress(const unsigned char *compressed, const size_t compressedSize, char *text);
+
+The compressed data is stored in an unsigned char* structure - NB this is
+binary data and will not display nicely on a terminal so don't try it! :)
+
+
+Making the C code
+------------------
+
+An example of using the library is given in testhuffman.c (see bottom of this file).
+
+So typically:
+
+  create a 'data.txt' file of many example messages (reflecting actual data).
+  Make it representative of the type and relative frequency of messages - we need
+  to find out what are the most common characters appearing so they can be more
+  heavily targetted.
+
+ then make the C code:
+  ts-node analyse.ts > huffman.c 
+
+ then:
+  edit the huffman.c file to extract the bits to be saved into huffman.h
+
+ finally:
+  use the huffman.c/huffman.h files in whatever systems need to
+  compress/uncompress text.
+
+Using the generated code
+------------------------
+
+to make the test example given in huffmantest.c (see below):
+
+        gcc testhuffman.c huffman.c -o testhuffman
+
+to run that test example:
+
+  ./testHuffman 'ds#111:25:1#affe::7a6f:3b4b:4bab:3902'
+
+to read and compress/uncompress all the example data strings used to generate
+the library to test it can handle them:
+
+   while read -r line; do ./testHuffman "$line"; done < data.txt
+
+-------------------------------------------------------------------------------
+NB If the type of messages substantially change, re-run the analyse program on
+new examples of the data to regenerate a new version of the C library and all
+encoding systems and decoding systems that use the library will need to have
+the newly generated library code compiled back in again - older uncompression
+versions will not properly process messages compressed using newer compression
+versions.
+-------------------------------------------------------------------------------
+
+Test Program
+
+--------------- testhuffman.c -------------------------------
+#include <stdio.h>
+#include "huffman.h"
+
+void main (int argc, char **argv)
+{
+    if (argc != 2)
+    {
+        printf("%s\n\tusage: %s STRING\nwhere STRING is a string to compress and decompress\n", argv[0], argv[0]);
+        exit(0);
+    }
+    char *data = argv[1];
+    printf("compressing: %s\n", data);
+
+    unsigned char *compressed = malloc(1.2 * sizeof(char) * strlen(data) + 1);
+    memset(compressed, 0, sizeof(compressed));
+
+    // compress the string...
+    size_t compLength = compress(data, compressed, strlen(data));
+
+    int ratio = 100 - ((100 * compLength) / strlen(data));
+    printf("compressed %d%% from %ld bytes to %ld bytes\n", ratio, strlen(data), compLength);
+
+    char *data2 = malloc(sizeof(char) * strlen(data) + 1);
+    memset(data2, 0, sizeof(data2));
+
+    // uncompress the string and see if it matches the original
+    uncompress(compressed, strlen(data), data2);
+
+    printf("uncompressed as %s\n", data2);
+    if (strcmp(data2, data) == 0)
+    {
+        printf("ok\n");
+    }
+    else
+    {
+        printf("FAIL\n");
+    }
+    free(compressed);
+    free(data2);
+}
+-------------------------------------------------------------

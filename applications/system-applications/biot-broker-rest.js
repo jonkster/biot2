@@ -648,6 +648,7 @@ function getData(req, res, next) {
 
     var fs = require('fs');
     fs.readdir(path, function(err, files) {
+        fs.close();
         if (err) {
             res.send(500, 'fail');
         } else {
@@ -682,6 +683,7 @@ function getCachedAssembly(req, res, next) {
 
     var fs = require('fs');
     fs.readFile(path, function(err, data) {
+        fs.close();
         data = JSON.parse(data);
         if (err) {
             console.log(err, 'reading file:', path);
@@ -705,6 +707,7 @@ function getDataValue(req, res, next) {
 
     var fs = require('fs');
     fs.readFile(path, function(err, data) {
+        fs.close();
         if (err) {
             res.send(404, err);
         } else {
@@ -738,6 +741,7 @@ function deleteDataValue(req, res, next) {
 
     var fs = require('fs');
     fs.unlink(path, function(err) {
+        fs.close();
         if (err) {
             console.log(err, 'deleting file:', path);
             res.send(500, err);

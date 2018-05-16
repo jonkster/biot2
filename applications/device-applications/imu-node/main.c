@@ -37,7 +37,7 @@ extern void udpRunIdleTask(bool state);
 extern void udp_serverListen(bool);
 
 bool led_status = false;
-static uint32_t lastT = 0;
+//static uint32_t lastT = 0;
 bool rplinit = false;
 static char housekeeping_stack[THREAD_STACKSIZE_DEFAULT+64]; // may get stack overflow if this too low...
 static char udp_stack[THREAD_STACKSIZE_DEFAULT+64];
@@ -179,10 +179,22 @@ int findRoot(void)
     return 0;
 }
 
-uint32_t lastSecs = 0;
 void idleTask(void)
 {
     uint32_t microSecs = getCurrentTime();
+
+    if ((microSecs % 100) > 10)
+    {
+        setCompass(false);
+        setAccel(false);
+        setGyro(true);
+    }
+    else
+    {
+        setCompass(true);
+        setAccel(true);
+        setGyro(true);
+    }
 
     // every second...
     if (schedule(microSecs, 10*ONE_SECOND_US, SCHEDULED_TASK_1))
@@ -215,11 +227,11 @@ void idleTask(void)
         if (schedule(microSecs, usDataUpdateInterval(), SCHEDULED_TASK_2))
         {
             getCurrentPosition();
-            uint32_t ts = getCurrentTime();
-            uint32_t delay = (ts - lastT)/1000;
-            if (delay > 40)
-                printf("%lu mS\n", delay);
-            lastT = ts;
+            //uint32_t ts = getCurrentTime();
+            //uint32_t delay = (ts - lastT)/1000;
+            //if (delay > 40)
+                //printf("%lu mS\n", delay);
+            //lastT = ts;
             if (inhibitDelay <= 0)
             {
                 sendNodeOrientation(myIpAddress);

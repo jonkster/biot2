@@ -61,6 +61,9 @@ bool initIMU(void)
     {
         displayConfiguration(imuDev);
         imuReady = true;
+        setCompassUse(true);
+        setAccelUse(true);
+        setGyroUse(true);
     }
     else
     {
@@ -69,6 +72,7 @@ bool initIMU(void)
     }
     return imuReady;
 }
+
 
 bool getCurrentPosition(void)
 {
@@ -92,6 +96,7 @@ void sendNodeOrientation(char *myIpAddress)
         char buffer[l + 1];
         memset(buffer, 0, l);
         sprintf(buffer, "a%lu:%."QPRECISION"f:%."QPRECISION"f:%."QPRECISION"f:%."QPRECISION"f#%s", ts, orientationQ.w, orientationQ.x, orientationQ.y, orientationQ.z, myIpAddress);
+
         unsigned char compressed[l + 1];
         size_t compressedLength = compress(buffer, compressed, l+1);
         if (compressedLength < l)
@@ -102,9 +107,6 @@ void sendNodeOrientation(char *myIpAddress)
         {
             udp_send("affe::5", buffer);
         }
-        //memset(buffer, 0, l+1);
-        //sprintf(buffer, "do#%lu:%f:%f:%f:%f#%s", ts, orientationQ.w, orientationQ.x, orientationQ.y, orientationQ.z, me);
-        //udp_send("affe::5", buffer);
     }
 }
 
@@ -114,13 +116,22 @@ void sendNodeCalibration(char *myIpAddress)
     {
         int16_t *mc = getMagCalibration();
         int l = snprintf(NULL, 0, "b%i:%i:%i:%i:%i:%i#%s", mc[0], mc[1], mc[2], mc[3], mc[4], mc[5], myIpAddress);
-        //int l = snprintf(NULL, 0, "dc#%i:%i:%i:%i:%i:%i#%s", mc[0], mc[1], mc[2], mc[3], mc[4], mc[5], me);
         char buffer[l + 1];
         memset(buffer, 0, l);
         sprintf(buffer, "b%i:%i:%i:%i:%i:%i#%s", mc[0], mc[1], mc[2], mc[3], mc[4], mc[5], myIpAddress);
         udp_send("affe::5", buffer);
-        //sprintf(buffer, "dc#%i:%i:%i:%i:%i:%i#%s", mc[0], mc[1], mc[2], mc[3], mc[4], mc[5], me);
-        //udp_send("affe::5", buffer);
+        printf("sending calibration: %s\n", buffer);
+
+        unsigned char compressed[l + 1];
+        size_t compressedLength = compress(buffer, compressed, l+1);
+        if (compressedLength < l)
+        {
+            udp_send_raw("affe::5", (char*)compressed, compressedLength);
+        }
+        else
+        {
+            udp_send("affe::5", buffer);
+        }
     }
 }
 
@@ -149,11 +160,23 @@ void sendNodeStatus(char *myIpAddress)
             memset(buffer, 0, l);
             sprintf(buffer, "c%d:%"SCNu32":%d#%s", dof, is.dupInterval, mode, myIpAddress);
             udp_send("affe::5", buffer);
-            //sprintf(buffer, "ds#%d:%"SCNu32":%d#%s", dof, is.dupInterval, mode, me);
-            ////udp_send("affe::1", buffer);
-            //udp_send("affe::5", buffer);
         }
     }
+}
+
+void setAccel(bool onoff)
+{
+        setAccelUse(onoff);
+}
+
+void setCompass(bool onoff)
+{
+        setCompassUse(onoff);
+}
+
+void setGyro(bool onoff)
+{
+        setGyroUse(onoff);
 }
 
 void setUpdateInterval(uint32_t interval) {

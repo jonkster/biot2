@@ -22,11 +22,11 @@ fi
 
 if [ $WANTNODES -eq 1 ]
 then
-	node ./biot-broker-nodes.js > nodes.log &
+	node --trace-warnings ./biot-broker-nodes.js > nodes.log &
 fi
 
 if [ $WANTREST -eq 1 ]
 then
-	node ./biot-broker-rest.js > rest.log &
+	node  --trace-warnings ./biot-broker-rest.js > rest.log &
 fi
 

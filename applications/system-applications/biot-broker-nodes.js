@@ -134,6 +134,7 @@ db.once('open', function() {
 					    console.log('scrambled do', message);
 					}
 				} else if (bits[0] == 'dc'){
+console.log('DC', bits[1]);
 					if (bits[1].match(/[\-0-9]+:[\-0-9]+:[\-0-9]+:[\-0-9]+:[\-0-9]+:[\-0-9]+/)) {
 						dirty = true;
 						node['dc'] = bits[1];
@@ -141,6 +142,7 @@ db.once('open', function() {
 					    console.log('scrambled dc', message);
 					}
 				} else if (bits[0] == 'ds'){
+console.log('DS', bits[1]);
 					if (bits[1].match(/[0-9]+:[0-9]+:[0-9]+/)) {
 						dirty = true;
 						node['ds'] = bits[1];

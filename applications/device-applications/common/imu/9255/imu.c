@@ -361,7 +361,7 @@ myQuat_t getPosition(mpu9255_t dev)
         ypr[ROLL] = atan2(downY, fiddledDownZ);
         ypr[PITCH] = -atan2(downX, sqrt(downY*downY + downZ*downZ));
         ypr[YAW] = 0;  // yaw == 0, accelerometer cannot measure yaw
-        if (! useAccelerometers) 
+        if ((! useAccelerometers))
         {
             // if no accelerometers, use roll and pitch values from gyroscope
             // derived orientation
@@ -378,10 +378,11 @@ myQuat_t getPosition(mpu9255_t dev)
             ypr[YAW] = gyroDeducedYPR[YAW];
         }
 
-        if (! useMagnetometers)
+        if ((! useMagnetometers))
         {
             ypr[YAW] = gyroDeducedYPR[YAW];
         }
+        
         myQuat_t accelQ = eulerToQuat(ypr);
         myQuat_t invAccelQ = quatConjugate(accelQ);
 
