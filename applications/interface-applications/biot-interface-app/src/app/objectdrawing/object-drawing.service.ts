@@ -27,7 +27,8 @@ export class ObjectDrawingService {
             obj.position.set(node.position[0], node.position[1], node.position[2]);
             obj.setRotationFromQuaternion(node.quaternion.normalize());
             this.threedService.add(obj);
-            this.addTrail(obj, node.position[0], node.position[1], node.position[2]);
+            this.addTrail(obj, obj.position[0], obj.position[1], obj.position[2]);
+            //this.addTrail(obj, node.position[0], node.position[1], node.position[2]);
             return true;
         } else {
             return false;
@@ -46,24 +47,27 @@ export class ObjectDrawingService {
                 this.trails[addr] = [];
                 let trailGroup = new THREE.Group();
                 trailGroup.name = 'trail_' + addr;
+                trailGroup.userData.colour = obj.userData.colour;
                 this.threedService.add(trailGroup);
             }
             
             if (obj !== undefined) {
-                let pos = new THREE.Vector3( obj.userData.limbLength * 1.1, 0, 0 ).applyQuaternion(obj.quaternion);
-                this.trails[addr].push([pos.x, pos.y, pos.z]);
-                if (this.trails[addr].length > this.trailLength) {
-                    this.trails[addr].shift();
-                }
+                    obj.updateMatrixWorld();
+                    let pos = new THREE.Vector3( obj.userData.limbLength * 1.1, 0, 0);
+                    pos.applyMatrix4( obj.matrixWorld );
+                    this.trails[addr].push([pos.x, pos.y, pos.z]);
+                    if (this.trails[addr].length > this.trailLength) {
+                            this.trails[addr].shift();
+                    }
             }
         }
     }
 
-    addTrailDots(groupName: string, coords: number[][]) {
-        let dots = this.threedService.makePixieDots(coords);
-        dots.name = name;
+    addTrailDots(groupName: string, coords: number[][], colour: number) {
+        let dots = this.threedService.makePixieDots(coords, colour);
+        dots.name = groupName;
         dots.userData['group'] = groupName;
-        this.threedService.addToGroup('trail_' + groupName, dots);
+        this.threedService.addToGroup('trail_' + groupName, dots, colour);
     }
 
     getNodeMonitoredObject(addr: string): THREE.Object3D {
@@ -185,7 +189,7 @@ export class ObjectDrawingService {
                 if (obj !== undefined) {
                     let node = self.nodeService.getNode(addr);
                     if (node !== undefined) {
-                        //obj.position.set(node.position[0], node.position[1], node.position[2]);
+                        obj.position.set(node.position[0], node.position[1], node.position[2]);
                         obj.setRotationFromQuaternion(node.quaternion.normalize());
                         if (obj.userData.limbRotationX !== undefined) {
                             obj.rotateX(obj.userData.limbRotationX);
@@ -193,7 +197,8 @@ export class ObjectDrawingService {
                             obj.rotateZ(obj.userData.limbRotationZ);
                         }
                         self.unrotateByParent(obj);
-                        self.addTrail(obj, node.position[0], node.position[1], node.position[2]);
+                        self.addTrail(obj, obj.position[0], obj.position[1], obj.position[2]);
+                        //self.addTrail(obj, node.position[0], node.position[1], node.position[2]);
                         self.updateTrails();
                     }
                 }
@@ -217,14 +222,18 @@ export class ObjectDrawingService {
     }
 
     updateTrails() {
-        let addresses = Object.keys(this.trails);
-        for (let i = 0; i < addresses.length; i++) {
-            let addr = addresses[i];
-            this.threedService.removeGroupChildren('trail_' + addr);
-            let trail = this.trails[addr];
-            this.addTrailDots(addr, trail);
-
-        }
+            let colour = 0x000000;
+            let addresses = Object.keys(this.trails);
+            for (let i = 0; i < addresses.length; i++) {
+                    let addr = addresses[i];
+                    let trailGroup = this.threedService.getObject('trail_' + addr);
+                    if (trailGroup.userData.colour !== undefined) {
+                            colour = trailGroup.userData.colour;
+                    }
+                    this.threedService.removeGroupChildren('trail_' + addr);
+                    let trail = this.trails[addr];
+                    this.addTrailDots(addr, trail, colour);
+            }
     }
 
 }

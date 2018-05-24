@@ -117,7 +117,7 @@ export class NodeService {
         for (let i = 0; i < addresses.length; i++) {
             let addr = addresses[i];
             if (this.knownNodes[addr] !== undefined) {
-                rotations[addr] = this.knownNodes.quaternion;
+                rotations[addr] = this.knownNodes[addr].quaternion;
             }
         }
         return rotations;

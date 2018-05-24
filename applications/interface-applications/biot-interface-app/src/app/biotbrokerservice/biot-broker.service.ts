@@ -80,22 +80,22 @@ export class BiotBrokerService {
     }
 
     getANodesData(addr) {
-        const result = this.makeBrokerRequest('biotz/addresses/' + addr);
+        const result = this.makeBrokerRequest('biotz/addresses/' + addr, false);
         return result;
     }
 
     getAddresses() {
-        const result = this.makeBrokerRequest('biotz/addresses');
+        const result = this.makeBrokerRequest('biotz/addresses', false);
         return result;
     }
 
     getAllNodesData() {
-        const result = this.makeBrokerRequest('biotz/all/nodes');
+        const result = this.makeBrokerRequest('biotz/all/nodes', false);
         return result;
     }
 
     getAllNodesOrientation() {
-        const result = this.makeBrokerRequest('biotz/all/data');
+        const result = this.makeBrokerRequest('biotz/all/data', false);
         return result;
     }
 
@@ -115,7 +115,7 @@ export class BiotBrokerService {
                     }
                     let ip = net + i++;
                     this.callBrokerHost(ip, () => { clearInterval(p); });
-                }, 10);
+                }, 100);
             }
         }
     }
@@ -129,17 +129,17 @@ export class BiotBrokerService {
     }
 
     getCachedAssemblies() {
-        const result = this.makeBrokerRequest('data/assembly');
+        const result = this.makeBrokerRequest('data/assembly', true);
         return result;
     }
 
     getCachedAssembly(name) {
-        const result = this.makeBrokerRequest('data/assembly/' + name);
+        const result = this.makeBrokerRequest('data/assembly/' + name, false);
         return result;
     }
 
     getCalibration(addr) {
-        const result = this.makeBrokerRequest('biotz/addresses/' + addr + '/calibration');
+        const result = this.makeBrokerRequest('biotz/addresses/' + addr + '/calibration', true);
         return result;
     }
 
@@ -191,22 +191,22 @@ export class BiotBrokerService {
     }
 
     getRecordStatus(addr) {
-        const result = this.makeBrokerRequest('biotz/addresses/' + addr + '/record/status');
+        const result = this.makeBrokerRequest('biotz/addresses/' + addr + '/record/status', true);
         return result;
     }
 
     getRouterStatus() {
         const path = "biotz/edgerouter";
-        return this.makeBrokerRequest(path);
+        return this.makeBrokerRequest(path, false);
     }
 
     getStatus(addr) {
-        const result = this.makeBrokerRequest('biotz/addresses/' + addr + '/alive');
+        const result = this.makeBrokerRequest('biotz/addresses/' + addr + '/alive', true);
         return result;
     }
 
     getSystemMessageRate() {
-        const result = this.makeBrokerRequest('system/mrate');
+        const result = this.makeBrokerRequest('system/mrate', false);
         return result;
     }
 
@@ -226,24 +226,27 @@ export class BiotBrokerService {
     }
 
 
-    private makeBrokerRequest(path: string): Observable<any> {
-        if (this.biotServerHost !== '') {
-            const url = "http://" + this.biotServerHost + ":" + this.biotServerPort + "/" + path ;
-            let src = this.http.get(url)
-                .timeout(60)
-                .map(this.extractWSData)
-                .catch((err: Response) => {
-                    console.log(err);
-                    if (err.status >= 500) {
-                        this.foundBroker = false;
-                    } 
-                    console.log('failed to get resource', url, err);
-                    return this.handleError(err)
-                });
-                return src;
-        } else {
-            return Observable.empty();
-        }
+    private makeBrokerRequest(path: string, ignoreFail: boolean): Observable<any> {
+            if (this.biotServerHost !== '') {
+                    const url = "http://" + this.biotServerHost + ":" + this.biotServerPort + "/" + path ;
+                    let src = this.http.get(url)
+                            .timeout(60)
+                            .map(this.extractWSData)
+                            .catch((err: Response) => {
+                                            if (!ignoreFail) {
+                                                console.log(err);
+                                                if (err.status >= 500) {
+                                                        this.foundBroker = false;
+                                                } 
+                                                console.log('failed to get resource', url, err);
+                                                return this.handleError(err)
+                                            }
+                                            return Observable.empty();
+                                    });
+                    return src;
+            } else {
+                    return Observable.empty();
+            }
     }
 
     postAssemblyToCache(name: string, data: string) {
@@ -321,7 +324,7 @@ export class BiotBrokerService {
     resetService() {
         console.log("resetting communications");
         const path = '';
-        const result = this.makeBrokerRequest(path);
+        const result = this.makeBrokerRequest(path, false);
         result.subscribe(
             rawData => {
                 console.log('data', rawData);
@@ -354,7 +357,7 @@ export class BiotBrokerService {
     }
 
     synchronise() {
-        const result = this.makeBrokerRequest('biotz/synchronise');
+        const result = this.makeBrokerRequest('biotz/synchronise', false);
         return result;
     }
 

@@ -39,7 +39,8 @@ export class SystemComponent implements AfterViewInit {
     }
 
     //private biotBrokerIP: string = '127.0.0.1';
-    private biotBrokerIP: string = '10.1.1.61';
+    //private biotBrokerIP: string = '10.1.1.61';
+    private biotBrokerIP: string = '192.168.0.30';
     private biotBrokerPort: string = '8889';
     private debugHistory: string[] = [];
 
@@ -60,6 +61,7 @@ export class SystemComponent implements AfterViewInit {
     }
 
     ngAfterViewInit() {
+        this.changeBroker(this.biotBrokerIP, this.biotBrokerPort);
 	this.getRouterStatus();
 	this.setFaultStatus();
     	this.initCanvas();
@@ -215,8 +217,6 @@ export class SystemComponent implements AfterViewInit {
         if (status !== null) {
             status.subscribe(
                 rawData => {
-                    console.log('got status', rawData);
-                    //this.routerStatus = rawData;
                     this.routerStatus.status = rawData['status'];
                     this.routerStatus.ip = rawData['ip'];
                     this.routerStatus.port = rawData['port'];

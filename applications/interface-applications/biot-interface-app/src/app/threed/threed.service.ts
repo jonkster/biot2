@@ -120,10 +120,16 @@ export class ThreedService {
         this.scene.add(light);
     }
 
-    addToGroup(name: string, obj: THREE.Object3D) {
+    addToGroup(name: string, obj: THREE.Object3D, colour: number) {
         let group = this.scene.getObjectByName(name);
         if (group !== undefined) {
             group.add(obj);
+        } else {
+                let trailGroup = new THREE.Group();
+                trailGroup.name = name;
+                trailGroup.userData['colour'] = colour;
+                this.add(trailGroup);
+                trailGroup.add(obj);
         }
     }
 
@@ -180,6 +186,10 @@ export class ThreedService {
             intersects = this.raycaster.intersectObjects(obs);
         }
         return intersects;
+    }
+
+    getObject(name: string) : THREE.Object3D {
+        return this.scene.getObjectByName(name);
     }
 
     getStats() {
@@ -300,17 +310,17 @@ export class ThreedService {
         return group;
     }
 
-    makePixieDots(coords : number[][]) {
+    makePixieDots(coords : number[][], colour: number) {
         let geometry = new THREE.Geometry();
         for (let j = 0; j < coords.length; j++) {
             let coord = coords[j];
             geometry.vertices.push(new THREE.Vector3(coord[0], coord[1], coord[2]));
         }
         let dotMaterial = new THREE.LineBasicMaterial({
-            'color': 0xaf7faf,
-            'linewidth': 3
+            'color': colour,
+            'linewidth': 1
         });
-        let dots = new THREE.Line(geometry, dotMaterial);
+        let dots = new THREE.LineSegments(geometry, dotMaterial);
         dots.userData['type'] = 'trail';
         return dots;
     }

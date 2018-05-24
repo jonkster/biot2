@@ -85,7 +85,6 @@ export class AssembliesComponent implements OnInit {
                       this.pickAColour(i),
                       30);
                   this.objectDrawingService.addNodeMonitoredObject(addr, this.knownLimbs[addr]);
-                  //console.log("adding limb");
               }
           }
           if (addresses.length > 0) {
@@ -169,8 +168,6 @@ export class AssembliesComponent implements OnInit {
   getKnownAssemblies() {
       this.biotBrokerService.getCachedAssemblies().subscribe(
           rawData => {
-              //this.debug("got assemblies:" + rawData);
-              //console.log('know assemblies', rawData);
               this.knownAssemblies = rawData as string[];
           },
           error => { this.debug("error when getting assembly names:" + error); }
@@ -364,6 +361,10 @@ export class AssembliesComponent implements OnInit {
           }
           this.knownLimbs[addr] = limb;
       }
+  }
+ 
+  zoom(dir: number) {
+        this.threedService.zoom(dir);
   }
 
 }

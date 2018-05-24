@@ -4,6 +4,8 @@
 <div appThreed [displaywidth]="1400" [displayheight]="800" class="centred"></div>
 <div appThreestats [statsstyle]="{position: 'inherit', float: 'left', display: 'flex'}"></div>
 <div>
+    <button (click)="threedService.zoom(0.1);">Zoom In</button>
+    <button (click)="threedService.zoom(-0.1);">Zoom Out</button>
     <button (click)="threedService.viewFrom(0, 0, 1);">Top</button>
     <button (click)="threedService.viewFrom(0, 0, -1);">Bottom</button>
     <button (click)="threedService.viewFrom(1, 0, 0);">Front</button>
